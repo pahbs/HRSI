@@ -167,16 +167,24 @@ def run_asp_smry(
                         if not os.path.exists(imageDir):
                             os.mkdir(imageDir)
 
-                       # Create symbolic links in imageDir of each item in the selected rows AND their corresponding xml
+                        # Create symbolic links in imageDir of each item in the selected rows AND their corresponding xml
                         preLogText.append("\n\t Creating symbolic links to input in NGA database:")
                         for row in selected:
-                            symLink = os.path.join(imageDir,os.path.split(row[0])[1])
+                            """
+                            symlink gets me that path to the NTF in NCCS, and its used to give me the XML too
+                            """
+                            symbolicLink = os.path.join(imageDir,os.path.split(row[0])[1])
 
-                            if not os.path.exists(symLink):
-                                os.symlink(row[0], symLink )
-                                preLogText.append("\t" + symLink)
-                            if not os.path.exists(symLink.split(".")[0] + ".xml"):                            # image
-                                os.symlink(row[0].split('.')[0] + ".xml", symLink.split(".")[0] + ".xml" )    # xml
+                            # If symlink exists, remove it to create a new one. This gets rid of broken links problem
+
+                            if os.path.lexists(symbolicLink):
+                                os.remove(symbolicLink)
+                            os.symlink(row[0], symbolicLink )
+                            preLogText.append("\t" + symbolicLink)
+
+                            if os.path.lexists(symbolicLink.split(".")[0] + ".xml"):
+                                os.remove(symbolicLink.split(".")[0] + ".xml")                            # image
+                            os.symlink(row[0].split('.')[0] + ".xml", symbolicLink.split(".")[0] + ".xml" )    # xml
 
                 if len(catIDlist) == 0:
                     try:
