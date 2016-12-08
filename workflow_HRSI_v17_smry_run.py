@@ -239,8 +239,6 @@ def run_asp_smry(
             print "\n"
             print "________________________"
             print "><><><><><><><><><><><><"
-            print(" Working on sym links to scenes in dir: " + imageDir)
-            print "\n"
             print("\n\tACQ_DATE in line is: %s" % (str(imageDate)))##(line.split(',')[2]))
             try:
                 print("\tutm_zone = " + utm_zone)
@@ -248,39 +246,13 @@ def run_asp_smry(
                 print("\tutm_zone = " + 'NA')
             print "\tSun Elev Angle = %s" %avSunElev
 
-            # [----] CD to the top level dir for a recursive search
-            os.chdir('/att/gpfsfs/userfs02/ppl/cneigh/nga_veg/data/ftp.agic.umn.edu')
-
-            # ------ Find the directory that has all the individual stereo image pairs
-            #       search with the first catID
-
-            cmdStr = "find $PWD -type d -wholename '*%s*' " %(catID_1)
-            findCmd         = subp.Popen(cmdStr, stdout=subp.PIPE, shell=True)
-            (imageDir, err) = findCmd.communicate()
-
-            # If duplicate dirs, imageDir will return those dups separated by "\n"; just take the second one, but if '', take first one.
-            if len(imageDir.split("\n"))>1:
-                if imageDir.split("\n")[1] != '':
-                    imageDir = imageDir.split("\n")[1]
-                else:
-                    imageDir = imageDir.split("\n")[0]
-
-            print(" ------ ")
-            print("\tWorking on scenes in dir: " + imageDir)
-            print(" ------ ")
-
-
-            # Go to the dir that holds all the indiv pairs associated with both stereo strips
-            ##os.chdir(imageDir)
-            DSMdone = False
-
             # Get stereo geometry angles
             conv_ang, bie_ang, asym_ang = ("" for i in range(3))
             try:
                 print "\n\tStereo angles calc output:"
                 conv_ang, bie_ang, asym_ang = g.stereopairs(imageDir)
             except Exception, e:
-                print "\n\tStereo angles not calc'd b/c there aren't 2 catIDs"
+                print "\n\tStereo angles not calc'd b/c there is no input for both catIDs"
 
             outAttributes = pairname + "," + str(found_catID[0]) + "," + str(found_catID[1]) + "," + str(mapprj) + "," + str(year) + "," + str(month) + "," + str(avSunElev)+ "," + str(avSunAz) + "," + str(avOffNadir) + "," + str(avTargetAz) + "," + str(avSatAz) + "," +str(conv_ang) + "," + str(bie_ang) + "," + str(asym_ang) + "," + str(DSMdone) +"\n"
             # Write out CSV summary info
