@@ -246,6 +246,8 @@ def run_asp_smry(
                 print("\tutm_zone = " + 'NA')
             print "\tSun Elev Angle = %s" %avSunElev
 
+            DSMdone = False
+
             # Get stereo geometry angles
             conv_ang, bie_ang, asym_ang = ("" for i in range(3))
             try:
