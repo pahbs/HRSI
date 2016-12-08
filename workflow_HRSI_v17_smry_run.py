@@ -78,9 +78,8 @@ def run_asp_smry(
     with open(csv.split(".")[0] + "_output_smry.csv",'w') as csvOut:
         csvOut.write(outHeader)
 
-        #------------------------------------------------------------------
-        #       CSV Loop --> runs parallel_stereo for each line of CSV across all VMs
-        #------------------------------------------------------------------
+        #  CSV Loop --> runs parallel_stereo for each line of CSV across all VMs
+        #
         # [3] Loop through the lines (the records in the csv table), get the attributes and run the ASP commands
         for line in csvLines:
             preLogText = []
@@ -117,7 +116,7 @@ def run_asp_smry(
                         pass
 
             # [4] Search ADAPT's NGA database for catID_1 and catid_2
-
+            #
             # Establish the database connection
             with psycopg2.connect(database="NGAdb01", user="anon", host="ngadb01", port="5432") as dbConnect:
 
@@ -125,7 +124,8 @@ def run_asp_smry(
                 catIDlist = [] # build now to indicate which catIDs were found, used later
                 pIDlist = []
                 found_catID = [False,False]
-                # setup and execute the query on both catids of the stereopair indicated with the current line of the input CSV
+
+                # Setup and execute the query on both catids of the stereopair indicated with the current line of the input CSV
                 for num, catID in enumerate([catID_1,catID_2]):
 
                     selquery =  "SELECT s_filepath, sensor, acq_time, cent_lat, cent_long FROM nga_files_footprint_v2 WHERE catalog_id = '%s'" %(catID)
@@ -133,9 +133,8 @@ def run_asp_smry(
                     cur.execute(selquery)
                     selected=cur.fetchall()
                     preLogText.append( "\n\t Found '%s' scenes for catID '%s' "%(len(selected),catID))
+
                     # Get info from first item returned
-                    #
-                    #
                     if len(selected) == 0:
                         found_catID[num] = False
                     else:
@@ -179,7 +178,6 @@ def run_asp_smry(
                             if not os.path.exists(symLink.split(".")[0] + ".xml"):                            # image
                                 os.symlink(row[0].split('.')[0] + ".xml", symLink.split(".")[0] + ".xml" )    # xml
 
-
                 if len(catIDlist) == 0:
                     try:
                         year = "%04d" % imageDate.year
@@ -209,7 +207,6 @@ def run_asp_smry(
                         ew = "W"
                     else:
                         ew = "E"
-
 
             # -----------------------
             # For logging on the fly
