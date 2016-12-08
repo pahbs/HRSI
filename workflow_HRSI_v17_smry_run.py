@@ -29,7 +29,7 @@ from distutils.util import strtobool
 
 def run_asp_smry(
     csv,
-    outDir,     ##  ='/att/gpfsfs/userfs02/ppl/pmontesa/outASP',         #'/att/gpfsfs/userfs02/ppl/cneigh/nga_veg/outASP',
+    outDir,
     inDir,
     prj='EPSG:32647'
     ):

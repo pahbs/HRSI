@@ -251,52 +251,46 @@ def runVALPIX(outStereoPre, root, newFieldsList, newAttribsList, outSHP):
                print("\t Removed: "+ f)
 
 def runVRT(outStereoPre,
-            root, ##= '/att/gpfsfs/userfs02/ppl/pmontesa/outASP',
+            root,
             newFieldsForVALPIX,
-            newAttributesForVALPIX,
-            strip=True):
-    if strip:
-        # Build a VRT of the strip clr-shd file
-        # Build a VRT of the DRG file
-        # Update footprints of each with gdaltindex
-        # Note: VRTs need absolute paths!
+            newAttributesForVALPIX
+            ):
 
-        # --CLR
-        srcSHD = outStereoPre + "-holes-fill-DEM-clr-shd.tif"
-        path = os.path.join(root,"vrt_clr_v7")
-        dst = os.path.join(path, outStereoPre.split('/')[-2] + '_' + outStereoPre.split('/')[-1] + "-holes-fill-DEM-clr-shd.vrt")
-        if os.path.isfile(dst):
-            os.remove(dst)
-        cmdStr = "gdal_translate -of VRT " + srcSHD + " " + dst
-        wf.run_os(cmdStr)
-        print("\tWriting VRT " + dst)
+    # Build a VRT of the strip clr-shd file
+    # Build a VRT of the DRG file
+    # Update footprints of each with gdaltindex
+    # Note: VRTs need absolute paths!
 
-        ## Update clr index shapefile
-        #cmdStr = "gdaltindex -t_srs EPSG:4326 " + path + "clr_index.shp " + dst
-        #run_os(cmdStr)
+    # --CLR
+    srcSHD = outStereoPre + "-holes-fill-DEM-clr-shd.tif"
+    path = os.path.join(root,"vrt_clr_v7")
+    dst = os.path.join(path, outStereoPre.split('/')[-2] + '_' + outStereoPre.split('/')[-1] + "-holes-fill-DEM-clr-shd.vrt")
+    if os.path.isfile(dst):
+        os.remove(dst)
+    cmdStr = "gdal_translate -of VRT " + srcSHD + " " + dst
+    wf.run_os(cmdStr)
+    print("\tWriting VRT " + dst)
 
-        # --DRG
-        srcDRG = outStereoPre + "-holes-fill-DRG.tif"
-        path = os.path.join(root,"vrt_drg")
-        dst = os.path.join(path, outStereoPre.split('/')[-2] + '_' + outStereoPre.split('/')[-1] + "-holes-fill-DRG.vrt")
-        if os.path.isfile(dst):
-            os.remove(dst)
-        cmdStr = "gdal_translate -of VRT " + srcDRG + " " + dst
-        wf.run_os(cmdStr)
-        print("\tWriting VRT " + dst)
+    ## Update clr index shapefile
+    #cmdStr = "gdaltindex -t_srs EPSG:4326 " + path + "clr_index.shp " + dst
+    #run_os(cmdStr)
 
-        # --Update DRG index shapefile
-        #cmdStr = "gdaltindex -t_srs EPSG:4326 " + path + "drg_index.shp " + dst
-        #run_os(cmdStr)
+    # --DRG
+    srcDRG = outStereoPre + "-holes-fill-DRG.tif"
+    path = os.path.join(root,"vrt_drg")
+    dst = os.path.join(path, outStereoPre.split('/')[-2] + '_' + outStereoPre.split('/')[-1] + "-holes-fill-DRG.vrt")
+    if os.path.isfile(dst):
+        os.remove(dst)
+    cmdStr = "gdal_translate -of VRT " + srcDRG + " " + dst
+    wf.run_os(cmdStr)
+    print("\tWriting VRT " + dst)
 
-        runVALPIX(outStereoPre,root,newFieldsForVALPIX, newAttributesForVALPIX, "outASP_strips_valid_areas.shp")
+    # --Update DRG index shapefile
+    #cmdStr = "gdaltindex -t_srs EPSG:4326 " + path + "drg_index.shp " + dst
+    #run_os(cmdStr)
 
-    else:
-        # Mosaic scenes to strip files, build a VRT.
-        # [5.6] Pyramid layers: Run gdaladdo on all tif files with 'holes' in the name, in the cur dir
-        cmdStr = "/att/gpfsfs/home/pmontesa/code/run_gdaldem_strips_v2"
-        wf.run_os(cmdStr)
-        # Dont communicate this... Let the program move to the next dir to start processing those scenes while this runs.
+    runVALPIX(outStereoPre,root,newFieldsForVALPIX, newAttributesForVALPIX, "outASP_strips_valid_areas.shp")
+
 
     print("\n\t ---------------")
     print("\n\t ")
@@ -982,11 +976,11 @@ def run_asp(
 
                         # Out ASP dir with out file prefix
                         """
-                        outASPcur will look like this: /att/nobackup/pmontesa/outASP/WV01_20150610_102001003EBA8900_102001003E8CA400
+                        outASPcur will look like this: outDir/WV01_20150610_102001003EBA8900_102001003E8CA400
                         """
                         outASPcur = outDir + "/" + imageDir.split('/')[-1].rstrip('\n')
                         """
-                        outStereoPre looks like this: /att/nobackup/pmontesa/outASP/WV01_20150610_102001003EBA8900_102001003E8CA400/out
+                        outStereoPre looks like this: outDir/WV01_20150610_102001003EBA8900_102001003E8CA400/out
                         """
                         outStereoPre = outASPcur + "/out-" + outType + sceneNum
                         doStereo = False
@@ -1070,7 +1064,7 @@ def run_asp(
 
                             if DSMdone:
                                 print("\n\t Running VRT function...")
-                                runVRT(outStereoPre,'/att/gpfsfs/userfs02/ppl/pmontesa/outASP', outHeaderList, outAttributesList, strip=True)
+                                runVRT(outStereoPre,outDir, outHeaderList, outAttributesList)
                             else:
                                 print("\n\t VRTs not done b/c DSM not done. Moving on...")
                         else:
