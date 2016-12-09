@@ -175,6 +175,44 @@ def runP2D(outStereoPre, prj, strip=True):
     """
     Also, remove all the subdirs and other intermediate created from the stereo run
     """
+def footprint_dsm(outRoot, inRoot):
+        """
+        Find all DSM in subdirs of an outRoot dir.
+        Find matching input files in corresponding dirs of inRoot
+        Gather list of image level attributes
+        Output to shp with runVALPIX
+        """
+        from os import listdir
+        import get_stereopairs_v3 as g
+
+        for subdir in os.listdir(outRoot):
+
+            # Get the outASP dir
+            outASPdir = os.path.join(outRoot,subdir)
+
+            print '\n\tHRSI DSM dir: %s' %(outASPdir)
+
+            # Look for clr-shd: If exists, then DSM was likely output ok
+            for root, dirs, files in os.walk(outASPdir):
+                for each in files:
+                    if 'holes-fill-DEM-clr-shd' in each:
+                        print '\n\tDEM and Color-shaded relief exist'
+                        DSMok = True
+
+            if DSMok:
+
+                # Get the inASP dir
+                inASPdir = os.path.join(inRoot,subdir)
+
+                if os.path.isdir(inASPdir):
+
+                    c,b,a,hdr,line = g.stereopairs(inASPdir)
+
+                    runVALPIX(outASPdir+'/out-strip', outASPdir, hdr, line, 'outASP_test.shp')
+
+
+
+
 
 
 def runVALPIX(outStereoPre, root, newFieldsList, newAttribsList, outSHP):

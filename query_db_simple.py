@@ -11,6 +11,7 @@
 import psycopg2
 import csv
 
+
 def main(csvlist):
     """
     csvlist     a column with a header as a csv file
