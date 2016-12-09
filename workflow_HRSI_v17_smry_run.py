@@ -252,7 +252,7 @@ def run_asp_smry(
             conv_ang, bie_ang, asym_ang = ("" for i in range(3))
             try:
                 print "\n\tStereo angles calc output:"
-                conv_ang, bie_ang, asym_ang = g.stereopairs(imageDir)
+                conv_ang, bie_ang, asym_ang, hdr, attrbs = g.stereopairs(imageDir)
             except Exception, e:
                 print "\n\tStereo angles not calc'd b/c there is no input for both catIDs"
 
