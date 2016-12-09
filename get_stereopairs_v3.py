@@ -157,7 +157,7 @@ def stereopairs(imageDir):
         # Get all combos of scenes from each catid strip:
         for leftXML in cat1list:
             for rightXML in cat2list:
-                with open(os.path.join(imageDir,leftXML), 'r') as file1, open(os.path.join(imageDir,rightXML),'r') as file2:
+                with open(os.path.realpath(os.path.join(imageDir,leftXML)), 'r') as file1, open(os.path.realpath(os.path.join(imageDir,rightXML)),'r') as file2:
                     i = 0
 
                     # Initialize vars
