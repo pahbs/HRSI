@@ -791,60 +791,66 @@ def run_asp(
                         stripList.append(outStrip)
                         print("\n\tCatID: " + catID)
 
-                        # If the mosaic already exists, dont do it again, dummy
+                        ## If the mosaic already exists, dont do it again, dummy
+                        # Dummy, if the mosaic already exists, it might be have been only partially completed on a previously failed run, so delete and redo
                         if os.path.isfile(outStrip):
-                            print("\n\t Mosaic strip already exists: " + outStrip)
-                            dg_mos = False
-                        else:
-                            # Get seachExt for wv_correc and dg_mosaic
-                            wv_cor_cmd = False
-                            """
-                            We may have solved this problem of communicating in serial the wv_correct Cmds that were run in near-parallel
-                            """
-                            wvCmdList = []
+                            print("\n\t Mosaic strip already exists, but delete and redo: " + outStrip)
+                            os.remove(outStrip)
+                            try:
+                                os.remove(outStrip.replace('.tif','.xml'))
+                            except Exception, e:
+                                pass
+                            ##dg_mos = False
+                        ##else:
+                        # Get seachExt for wv_correct and dg_mosaic
+                        wv_cor_cmd = False
+                        """
+                        We may have solved this problem of communicating in serial the wv_correct Cmds that were run in near-parallel
+                        """
+                        wvCmdList = []
 
-                            for imgNum, raw_image in enumerate(raw_imageList):
-                                for searchExt in searchExtList:
-                                    if searchExt in raw_image and not 'cor' in raw_image:
-                                        cor_imageList.append(raw_image.replace(searchExt, corExt))
-                                        break
+                        for imgNum, raw_image in enumerate(raw_imageList):
+                            for searchExt in searchExtList:
+                                if searchExt in raw_image and not 'cor' in raw_image:
+                                    cor_imageList.append(raw_image.replace(searchExt, corExt))
+                                    break
 
-                                if 'WV01' in sensor or 'WV02' in sensor:
-                                # --------
-                                # wv_correct loop
-                                #
+                            if 'WV01' in sensor or 'WV02' in sensor:
+                            # --------
+                            # wv_correct loop
+                            #
 
-                                    try:
-                                        print("\n\tRunnning wv_correct on raw image: " + raw_image)
-                                        cmdStr ="wv_correct --threads=4 " + raw_image + " " + raw_image.replace(searchExt, ".xml") + " " + raw_image.replace(searchExt, corExt)
-                                        Cmd = subp.Popen(cmdStr.rstrip('\n'), stdout=subp.PIPE, shell=True)
-                                        wv_cor_cmd = True
-                                        wvCmdList.append(Cmd)
+                                try:
+                                    print("\n\tRunnning wv_correct on raw image: " + raw_image)
+                                    cmdStr ="wv_correct --threads=4 " + raw_image + " " + raw_image.replace(searchExt, ".xml") + " " + raw_image.replace(searchExt, corExt)
+                                    Cmd = subp.Popen(cmdStr.rstrip('\n'), stdout=subp.PIPE, shell=True)
+                                    wv_cor_cmd = True
+                                    wvCmdList.append(Cmd)
 
-                                        # Make copies of xmls to match *cor.tif
-                                        shutil.copy(raw_image.replace(searchExt,".xml"), raw_image.replace(searchExt,corExt.replace('.tif',".xml")))
+                                    # Make copies of xmls to match *cor.tif
+                                    shutil.copy(raw_image.replace(searchExt,".xml"), raw_image.replace(searchExt,corExt.replace('.tif',".xml")))
 
-                                    except Exception, e:
-                                        #print '\t' + str(e)
-                                        print "\n\t Tried using this extension: " + searchExt
+                                except Exception, e:
+                                    #print '\t' + str(e)
+                                    print "\n\t Tried using this extension: " + searchExt
 
-                            if not wv_cor_cmd:
-                                print "\n\tRaw image search extension for dg_mosaic: %s: " %searchExt
+                        if not wv_cor_cmd:
+                            print "\n\tRaw image search extension for dg_mosaic: %s: " %searchExt
 
-                            # Communicate the wv_correct cmd
-                            """
-                            Probably should find a way to DEDENT the wv_correct AND dg_mosaic blocks so that ALL wv_corrects can be running simultaneously
-                                and then BOTH mosaics can be running simultaneously.
-                            """
-                            if wv_cor_cmd:
-                                print wvCmdList
-                                for num, c in enumerate(wvCmdList):
-                                    s,e = c.communicate()
+                        # Communicate the wv_correct cmd
+                        """
+                        Probably should find a way to DEDENT the wv_correct AND dg_mosaic blocks so that ALL wv_corrects can be running simultaneously
+                            and then BOTH mosaics can be running simultaneously.
+                        """
+                        if wv_cor_cmd:
+                            print wvCmdList
+                            for num, c in enumerate(wvCmdList):
+                                s,e = c.communicate()
 
-                                    print "\n\twv_correct run # %s" %num
-                                    print "\twv_correct output:"
-                                    ##print "\tStandard out: %s" %str(s)
-                                    print "\tStandard error: %s" %str(e)
+                                print "\n\twv_correct run # %s" %num
+                                print "\twv_correct output:"
+                                ##print "\tStandard out: %s" %str(s)
+                                print "\tStandard error: %s" %str(e)
 
                             # --------
                             # dg_mosaic:    This has to one once for each of the image strips.
