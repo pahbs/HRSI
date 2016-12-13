@@ -175,40 +175,86 @@ def runP2D(outStereoPre, prj, strip=True):
     """
     Also, remove all the subdirs and other intermediate created from the stereo run
     """
+
+def db_query(catIDlist):
+    """
+    returns a list of lists. Each list is a list of images associated with each catID of input list.
+    """
+
+    import psycopg2
+    # Establish the database connection
+    with psycopg2.connect(database="NGAdb01", user="anon", host="ngadb01", port="5432") as dbConnect:
+
+        cur = dbConnect.cursor() # setup the cursor
+        sel_list=[]
+
+        """
+        Search 1 catID at a time
+        """
+        # setup and execute the query on both catids of the stereopair indicated with the current line of the input CSV
+        for num, catID in enumerate(catIDlist):
+
+            selquery =  "SELECT s_filepath, sensor, acq_time, cent_lat, cent_long FROM nga_files WHERE catalog_id = '%s'" %(catID)
+            ##preLogText.append( "\n\t Now executing database query on catID '%s' ..."%catID)
+            cur.execute(selquery)
+            """
+            'selected' will be a list of all raw scene matching the catid and their associated attributes that you asked for above
+            """
+            selected=cur.fetchall()
+            sel_list.append(selected)
+    return(sel_list)
+
 def footprint_dsm(outRoot, inRoot):
-        """
-        Find all DSM in subdirs of an outRoot dir.
-        Find matching input files in corresponding dirs of inRoot
-        Gather list of image level attributes
-        Output to shp with runVALPIX
-        """
-        from os import listdir
-        import get_stereopairs_v3 as g
+    """
+    outRoot     eg, outASP dir
+    inRoot      eg, inASP dir
+    Find all DSM in subdirs of an outRoot dir.
+    Find matching input files in corresponding dirs of inRoot
+    Gather list of image level attributes
+    Output to shp with runVALPIX
+    """
+    from os import listdir
+    import get_stereopairs_v3 as g
+    from shutil import copyfile
 
-        for subdir in os.listdir(outRoot):
+    for subdir in os.listdir(outRoot):
 
-            # Get the outASP dir
-            outASPdir = os.path.join(outRoot,subdir)
+        # Get the outASP dir
+        outASPdir = os.path.join(outRoot,subdir)
 
-            print '\n\tHRSI DSM dir: %s' %(outASPdir)
+        print '\n\tHRSI DSM dir: %s' %(outASPdir)
 
-            # Look for clr-shd: If exists, then DSM was likely output ok
-            for root, dirs, files in os.walk(outASPdir):
-                for each in files:
-                    if 'holes-fill-DEM-clr-shd' in each:
-                        print '\n\tDEM and Color-shaded relief exist'
-                        DSMok = True
+        # Look for clr-shd: If exists, then DSM was likely output ok
+        for root, dirs, files in os.walk(outASPdir):
+            for each in files:
+                if 'holes-fill-DEM-clr-shd' in each:
+                    print '\n\tDEM and Color-shaded relief exist'
+                    DSMok = True
 
-            if DSMok:
+        if DSMok:
+            # Copy the XMLs to inASP
 
-                # Get the inASP dir
-                inASPdir = os.path.join(inRoot,subdir)
+            catID_1 = subdir.split('_')[2]
+            catID_2 = subdir.split('_')[3]
 
-                if os.path.isdir(inASPdir):
+            for num, catID in enumerate([catID_1,catID_2]):
+                sList = db_query([catID])
 
-                    c,b,a,hdr,line = g.stereopairs(inASPdir)
+                # Get file_paths of all images assoc'd with catID
+                for numimg, img in enumerate(range(0:len(sList[num])):
+                    file_path = sList[num][numimg][0]   # third position is the file_path
+                    file_path = file_path.replace('.ntf','.xml')
+                    copyfile(file_path, os.path.join(inRoot,subdir,os.pathsplit(file_path)[1])))
 
-                    runVALPIX(outASPdir+'/out-strip', outASPdir, hdr, line, 'outASP_test.shp')
+
+            # Get the inASP dir
+            inASPdir = os.path.join(inRoot,subdir)
+
+            if os.path.isdir(inASPdir):
+
+                c,b,a,hdr,line = g.stereopairs(inASPdir)
+
+                runVALPIX(outASPdir+'/out-strip', outASPdir, hdr, line, 'outASP_test.shp')
 
 
 
