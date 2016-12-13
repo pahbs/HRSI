@@ -204,62 +204,107 @@ def db_query(catIDlist):
             sel_list.append(selected)
     return(sel_list)
 
-def footprint_dsm(outRoot, inRoot):
+def copy_over_symlink(file_path, inRoot, subdir):
+
+    from shutil import copyfile
+
+    new_file_path = os.path.join(inRoot,subdir,os.path.split(file_path)[1])
+    try:
+        copyfile(file_path, new_file_path)
+    except Exception, e:
+        if os.path.islink(new_file_path):
+            os.unlink(new_file_path)
+        if not os.path.exists(os.path.join(inRoot,subdir)):
+            os.makedirs(os.path.join(inRoot,subdir))
+        copyfile(file_path, new_file_path)
+
+    print "\tCopied xml to %s" %(os.path.join(inRoot,subdir,os.path.split(file_path)[1]))
+
+def footprint_dsm(outRoot, inRoot, myDir):
     """
     outRoot     eg, outASP dir
     inRoot      eg, inASP dir
+    myDir       a top level input dir in my NOBACKUP space in which to search for catIDs if the NGA dB doesnt find them
+
     Find all DSM in subdirs of an outRoot dir.
     Find matching input files in corresponding dirs of inRoot
     Gather list of image level attributes
     Output to shp with runVALPIX
     """
+    import os
     from os import listdir
     import get_stereopairs_v3 as g
-    from shutil import copyfile
 
-    for subdir in os.listdir(outRoot):
+    for root, subdirs, files in os.walk(outRoot):
 
-        # Get the outASP dir
-        outASPdir = os.path.join(outRoot,subdir)
+        for subdir in subdirs:
+            # Get the outASP dir
+            outASPdir = os.path.join(outRoot,subdir)
 
-        print '\n\tHRSI DSM dir: %s' %(outASPdir)
+            print '\n\tHRSI DSM dir: %s' %(outASPdir)
 
-        # Look for clr-shd: If exists, then DSM was likely output ok
-        for root, dirs, files in os.walk(outASPdir):
-            for each in files:
-                if 'holes-fill-DEM-clr-shd' in each:
-                    print '\n\tDEM and Color-shaded relief exist'
-                    DSMok = True
+            # Look for clr-shd: If exists, then DSM was likely output ok
+            for root, dirs, files in os.walk(outASPdir):
+                for each in files:
+                    if 'holes-fill-DEM-clr-shd' in each and '.tif' in each:
+                        print '\tDEM and Color-shaded relief exist'
+                        DSMok = True
 
-        if DSMok:
-            # Copy the XMLs to inASP
+            if DSMok:
+                # Copy the XMLs to inASP
 
-            catID_1 = subdir.split('_')[2]
-            catID_2 = subdir.split('_')[3]
+                catID_1 = subdir.split('_')[2]
+                catID_2 = subdir.split('_')[3]
 
-            for num, catID in enumerate([catID_1,catID_2]):
-                sList = db_query([catID])
+                for num, catID in enumerate([catID_1,catID_2]):
 
-                # Get file_paths of all images assoc'd with catID
-                for numimg, img in enumerate(range(0:len(sList[num])):
-                    file_path = sList[num][numimg][0]   # third position is the file_path
-                    file_path = file_path.replace('.ntf','.xml')
-                    copyfile(file_path, os.path.join(inRoot,subdir,os.pathsplit(file_path)[1])))
+                    # Query the db
+                    sList = db_query([catID])
+                    print "\n\tcatID is %s" %(catID)
 
+                    if len(sList[0]) == 0:
+                        print "\n\tThis catID not found in NGA dB...searching personal dir %s" %(myDir)
 
-            # Get the inASP dir
-            inASPdir = os.path.join(inRoot,subdir)
+                        for root, dirs, files in os.walk(myDir):
+                            for each in files:
+                                if 'P1BS-' + catID + '.xml' in each:
 
-            if os.path.isdir(inASPdir):
+                                    # Function to copy XML from myDir into inASP
+                                    copy_over_symlink(os.path.join(root+'/'+ each), inRoot, subdir)
+                    else:
 
-                c,b,a,hdr,line = g.stereopairs(inASPdir)
+                        # Get file_paths of all images assoc'd with catID
+                        for numimg, img in enumerate(range(0,len(sList[num-1])-1)):
 
-                runVALPIX(outASPdir+'/out-strip', outASPdir, hdr, line, 'outASP_test.shp')
+                            print "\tScene number is %s" %(numimg)
 
+                            file_path = sList[num-1][numimg-1][0]   # third position is the file_path
+                            file_path = file_path.replace('.ntf','.xml')
 
+                            # Function to copy XML from NGA dB into inASP
+                            copy_over_symlink(file_path, inRoot, subdir)
 
+                # Get the inASP dir
+                inASPdir = os.path.join(inRoot,subdir)
 
+                if os.path.isdir(inASPdir):
 
+                    # Get image-level & stereopair acquisition info
+                    try:
+                        c,b,a,hdr,line = g.stereopairs(inASPdir)
+                    except Exception, e:
+                        print "\n\tStereo angles not calc'd b/c there is no input for both catIDs"
+
+                    # Reconfigure hdr and attribute line
+                    hdr = 'pairname,year,month,day,' + hdr
+                    pairname    = os.path.split(outASPdir)[1]
+                    year        = pairname.split('_')[1].rstrip()[0:-4]
+                    month       = pairname.split('_')[1].rstrip()[4:-2]
+                    day         = pairname.split('_')[1].rstrip()[6:]
+                    line = pairname + ',' + year + ',' + month + ',' + day + ',' + line
+
+                    # Make a shapefile of DSM footprints (the valid areas for which DSM pixels exist; coarsened)
+                    runVALPIX(outASPdir+'/out-strip', os.path.split(outASPdir)[0], hdr.split(','), line.split(','), 'outASP_test.shp')
 
 def runVALPIX(outStereoPre, root, newFieldsList, newAttribsList, outSHP):
         # -- Update Valid Pixels Shapefile
@@ -268,6 +313,7 @@ def runVALPIX(outStereoPre, root, newFieldsList, newAttribsList, outSHP):
         #       outStereoPre --> /att/nobackup/pmontesa/outASP/WV01_20130617_1020010022894400_1020010022BB6400/out-strip
         # [1] Create out-strip-holes-fill-DEM-clr-shd_VALID.shp files for each strip
         srcSHD = outStereoPre + "-holes-fill-DEM-clr-shd.tif"
+        print(outStereoPre.split('/')[-2])
         outValTif_TMP = os.path.join(root,outStereoPre.split('/')[-2], "VALIDtmp.tif")
         outValShp_TMP = os.path.join(root,outStereoPre.split('/')[-2], "VALIDtmp.shp")
         outValShp     = os.path.join(root,outStereoPre.split('/')[-2], "VALID.shp")
