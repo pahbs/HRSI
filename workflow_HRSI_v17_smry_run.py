@@ -128,7 +128,7 @@ def run_asp_smry(
                 # Setup and execute the query on both catids of the stereopair indicated with the current line of the input CSV
                 for num, catID in enumerate([catID_1,catID_2]):
 
-                    selquery =  "SELECT s_filepath, sensor, acq_time, cent_lat, cent_long FROM nga_files_footprint_v2 WHERE catalog_id = '%s'" %(catID)
+                    selquery =  "SELECT s_filepath, sensor, acq_time, cent_lat, cent_long FROM nga_files WHERE catalog_id = '%s'" %(catID)
                     preLogText.append( "\n\t Now executing database query on catID '%s' ..."%catID)
                     cur.execute(selquery)
                     selected=cur.fetchall()
@@ -136,6 +136,9 @@ def run_asp_smry(
 
                     # Get info from first item returned
                     if len(selected) == 0:
+                        """
+                        right here is where you can add a local dir search
+                        """
                         found_catID[num] = False
                     else:
                         found_catID[num] = True
