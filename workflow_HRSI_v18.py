@@ -233,12 +233,12 @@ def footprint_dsm(outRoot, inRoot, myDir, outShp):
     Output to shp with runVALPIX
     """
     import os
-    import csv
     from os import listdir
     import get_stereopairs_v3 as g
     DSMincomplete = []      # list of incomplete DSMs (subdirs exist, but interrupted processing)
     DSMcatIDfail = []       # list of subdirs with at least 1 catID not found --> send to Julien
     catIDfails = []         # list of catIDs not found
+    catIDsuccess = []       # list of catIDs found in my dB that werent in NGA db
     DSMfootprintFail = []   # list of DSMs that seem ok but failed to get footprinted
     i = 0
     for root, subdirs, files in os.walk(outRoot):
@@ -302,6 +302,8 @@ def footprint_dsm(outRoot, inRoot, myDir, outShp):
                                 if not catIDmyDir:
                                     print "\n\tFailed to find %s in personal dir" %(catID)
                                     catIDfails.append(catID)
+                                else:
+                                    catIDsuccess.append(catID)
                             else:
                                 # Get file_paths of all images assoc'd with catID
                                 for numimg, img in enumerate(range(0,len(sList[num-1])-1)):
@@ -340,29 +342,36 @@ def footprint_dsm(outRoot, inRoot, myDir, outShp):
                             print "\n\tCould not get footprint of %s" %(pairname)
                             DSMfootprintFail.append(subdir)
 
-    # Ouput a CSV of catIDs not found in nga db or personal db
-    outCSV = open(os.path.join(outRoot,outShp.split('.')[0] + '_failed_find_catID.csv'), 'wb')
-    wr = csv.writer(outCSV)
-    for fail in catIDfails:
-        wr.writerow(fail)
-
-    # Ouput a CSV of incomplete DSM dirs
-    outCSV = open(os.path.join(outRoot,outShp.split('.')[0] + '_failed_inc_DSM.csv'), 'wb')
-    wr = csv.writer(outCSV)
-    for fail in DSMincomplete:
-        wr.writerow(fail)
-
-    # Ouput a CSV of DSMs with at least 1 failed catID searches
-    outCSV = open(os.path.join(outRoot,outShp.split('.')[0] + '_failed_find_DSMcatID.csv'), 'wb')
-    wr = csv.writer(outCSV)
-    for fail in DSMcatIDfail:
-        wr.writerow(fail)
-
-    # Ouput a CSV of failed DSM footprints to the same dir as the output Shapefile (outASP)
-    outCSV = open(os.path.join(outRoot,outShp.split('.')[0] + '_failed_DSM_foots.csv'), 'wb')
-    wr = csv.writer(outCSV)
-    for DSMfail in DSMfootprintFail:
-        wr.writerow(DSMfail)
+    # [1] Output a CSV of catIDs not found in nga db or personal
+    # [2] Output a CSV of catIDs not found in nga db but successfully found in personal db
+    # [2] Output a CSV of incomplete DSM dirs
+    # [3] Output a CSV of DSMs with at least 1 failed catID searches
+    # [4] Output a CSV of failed DSM footprints to the same dir as the output Shapefile (outASP)
+    outCSVFileStrings = ['_failed_find_catID.csv', '_success_find_catID_personal.csv', '_failed_inc_DSM.csv', '_failed_find_DSMcatID.csv', '_failed_DSM_foots.csv']
+    failList = [catIDfails, catIDsuccess, DSMincomplete, DSMcatIDfail, DSMfootprintFail]
+    for num, outStr in enumerate(outCSVFileStrings):
+        # Ouput a CSV, 1 line for each fail
+        with open(os.path.join(outRoot,outShp.split('.')[0] + outStr), 'wb') as outCSV:
+            for failline in failList[num]:
+                outCSV.write(failline + '\n')
+##
+##    # Ouput a CSV of incomplete DSM dirs
+##    outCSV = open(os.path.join(outRoot,outShp.split('.')[0] + '_failed_inc_DSM.csv'), 'wb')
+##    wr = csv.writer(outCSV)
+##    for fail in DSMincomplete:
+##        wr.writerow(fail)
+##
+##    # Ouput a CSV of DSMs with at least 1 failed catID searches
+##    outCSV = open(os.path.join(outRoot,outShp.split('.')[0] + '_failed_find_DSMcatID.csv'), 'wb')
+##    wr = csv.writer(outCSV)
+##    for fail in DSMcatIDfail:
+##        wr.writerow(fail)
+##
+##    # Ouput a CSV of failed DSM footprints to the same dir as the output Shapefile (outASP)
+##    outCSV = open(os.path.join(outRoot,outShp.split('.')[0] + '_failed_DSM_foots.csv'), 'wb')
+##    wr = csv.writer(outCSV)
+##    for DSMfail in DSMfootprintFail:
+##        wr.writerow(DSMfail)
 
 def runVALPIX(outStereoPre, root, newFieldsList, newAttribsList, outSHP):
         # -- Update Valid Pixels Shapefile
@@ -406,6 +415,8 @@ def runVALPIX(outStereoPre, root, newFieldsList, newAttribsList, outSHP):
         for newfieldStr in newFieldsList:
             if 'pair' in newfieldStr or 'left' in newfieldStr or 'right' in newfieldStr:
                 fieldType = ogr.OFTString
+            elif 'year' or 'month' or 'day' in newfieldStr:
+                fieldType = ogr.OFTInteger
             else:
                 fieldType = ogr.OFTReal
             # Add a new field
