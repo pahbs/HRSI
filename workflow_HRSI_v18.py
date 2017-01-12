@@ -39,7 +39,7 @@ import shapefile
 from distutils.util import strtobool
 
 ##def run_parstereo(par, nodesList, imagePairs, imagePair_xmls, outStereoPre, mapprjDEM, test=False, mapprj=False):
-def run_stereo(par, nodesList, imagePairs, imagePair_xmls, outStereoPre, DEM, mapprj, test=False):
+def run_stereo(par, nodesList, imagePairs, imagePair_xmls, outStereoPre, DEM, mapprj, test):
     start_ps = timer()
     """
     Try to OPTIMIZE this step
@@ -54,12 +54,23 @@ def run_stereo(par, nodesList, imagePairs, imagePair_xmls, outStereoPre, DEM, ma
         else:
             cmdStr = cmdStr
     else:
-        cmdStr = "stereo --threads 18 --corr-timeout 360 " + imagePairs + imagePair_xmls + outStereoPre
-##        if test:    # TEST 'STEREO' on a small window
-##            outStereoPre = outStereoPre + "-sub"
-##            cmdStr = "stereo --threads 18 --corr-timeout 300 --left-image-crop-win 10000 15000 3000 3000 " + imagePairs + imagePair_xmls + outStereoPre
-##        else:       # STEREO
-##            cmdStr = "stereo --threads 18 --corr-timeout 360 " + imagePairs + imagePair_xmls + outStereoPre
+        if test:    # TEST 'STEREO' on a small window
+##            # Clip to create small test input
+##            if os.path.lexists('left.tif'):
+##                os.remove('left.tif')
+##            if os.path.lexists('right.tif'):
+##                os.remove('right.tif')
+##            os.symlink(imagePairs.split(" ")[0], 'left.tif')
+##            os.symlink(imagePairs.split(" ")[1], 'right.tif')
+##            cmdStr = "gdal_translate -co compress=lzw -co TILED=yes -co INTERLEAVE=BAND -co BLOCKXSIZE=256 -co BLOCKYSIZE=256 -co compress=lzw -srcwin 15000 80000 10000 10000 left.tif left_clip.tif"
+##            wf.run_wait_os(cmdStr, print_stdOut=False)
+##            cmdStr = "gdal_translate -co compress=lzw -co TILED=yes -co INTERLEAVE=BAND -co BLOCKXSIZE=256 -co BLOCKYSIZE=256 -co compress=lzw -srcwin 15000 80000 10000 10000 right.tif right_clip.tif"
+##            wf.run_wait_os(cmdStr, print_stdOut=False)
+            ##outStereoPre = outStereoPre + "-sub"
+            ##
+            cmdStr = "stereo --threads 18 --subpixel-kernel 9 9 --corr-timeout 300 --left-image-crop-win 5000 80000 10000 10000 " + imagePairs + imagePair_xmls + outStereoPre
+        else:       # STEREO
+            cmdStr = "stereo --threads 18 --corr-timeout 360 " + imagePairs + imagePair_xmls + outStereoPre
 
     print "\n\t" + cmdStr
 
@@ -510,6 +521,7 @@ def run_asp(
     mapprj,
     mapprjRes,
     par,
+    test,
     strip=True,
     searchExtList=['.ntf','.tif','.NTF','.TIF'],        ## All possible extentions for input imagery ['.NTF','.TIF','.ntf','.tif']
     csvSplit=False,
@@ -517,15 +529,15 @@ def run_asp(
     stereoDef='/att/gpfsfs/home/pmontesa/code/stereo.default',
     dirDEM='/att/nobackup/cneigh/nga_veg/in_DEM/aster_gdem',
     #mapprjDEM='/att/nobackup/cneigh/nga_veg/in_DEM/aster_gdem2_siberia_N60N76.tif',     ## for testing
-    prj='EPSG:32647',                                                                   ## default is for Siberia
-    test=False,                                                                         ## for testing
+    prj='EPSG:32647',                                                                   ## default is for Siberia                                                                         ## for testing
     rp=100):
 
     LogHeaderText = []
 
     # Strings to booleans
-    mapprj = bool(strtobool(mapprj))
-    par = bool(strtobool(par))
+    mapprj  = bool(strtobool(mapprj))
+    par     = bool(strtobool(par))
+    test    = bool(strtobool(test))
 
     # List of processing nodes for parallel_stereo
     # v10 --> now we have a set of nodes for each 'launch' node.
@@ -1263,7 +1275,7 @@ def run_asp(
                             """
                             we'll probably gonna set par=False and no run parallel_stereo; stereo instead
                             """
-                            run_stereo(par, nodesList, imagePairs, imagePair_xmls, outStereoPre, mapprjDEM, mapprj)
+                            run_stereo(par, nodesList, imagePairs, imagePair_xmls, outStereoPre, mapprjDEM, mapprj, test)
                             #if os.path.isfile(mapprjDEM):
                             #    os.remove(mapprjDEM)
 
@@ -1294,4 +1306,4 @@ def run_asp(
 
 if __name__ == "__main__":
     import sys
-    run_asp( sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6], sys.argv[7]  )
+    run_asp( sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6], sys.argv[7], sys.argv[8]  )

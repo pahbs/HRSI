@@ -25,16 +25,19 @@ import LLtoUTM as convert
 import get_stereopairs_v3 as g
 import shapefile
 from distutils.util import strtobool
-
+import shutil
 
 def run_asp_smry(
     csv,
     outDir,
     inDir,
+    remove_inDir,
     prj='EPSG:32647'
     ):
 
     LogHeaderText = []
+
+    remove_inDir = (strtobool(remove_inDir))
 
     mapprj = False
 
@@ -57,14 +60,35 @@ def run_asp_smry(
 
 
     # [2] From the header, get the indices of the attributes you need
-    catID_1_idx     = header.index('catalogid')
-    catID_2_idx     = header.index('stereopair')
-    sensor_idx      = header.index('platform')
-    avSunElev_idx   = header.index('avsunelev')
-    avSunAzim_idx   = header.index('avsunazim')
-    imageDate_idx   = header.index('acqdate')
-    avOffNadir_idx  = header.index('avoffnadir')
-    avTargetAz_idx  = header.index('avtargetaz')
+    try:
+        catID_1_idx     = header.index('catalogid')
+        catID_2_idx     = header.index('stereopair')
+        pairnameField = False
+    except Exception, e:
+        # Sometimes the catid in the catalogid field does not come first in the pairname field
+        # Need to use pairname field to ensure we get both cat IDs
+        catID_1_idx     = header.index('pairname')
+        catID_2_idx     = header.index('pairname')
+        pairnameField = True
+    try:
+        sensor_idx      = header.index('platform')
+    except Exception, e:
+        sensor_idx     = header.index('sensor')
+    try:
+        avSunElev_idx   = header.index('avsunelev')
+    except Exception, e:
+        avSunElev_idx   = header.index('sun_elev')
+    try:
+        imageDate_idx   = header.index('acqdate')
+    except Exception, e:
+        imageDate_idx   = header.index('acq_time')
+    try:
+        avSunAzim_idx   = header.index('avsunazim')
+        avOffNadir_idx  = header.index('avoffnadir')
+        avTargetAz_idx  = header.index('avtargetaz')
+        angle_info = True
+    except Exception, e:
+        angle_info = False
 
     # Save all csv lines; close file
     csvLines = csvStereo.readlines()
@@ -88,20 +112,30 @@ def run_asp_smry(
             linesplit = line.rstrip().split(',')
             preLogText.append("Current line from CSV file:")
             preLogText.append(linesplit)
-
-            catID_1    = linesplit[catID_1_idx]
-            catID_2    = linesplit[catID_2_idx]
+            if pairnameField:
+                catID_1    = linesplit[catID_1_idx].split("_")[-2]
+                catID_2    = linesplit[catID_2_idx].split("_")[-1]
+            else:
+                catID_1    = linesplit[catID_1_idx]
+                catID_2    = linesplit[catID_2_idx]
+            preLogText.append("catID_1_idx: %s" %(catID_1_idx))
+            preLogText.append("PairNameField: %s" %(pairnameField))
+            preLogText.append("catID_2_idx: %s" %(catID_2_idx))
+            preLogText.append("catID_2: %s" %(catID_2))
             sensor     = str(linesplit[sensor_idx])
             imageDate  = linesplit[imageDate_idx]
             avSunElev  = round(float(linesplit[avSunElev_idx]),0)
-            avSunAz    = round(float(linesplit[avSunAzim_idx]),0)
-            avOffNadir = round(float(linesplit[avOffNadir_idx]),0)
-            avTargetAz = round(float(linesplit[avTargetAz_idx]),0)
-            if avTargetAz <= 180:
-                avSatAz = avTargetAz + 180
+            if angle_info:
+                avSunAz    = round(float(linesplit[avSunAzim_idx]),0)
+                avOffNadir = round(float(linesplit[avOffNadir_idx]),0)
+                avTargetAz = round(float(linesplit[avTargetAz_idx]),0)
+                if avTargetAz <= 180:
+                    avSatAz = avTargetAz + 180
+                else:
+                    avSatAz = avTargetAz - 180
             else:
-                avSatAz = avTargetAz - 180
 
+                avSunAz, avOffNadir, avTargetAz, avSatAz = ("" for i in range(4))
             # Get Image Date
             if imageDate != '':
                 try:
@@ -167,6 +201,7 @@ def run_asp_smry(
                         month = date.strip()[4:].strip()[:-2]
                         pairname = sensor + "_" + date + "_" + catID_1 + "_" + catID_2
                         imageDir = os.path.join(inDir,pairname)
+
                         if not os.path.exists(imageDir):
                             os.mkdir(imageDir)
 
@@ -255,14 +290,27 @@ def run_asp_smry(
             conv_ang, bie_ang, asym_ang = ("" for i in range(3))
             try:
                 print "\n\tStereo angles calc output:"
-                conv_ang, bie_ang, asym_ang, hdr, attrbs = g.stereopairs(imageDir)
+                if 'WV' in sensor:
+                    conv_ang, bie_ang, asym_ang, hdr, attrbs = g.stereopairs(imageDir)
+                else:
+                    conv_ang, bie_ang, asym_ang = ("" for i in range(3))
             except Exception, e:
                 print "\n\tStereo angles not calc'd b/c there is no input for both catIDs"
 
-            outAttributes = pairname + "," + str(found_catID[0]) + "," + str(found_catID[1]) + "," + str(mapprj) + "," + str(year) + "," + str(month) + "," + str(avSunElev)+ "," + str(avSunAz) + "," + str(avOffNadir) + "," + str(avTargetAz) + "," + str(avSatAz) + "," +str(conv_ang) + "," + str(bie_ang) + "," + str(asym_ang) + "," + str(DSMdone) +"\n"
+            if remove_inDir:
+                if os.path.exists(imageDir):
+                    # Delete dir and contents
+                    shutil.rmtree(imageDir)
+
+            outAttributes = pairname + "," + str(found_catID[0]) + "," +\
+                                             str(found_catID[1]) + "," +\
+                                             str(mapprj) + "," + \
+                                             str(year) + "," + str(month) + "," + \
+                                             str(avSunElev)+ "," + str(avSunAz) + "," + str(avOffNadir) + "," + str(avTargetAz) + "," + str(avSatAz) + "," +\
+                                             str(conv_ang) + "," + str(bie_ang) + "," + str(asym_ang) + "," + str(DSMdone) +"\n"
             # Write out CSV summary info
             csvOut.write(outAttributes)
 
 if __name__ == "__main__":
     import sys
-    run_asp_smry( sys.argv[1], sys.argv[2], sys.argv[3] )
+    run_asp_smry( sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4] )
