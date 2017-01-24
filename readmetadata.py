@@ -20,7 +20,7 @@ markup = """
     <country>Norway</country>
   </shipto>
   <item>
-    <title>Empire Burlesque</title>
+    <title>Empire Strikes Back</title>
     <note>Special Edition</note>
     <quantity>1</quantity>
     <price>10.90</price>
