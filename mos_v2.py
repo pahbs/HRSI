@@ -15,34 +15,6 @@ from osgeo.gdalconst import *
 gdal.AllRegister() #register all raster format drivers
 import gdalinfo
 
-def mos_gdem(direct='/att/dsc/nobackup03/ppl/cneigh/nga_veg/in_DEM/dem_tmp/tifs',lookFor='dem'):
-    """
-    Create List
-    """
-    inputList = open(direct+'/inputList.txt','w')
-    roots = []
-    filecounter = 0
-    for root, dirs, files in os.walk(direct):
-        for each in files:
-            # Just look for a specific file type or name
-            if len(each.split(lookFor)) > 1:
-                if each.endswith('.tif'):
-                    inFile = root + '/' + each
-                    roots.append(inFile)
-                    inputList.write(inFile+'\n')
-
-    inputList.close()
-
-    print 'Number of files: ',str(filecounter)
-    vrtFile = direct + '/' + direct.split('/')[-1]
-    print 'Creating VRT file for: ',
-    cmdStr = 'gdalbuildvrt -input_file_list '+ direct+'/inputList.txt' +" " + vrtFile+'.vrt'
-    print subprocess.Popen(cmdStr, stdout=subprocess.PIPE,stderr=subprocess.PIPE, shell=True).stderr.read()
-    print subprocess.Popen(cmdStr, stdout=subprocess.PIPE,stderr=subprocess.PIPE, shell=True).stdout.read()
-    ## http://spectraldifferences.wordpress.com/2014/03/02/recursively-finding-files-in-python-using-the-find-command/
-    out = subprocess.Popen(cmdStr, shell=True,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    (stdout, stderr) = out.communicate()
-
 def foot_tiles(
     direct,
     lookFor,    #='dem',
@@ -128,18 +100,7 @@ def foot_tiles(
 
         # Initialize variables which should be overwritten below
         coordinateList= []
-        UL = ''
-        LL = ''
-        UR = ''
-        LR = ''
-        ullon = ''
-        ullat = ''
-        urlon = ''
-        urlat = ''
-        lllon = ''
-        lllat = ''
-        lrlon = ''
-        lrlat = ''
+        UL, LL, UR, LR, ullon, ullat, urlon, urlat, lllon, lllat, lrlon, lrlat = ("" for i in range(12))
 
         # Look at each line in metadata txt and pull out useful tags
         coordinateList = [] #throw out any and all coordinates recorded so far
@@ -165,7 +126,10 @@ def foot_tiles(
         # If UL, LL, UR, LR in hand, write metadata into csv row
     ##        if len(coordinateList) == 4:
     ##            coords = ', '.join(coordinateList)
-        csvOut.write(namesList[fileCounter]+','+str(ullon)+','+str(ullat)+','+str(lllon)+','+str(lllat)+','+str(urlon)+','+str(urlat)+','+str(lrlon)+','+str(lrlat)+'\n')
+        csvOut.write(namesList[fileCounter]+','+str(ullon)+','+str(ullat)+','+\
+                                                str(lllon)+','+str(lllat)+','+\
+                                                str(urlon)+','+str(urlat)+','+\
+                                                str(lrlon)+','+str(lrlat)+'\n')
 
         myfile.close()
 
@@ -203,7 +167,7 @@ def foot_tiles(
     ###############################################
     # Create shp features
     print('')
-    print('SHP/KML EXPORTS')
+    print('SHP EXPORT')
     #print('created footprints for:')
 
     #holder for shp-formatted kml feature values
@@ -212,19 +176,10 @@ def foot_tiles(
     countRast = 0
     for line in csvDBF.readlines():
         # Extract corner coords
-##        polyLL = line.split(',')[1].split('  ')
-##        polyLL = [float(polyLL[1]),float(polyLL[0])]
-##        polyLR = line.split(',')[2].split('  ')
-##        polyLR = [float(polyLR[1]),float(polyLR[0])]
-##        polyUR = line.split(',')[3].split('  ')
-##        polyUR = [float(polyUR[1]),float(polyUR[0])]
-##        polyUL = line.split(',')[4].split('  ')
-##        polyUL = [float(polyUL[1]),float(polyUL[0])]
         polyUL = [float(line.split(',')[1]),float(line.split(',')[2])]
         polyLL = [float(line.split(',')[3]),float(line.split(',')[4])]
         polyUR = [float(line.split(',')[5]),float(line.split(',')[6])]
         polyLR = [float(line.split(',')[7]),float(line.split(',')[8])]
-
 
         # Length of record has to equal number of fields
 
@@ -272,18 +227,6 @@ def foot_tiles(
         epsg += 'SPHEROID["WGS 84",6378137,298.257223563]]'
         epsg += ',PRIMEM["Greenwich",0],'
         epsg += 'UNIT["degree",0.0174532925199433]]'
-##    if 'sin' in srs:
-##        epsg = 'PROJCS["MODIS Sinusoidal",GEOGCS["GCS_WGS_1984",'
-##        epsg += 'DATUM["D_WGS_1984",'
-##        epsg += 'SPHEROID["WGS_1984",6378137,298.257223563]],'
-##        epsg += 'PRIMEM["Greenwich",0],'
-##        epsg += 'UNIT["Degree",0.017453292519943295]],'
-##        epsg += 'PROJECTION["Sinusoidal"],'
-##        epsg += 'PARAMETER["false_easting",0.0],'
-##        epsg += 'PARAMETER["false_northing",0.0],'
-##        epsg += 'PARAMETER["central_meridian",0.0],'
-##        epsg += 'PARAMETER["semi_major",6371007.181],'
-##        epsg += 'PARAMETER["semi_minor",6371007.181],UNIT["m",1.0]]'
 
     if 'sin' in srs:
         epsg = 'PROJCS["unnamed",'

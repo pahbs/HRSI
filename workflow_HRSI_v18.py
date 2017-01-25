@@ -391,8 +391,8 @@ def runVALPIX(outStereoPre, root, newFieldsList, newAttribsList, outSHP):
         #       outStereoPre --> /att/nobackup/pmontesa/outASP/WV01_20130617_1020010022894400_1020010022BB6400/out-strip
         # [1] Create out-strip-holes-fill-DEM-clr-shd_VALID.shp files for each strip
         srcSHD = outStereoPre + "-holes-fill-DEM-clr-shd.tif"
-        print "\n\t--Running valid Pixels Footprintings--\n"
-        print(outStereoPre.split('/')[-2])
+        print "\n\t--Running valid Pixels Footprintings--"
+        print("\t" + outStereoPre.split('/')[-2] + "\n")
         outValTif_TMP = os.path.join(root,outStereoPre.split('/')[-2], "VALIDtmp.tif")
         outValShp_TMP = os.path.join(root,outStereoPre.split('/')[-2], "VALIDtmp.shp")
         outValShp     = os.path.join(root,outStereoPre.split('/')[-2], "VALID.shp")
@@ -414,7 +414,7 @@ def runVALPIX(outStereoPre, root, newFieldsList, newAttribsList, outSHP):
 
         # [3] Dissolve/Aggregate Polygons into 1 feature
         input_basename = os.path.split(outValShp_prj)[1].replace(".shp","")
-        cmdStr = "ogr2ogr " + outValShp_agg + " " + outValShp_prj + " -dialect sqlite -sql 'SELECT ST_Union(geometry), DN FROM " + input_basename + " GROUP BY DN'"
+        cmdStr = "ogr2ogr " + outValShp_agg + " " + outValShp_prj + " -dialect sqlite -sql 'SELECT GUnion(geometry), DN FROM " + input_basename + " GROUP BY DN'"
         wf.run_wait_os(cmdStr)
 
         # Add fields
@@ -503,8 +503,10 @@ def runVRT(outStereoPre,
     # --Update DRG index shapefile
     #cmdStr = "gdaltindex -t_srs EPSG:4326 " + path + "drg_index.shp " + dst
     #run_os(cmdStr)
-
-    runVALPIX(outStereoPre,root,newFieldsForVALPIX, newAttributesForVALPIX, "outASP_strips_valid_areas.shp")
+    try:
+        runVALPIX(outStereoPre,root,newFieldsForVALPIX, newAttributesForVALPIX, "outASP_strips_valid_areas.shp")
+    except Exception, e:
+        print("\tFailed to update output shapefile. Check dir and delete tmp files manually.")
 
 
     print("\n\t ---------------")
@@ -527,7 +529,7 @@ def run_asp(
     csvSplit=False,
     doP2D=True,
     stereoDef='/att/gpfsfs/home/pmontesa/code/stereo.default',
-    dirDEM='/att/nobackup/cneigh/nga_veg/in_DEM/aster_gdem',
+    dirDEM='/att/pubrepo/ASTERGDEM',
     #mapprjDEM='/att/nobackup/cneigh/nga_veg/in_DEM/aster_gdem2_siberia_N60N76.tif',     ## for testing
     prj='EPSG:32647',                                                                   ## default is for Siberia                                                                         ## for testing
     rp=100):
