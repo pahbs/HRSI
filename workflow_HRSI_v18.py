@@ -409,7 +409,7 @@ def runVALPIX(outStereoPre, root, newFieldsList, newAttribsList, outSHP):
         wf.run_wait_os(cmdStr)
 
         # [2] Reproject to WGS and merge
-        cmdStr = "ogr2ogr -f 'ESRI Shapefile' -t_srs EPSG:4326 " + outValShp_prj + " " + outValShp + " -overwrite"
+        cmdStr = "ogr2ogr -f 'ESRI Shapefile' -t_srs EPSG:3995 " + outValShp_prj + " " + outValShp + " -overwrite"
         wf.run_wait_os(cmdStr)
 
         # [3] Dissolve/Aggregate Polygons into 1 feature
