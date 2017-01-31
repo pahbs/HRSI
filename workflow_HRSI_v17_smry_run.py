@@ -162,7 +162,7 @@ def run_asp_smry(
                 # Setup and execute the query on both catids of the stereopair indicated with the current line of the input CSV
                 for num, catID in enumerate([catID_1,catID_2]):
 
-                    selquery =  "SELECT s_filepath, sensor, acq_time, cent_lat, cent_long FROM nga_files WHERE catalog_id = '%s'" %(catID)
+                    selquery =  "SELECT s_filepath, sensor, acq_time, cent_lat, cent_long FROM nga_inventory WHERE catalog_id = '%s'" %(catID)
                     preLogText.append( "\n\t Now executing database query on catID '%s' ..."%catID)
                     cur.execute(selquery)
                     selected=cur.fetchall()
