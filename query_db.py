@@ -7,6 +7,14 @@
 # Created:     10/11/2016
 # Copyright:   (c) mwooten3 2016
 # Licence:     <your licence>
+
+
+# 1/24: Instead of passing along preLogText list, write preLogText to text file (saved to inASP dir) and pass filename as arg; then read file into list on DISCOVER
+# 1/24: Previously made changes are commented throughout the code (search #*, ##*, #Q, ##Q)
+
+
+
+
 #-------------------------------------------------------------------------------
 import os, sys, math, osgeo, shutil, time, glob, platform, csv, subprocess as subp # edited for ADAPT (no gdalinfo- do we need it?)
 from osgeo import ogr, osr, gdal
@@ -21,7 +29,7 @@ import get_stereopairs_v3 as g
 import shapefile
 from distutils.util import strtobool
 
-def main(csv, inDir, batchID): #* batchID to keep track of groups of pairs for processing
+def main(csv, inDir, batchID, mapprj=True, doP2D=True, rp=100): #* batchID to keep track of groups of pairs for processing
 
 ##    def run_asp(
 ##    csv,
@@ -47,11 +55,20 @@ def main(csv, inDir, batchID): #* batchID to keep track of groups of pairs for p
     batchDir = os.path.join(inDir, 'batch%s' % batchID)
     os.system('mkdir -p %s' % batchDir)
 
-    LogHeaderText = []
+    ##LogHeaderText = []
+    workflowCodeName = 'workflow_HRSI_vDISC.py'
 
+##    #DEl
+##    print "After getting inputs from CL:"
+##    print "inDir:", inDir
+##    print "DEMdir:", DEMdir
+##    print "DISCdir:", DISCdir
+##    print "batchDir:", batchDir
+##    print ''
 
-    LogHeaderText.append("Input csv file: %s" % csv)
-    LogHeaderText.append("BatchID: %s" % batchID)
+## # 1/30: moved this to preLog write-up
+##    LogHeaderText.append("Input csv file: %s" % csv)
+##    LogHeaderText.append("BatchID: %s" % batchID)
 
 
     # [1] Read csv of stereo shapefile footprints
@@ -79,7 +96,7 @@ def main(csv, inDir, batchID): #* batchID to keep track of groups of pairs for p
     csvStereo.close()
 
     # Used for output CSV and VALPIX shapefile
-    outHeader = "pairname, catID_1, catID_2, mapprj, year, month, avsunelev, avsunaz, avoffnad, avtaraz, avsataz, conv_ang, bie_ang, asym_ang, DSM\n"
+    outHeader = "pairname, catID_1, catID_2, mapprj, year, month, avsunelev, avsunaz, avoffnad, avtaraz, avsataz, conv_ang, bie_ang, asym_ang\n"
     outHeaderList = outHeader.rstrip().split(',')
 
 
@@ -87,7 +104,7 @@ def main(csv, inDir, batchID): #* batchID to keep track of groups of pairs for p
     ##* here I am removing the rest of the runASP code outside of the "with open output summary csv as csvOut" and will simply store the out Attrbiutes in a table then write them to the outCsv at the end
     # Set up an output summary CSV that matches input CSV
     # csvOutFile = csv.split(".")[0] + "_output_smry.csv" ##* old way, below is the same thing but more readable
-    csvOutFile = csv.replace('.csv', '_output_smry.csv')
+    csvOutFile = csv.replace('.csv', '_query_smry.csv')
     print ''
 
     #csvOutFile = [] # this will store the out attributes so we can write to summary csv
@@ -98,7 +115,8 @@ def main(csv, inDir, batchID): #* batchID to keep track of groups of pairs for p
     submission_file = os.path.join(batchDir, 'submit_jobs_batch%s.sh' % batchID)
     # ?? what all do we need here to run all the jobs ??
     with open(submission_file, 'w') as ff:
-        ff.write('Enter parameters needed here\nAnd here\nEtc.\n\n')
+        ff.write('#!/bin/bash\n\n')
+
 
 
     #------------------------------------------------------------------
@@ -108,18 +126,24 @@ def main(csv, inDir, batchID): #* batchID to keep track of groups of pairs for p
     n_lines = len(csvLines) # number of pairs we are attempting to process
     pair_count = 0 # to print which pair we are at
     n_pair_copy = 0 # number of succeffully copied pairs
-    for line in csvLines[0:2]: # AKA for pair, or record in the input table # TEST just 2 lines for now
+    for line in csvLines: # AKA for pair, or record in the input table # TEST just 2 lines for now
         pair_count += 1
-        print "Attemping to copy data for pair %d of %d" % (pair_count, n_lines)
+        print "Attemping to copy data for pair %d of %d" % (pair_count, n_lines) # print to ADAPT screen
+        #print line
 
-        preLogText = []
+        preLogText = [] # start over with new preLog everytime you go to another pair
 
 
         # Get attributes from the CSV
         linesplit = line.rstrip().split(',')
-        preLogText.append("Current line from CSV file:")
-        preLogText.append(line)
-        preLogText.append(linesplit)
+        #print linesplit
+        # 1/30: Edited pre-Log text to account for getting rid of LogHEader text in workflow
+        preLogText.append("--DB Querying Text (ADAPT)------\nInput csv file:\n%s\n\nLine from CSV file:\n%s\nBatch ID: %s\n\n\n" %(csv, line, batchID))
+        #preLogText.append(line)
+        #preLogText.append(linesplit)
+
+
+
 
         catID_1    = linesplit[catID_1_idx]
         catID_2    = linesplit[catID_2_idx]
@@ -133,6 +157,15 @@ def main(csv, inDir, batchID): #* batchID to keep track of groups of pairs for p
             avSatAz = avTargetAz + 180
         else:
             avSatAz = avTargetAz - 180
+
+##        #DEL :
+##        print "Variables from CSV:"
+##        print "catID_1:", catID_1
+##        print "catID_2:", catID_2
+##        print "sensor:", sensor
+##        print "imageDate:", imageDate
+##        print ''
+
 
         # Initialize DEM string
         mapprjDEM = ''
@@ -150,6 +183,10 @@ def main(csv, inDir, batchID): #* batchID to keep track of groups of pairs for p
                 except Exception, e:
                     pass
 
+##        # DEL
+##        print "if first imageDate was '':"
+##        print "imageDate:", imageDate
+##        print ''
 
         # [4] Search ADAPT's NGA database for catID_1 and catid_2
 
@@ -207,7 +244,16 @@ def main(csv, inDir, batchID): #* batchID to keep track of groups of pairs for p
 
                 print ''
                # for select in selected: selected_list.append(select) ##** add the list of scenes to the list of lists (index0 for catID 1, index1 fir catID2)
-        print pIDlist
+
+##        # DEL
+##        print "After the db query:"
+##        print "catIDlist:", catIDlist
+##        print "PIDlist:", pIDlist
+##        print "found_catID:", found_catID
+##        print "selected_list:", selected_list
+##        print ''
+
+
         conv_ang, bie_ang, asym_ang = ("" for i in range(3)) ##* set these to empty strings for later
 
         if len(catIDlist) == 0: ##** if neither of the catIDs returned data
@@ -223,12 +269,12 @@ def main(csv, inDir, batchID): #* batchID to keep track of groups of pairs for p
                 date = year+month+day # so date will be 'XXXXXXXX'
 
             pairname = sensor + "_" + date + "_" + catID_1 + "_" + catID_2
-            imageDir = os.path.join(batchDir,pairname)
+            imageDir = os.path.join(batchDir, pairname)
 
             mapprj = False
             DSMdone = False
 
-            outAttributes = pairname + "," + str(found_catID[0]) + "," + str(found_catID[1]) + "," + str(mapprj) + "," + str(year) + "," + str(month) + "," + str(avSunElev)+ "," + str(avSunAz) + "," + str(avOffNadir) + "," + str(avTargetAz) + "," + str(avSatAz) + "," +str(conv_ang) + "," + str(bie_ang) + "," + str(asym_ang) + "," + str(DSMdone) +"\n"
+            outAttributes = pairname + "," + str(found_catID[0]) + "," + str(found_catID[1]) + "," + str(mapprj) + "," + str(year) + "," + str(month) + "," + str(avSunElev)+ "," + str(avSunAz) + "," + str(avOffNadir) + "," + str(avTargetAz) + "," + str(avSatAz) + "," +str(conv_ang) + "," + str(bie_ang) + "," + str(asym_ang) +"\n"
             with open(csvOutFile, 'a') as c:
                 c.write(outAttributes) ##* append the attributes (mostly blank at this point) to the csv file list
 
@@ -255,23 +301,31 @@ def main(csv, inDir, batchID): #* batchID to keep track of groups of pairs for p
 
 
         ##** get info that we need from selected to make the imageDir, but don't actually make the imageDir unless data for both catIDs were found
-        sensor = str(selected[0][1])                        # eg. WV02
+##        #* 1/17 already have this info, right>?
+##        print "sensor:", sensor
+##        print ""
+        #sensor = str(selected[0][1])                        # eg. WV02
         date = str(selected[0][2]).replace("-","")          # eg. 20110604
-        year = date.strip()[:-4]
-        month = date.strip()[4:].strip()[:-2]
-        print "!!!"
-        print sensor
-        print date
-        print year
+        year = date.strip()[:-4]                            # e.g. 2011
+        month = date.strip()[4:].strip()[:-2]               # e.g. 06
+##        print "!!!"
+##        print sensor
+##        print date
+##        print year
+##        print month
+##        print ""
 
         """
         pairname is important: indicates that data on which the DSM was built..its unique..used for subdir names in outASP and inASP
         """
+
         pairname = sensor + "_" + date + "_" + catID_1 + "_" + catID_2
-        imageDir = os.path.join(batchDir,pairname)
-##        print "3:" #del
-##        print pairname
-##        print imageDir
+        imageDir = os.path.join(batchDir, pairname)
+
+##        #DEL
+##        print "Still running if catIDlist = 1:"
+##        print "pairname:", pairname
+##        print "imageDir:", imageDir
 ##        print ''
 
 
@@ -281,16 +335,26 @@ def main(csv, inDir, batchID): #* batchID to keep track of groups of pairs for p
             preLogText.append("\n\tMissing a catalog_id, can't do stereogrammetry. **review this print statement/placement with the one below in mind\n\n")
             mapprj = False
             DSMdone = False
-            outAttributes = pairname + "," + str(found_catID[0]) + "," + str(found_catID[1]) + "," + str(mapprj) + "," + str(year) + "," + str(month) + "," + str(avSunElev)+ "," + str(avSunAz) + "," + str(avOffNadir) + "," + str(avTargetAz) + "," + str(avSatAz) + "," +str(conv_ang) + "," + str(bie_ang) + "," + str(asym_ang) + "," + str(DSMdone) +"\n"
+            outAttributes = pairname + "," + str(found_catID[0]) + "," + str(found_catID[1]) + "," + str(mapprj) + "," + str(year) + "," + str(month) + "," + str(avSunElev)+ "," + str(avSunAz) + "," + str(avOffNadir) + "," + str(avTargetAz) + "," + str(avSatAz) + "," +str(conv_ang) + "," + str(bie_ang) + "," + str(asym_ang) + "\n"
             with open(csvOutFile, 'a') as c:
                 c.write(outAttributes)
             ##Q print statement here?
+            #* 1/17 print "\n\tMissing a catalog_id, can't do stereogrammetry." was how it was done in the workflow script
             preLogText.append("\n\t One of the catIDs does not have data in our archive **review this print statement/placement\n\n")
             continue ##* move on to the next pair
 
 
 
-
+##        # DEL
+##        print "Before we are sure that catIDlist == 2:"
+##        print "mapprj:", mapprj
+##        try:
+##            print "DSMdone:", DSMdone
+##            print "outAttributes:", outAttributes
+##        except Exception as e:
+##            print "Couldn't print: ", e
+##
+##        print ""
 
 
         #** we will only get to this point if there is data for both catIDs- ##Q is that OK?
@@ -309,7 +373,7 @@ def main(csv, inDir, batchID): #* batchID to keep track of groups of pairs for p
             path_0 = os.path.split(selected[0][0])[0]
 
 
-            preLogText.append("\n\tNGA dB path: %s" %path_0 )
+            preLogText.append("\n\tNGA dB path: %s" % path_0 )
             # Get productcatalogid from this first dir: sometimes 2 are associated with a catid, and represent duplicate data from different generation times
             pID = pIDlist[num]
             ##Q but this is onle the pID of the first/left pair...what about the others?
@@ -317,9 +381,6 @@ def main(csv, inDir, batchID): #* batchID to keep track of groups of pairs for p
 ##            print pID
 ##            print path_0
 ##            print ''
-
-
-
 
             preLogText.append("\tProduct ID: %s" %str(pID))
             preLogText.append("\tCenter Lat: %s" %str(lat))
@@ -351,21 +412,30 @@ def main(csv, inDir, batchID): #* batchID to keep track of groups of pairs for p
                 # ** FOR NOW: copy files if it exists. assumming if it doesnt exist the path changed to NGA, copy that instead
                 if not os.path.isfile(os.path.join(imageDir, os.path.basename(ntf))): # if the file is not in the imageDir
                     if os.path.isfile(ntf):
+                        #print "Copying %s" % ntf
                         os.system('cp %s %s' % (ntf, imageDir))
                     else:
                         ntf = ntf.replace('NGA_Incoming/NGA', 'NGA')
-                        print "Using %s" % ntf
+                       # print "Copying %s" % ntf
                         os.system('cp %s %s' % (ntf, imageDir))
+
                 if not os.path.isfile(os.path.join(imageDir, os.path.basename(xml))):
                     if os.path.isfile(xml):
+                       # print "Copying %s" % xml
                         os.system('cp %s %s' % (xml, imageDir))
                     else:
-                        print "Using %s" % xml
                         xml = xml.replace('NGA_Incoming/NGA', 'NGA')
+                       # print "Copying %s" % xml
                         os.system('cp %s %s' % (xml, imageDir))
             """
               Now we have all the raw data in the inASP subdir identified with the pairname
             """
+
+##        # DEL
+##        print "After looping through catIDs to copy data:"
+##        print "path_0", path_0
+##        print ''
+
 
         # try new method:
          # now we are out of the catID loop and back at the pair loop- only wanna do DEM stuff once per pair
@@ -417,7 +487,7 @@ def main(csv, inDir, batchID): #* batchID to keep track of groups of pairs for p
             preLogText.append( "\tv2: %s" %v2DEM)
             preLogText.append( "\tv1: %s" %v2DEM)
             preLogText.append( "\tCannot do mapproject on input")
-            mapprj=False
+            mapprj=False # set mapprj to false. If mapprj is True, this will turn it to False. If it's false, nothing changes
             #? What to do if this else is true...gdem_v does not get set. Should the below only happen if mapprj is True? editing to assume yes. Also set mapprj=True in the first 2 cases. that OK?
 
         if mapprj: #? Build the GDEM tile list and create the DEM if we are doing mapprj
@@ -466,43 +536,114 @@ def main(csv, inDir, batchID): #* batchID to keep track of groups of pairs for p
                     vrtDEMTxt.write("%s\n" %item)
             preLogText.append( "\tBuilding GDEM geoTIFF...") # *keep using vrt method so we can have list of DEMs used for pairDEM
 
-            pair_DEM = os.path.join(imageDir,"dem-%s.tif" % pairname)
+            pair_DEM = os.path.join(imageDir, "dem-%s.tif" % pairname)
             cmdStr = "gdalwarp -t_srs EPSG:4326 -ot Int16  %s %s" % (DEM_inputs.strip(' '), pair_DEM)
 
-            if not os.path.isfile(pair_DEM): wf.run_wait_os(cmdStr, print_stdOut=False)
+            if not os.path.isfile(pair_DEM):
+                wf.run_wait_os(cmdStr, print_stdOut=False)
+                preLogText.append("\tCreated %s" % pair_DEM)
+            else:
+                preLogText.append("\tDEM (%s) already exists" % pair_DEM)
 
 
         n_pair_copy += 1 # if we get to this point we have successfully copied data for the pair
 
+##        #DEL
+##        print "After running if mapprj"
+##        print "DEM_inputs:", DEM_inputs
+##        print "pair_DEM:", pair_DEM
+##        print ''
+
+
+        outAttributes = pairname + "," + str(found_catID[0]) + "," + str(found_catID[1]) + "," + str(mapprj) + "," + str(year) + "," + str(month) + "," + str(avSunElev)+ "," + str(avSunAz) + "," + str(avOffNadir) + "," + str(avTargetAz) + "," + str(avSatAz) + "," +str(conv_ang) + "," + str(bie_ang) + "," + str(asym_ang) + "," + "\n"
+        with open(csvOutFile, 'a') as c:
+            c.write(outAttributes)
+
+        discover_imageDir = os.path.join(DISCdir, 'inASP/batch%s/%s' % (batchID, pairname)) # where data will be copied to (and thus the imageDir we need to pass)
+        # DEL
+        print 'discover_imageDir:', discover_imageDir
+        print ''
+
+        # write preLogText to a text file
+        preLogTextFile = os.path.join(imageDir, 'preLogText_%s.txt' % pairname)
+        with open(preLogTextFile, 'w') as tf:
+            for r in preLogText:
+                tf.write(r + '\n')
+        preLogTextFile_DISC = os.path.join(discover_imageDir, os.path.basename(preLogTextFile)) # the path to where it's stored on DISCOVER
+
+        # get the pair arguments that we need to send to DISCOVER:
+        arg1 = '"{}"'.format(line.strip())
+        #arg2 = header
+        arg2 = '::join::'.join(header).strip() # header is a list arg
+        arg3 = discover_imageDir # imageDir on workflow side
+        arg4 = mapprj
+        #arg5 = mapprjRes - on workflow, do we need?
+        #arg6 = par - do we need? always false? #*
+        #arg7 = test # do we need? always false?
+        #arg8 = searchExtList = ...
+        arg9 = doP2D
+        #arg10 = stereoDef = ...
+        #arg11 = dirDEM = ...
+        #arg12 = prj = ...
+        arg13 = str(rp)
+        #arg14 = preLogText # list arg
+        arg14 = preLogTextFile_DISC
+        arg15 = batchID
+
+        # imageDir
+        # inDir/outDir
+        # outAttributes ?
+        # LogHeaderText - no, has been added to preLog text
+        # outHeader
+        # outHeaderList
+        # catIDlist?
+        # pIDlist ?
+
 
         # Create the individual job script:
-        job_script = os.path.join(imageDir, 'slurm_%s.j' % pairname)
+        #job_script = os.path.join(imageDir, 'slurm_%s.j' % pairname)
+        job_script = os.path.join(imageDir, 'slurm_batch%s_%s.j' % (batchID, pairname)) # do it like this instead?
 
-        # CHANGE THESE:
-        job_name = '%s_job' % pairname
-        time_limit = '12:00:00'
+        # CHANGE THESE ?:
+        job_name = '%s_%s_job' % (batchID, pairname) # identify job with batchID and pairname??
+        time_limit = '36:00:00'
         num_nodes = '1'
-        python_script_args = '%s arg1 arg2 arg3 etc' % (os.path.join(DISCdir, 'code', '<scriptName.py>'))
+        #python_script_args = '%s %s %s arg3 etc' % (os.path.join(DISCdir, 'code', '<scriptName.py>'), arg1, arg2)
+        python_script_args = 'python %s %s %s %s %s %s %s %s %s' % (os.path.join(DISCdir, 'code', workflowCodeName), arg1, arg2, arg3, arg4, arg9, arg13, arg14, arg15)
+        #print python_script_args
 
-        discover_imageDir = os.path.join(DISCdir, 'inASP/%s' % pairname)
+##        print '----'
+##        print 'python %s %s%s %s %s %s %s' % (os.path.join(DISCdir, 'code', workflowCodeName), arg1, arg2, arg3, arg4, arg9, arg13, arg14)
 
 
+        # slurm.j file (calls the python code in discover for just one pair)
         with open(job_script, 'w') as f:
-            f.write('#!/bin/csh -f\n#SBATCH --job-name=%s\n#SBATCH --time=%s\n#SBATCH --nodes=%s\n\n.%s' % (job_name, time_limit, num_nodes, python_script_args))
+            f.write('#!/bin/csh -f\n#SBATCH --job-name=%s\n#SBATCH --time=%s\n#SBATCH --nodes=%s\n#SBATCH --constraint=hasw\n\nsource /usr/share/modules/init/csh\n\nunlimit\nmodule load other/comp/gcc-5.3-sp3\nmodule load other/SSSO_Ana-PyD/SApd_4.2.0_py2.7_gcc-5.3-sp3\n\n%s' % (job_name, time_limit, num_nodes, python_script_args))
 
+
+        #TD: do I need to add arguments to the slurm.j call? don't think so because all it does is call the slurm.j script which WILL have args
         with open(submission_file, 'a') as ff:
             ff.write('\ncd %s\nsbatch %s' % (discover_imageDir, os.path.basename(job_script)))
 
-        #print preLogText
-        print ''
+       # print ''
 
-    print "\nSuccessfully copied data for %d of %d pairs" % (n_pair_copy, n_lines)
+    print "\nSuccessfully copied and tarred/zipped data for %d of %d pairs\n" % (n_pair_copy, n_lines)
 
-    # NOW TAR everything inASP
-    archive = os.path.join(inDir, 'batch%s-archive' % batchID)
+    #TD Lastly, print metrics on how long it took to copy X pairs
+
+    # NOW TAR everything in the batchDir into archive
+
+    archive = os.path.join(inDir, 'batch%s-archive.tar.gz' % batchID)
     print archive
-    tarComm = 'tar -zcvf %s %s' % (archive, inASP)
-    print tarComm
+    if not os.path.exists(archive): # if data has not yet been tarred up (careful with this)
+        print "\nBegin archiving:", datetime.now().strftime("%I:%M%p  %a, %m-%d-%Y")
+       # tarComm = 'tar -zcvf %s %s' % (archive, batchDir) #TD get rid of -v possibly when doing real
+       # tarComm = 'tar -zcvf %s %s -C %s batch%s' % (archive, batchDir, inDir, batchID) #TD get rid of -v possibly when doing real
+        tarComm = 'tar -zcvf %s -C %s batch%s' % (archive, inDir, batchID) # this might actually be the right way
+        print tarComm
+        os.system(tarComm)
+        print "\nFinish archiving:", datetime.now().strftime("%I:%M%p  %a, %m-%d-%Y")
+    else: print "%s already exists" % archive
 
 
 
