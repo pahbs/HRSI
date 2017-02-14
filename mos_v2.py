@@ -14,6 +14,7 @@ from osgeo import gdal, gdalconst
 from osgeo.gdalconst import *
 gdal.AllRegister() #register all raster format drivers
 import gdalinfo
+import datetime
 
 def foot_tiles(
     direct,
@@ -30,15 +31,24 @@ def foot_tiles(
 
     namesList = []
     pathroot = []
+    sceneList = []
     roots = []
+    # for ASTER L1A footprints where date is grabbed form the scene name
+    yearList = []
+    monthList = []
+    doyList = []
     for root, dirs, files in os.walk(direct):
         for file in files:
             if file.endswith(rasterExt) or file.endswith(rasterExt.upper()):
                 if lookFor in file:
                     root = root.replace('//','/').replace('\\','/')
                     roots.append(root + '/' + file)
+                    sceneList.append(root.split('/')[-1])
                     namesList.append(file)
                     pathroot.append(root)
+                    yearList.append(datetime.datetime.strptime(root.split('/')[-1].split('AST_L1A_003')[1][0:8],'%m%d%Y').year)
+                    monthList.append(datetime.datetime.strptime(root.split('/')[-1].split('AST_L1A_003')[1][0:8],'%m%d%Y').month)
+                    doyList.append(datetime.datetime.strptime(root.split('/')[-1].split('AST_L1A_003')[1][0:8],'%m%d%Y').timetuple().tm_yday)
 
     ###############################################
     # Use gdalinfo to make metadata txt from each raster
@@ -74,8 +84,8 @@ def foot_tiles(
     else: #script called at subdirectory
         fileName = direct.split('/')[len(direct.split('/'))-1]
 
-    csvOut = open(direct+'/'+fileName+'_metadata.csv', 'w') #named for folder containing imagery
-    csvOut.write('Name,ullon,ullat,lllon,lllat,urlon,urlat,lrlon,lrlat\n') #header file_name,UL1,UL2,LL1,LL2,UR1,UR2,LR1,LR2)
+    csvOut = open(os.path.dirname(direct) +'/'+fileName+'_metadata.csv', 'w') #named for folder containing imagery
+    csvOut.write('Name,Year,Month,DOY,ullon,ullat,lllon,lllat,urlon,urlat,lrlon,lrlat\n') #header file_name,UL1,UL2,LL1,LL2,UR1,UR2,LR1,LR2)
 
     ###############################################
     # Export metadata.txt info to a directory metadata csv
@@ -126,7 +136,11 @@ def foot_tiles(
         # If UL, LL, UR, LR in hand, write metadata into csv row
     ##        if len(coordinateList) == 4:
     ##            coords = ', '.join(coordinateList)
-        csvOut.write(namesList[fileCounter]+','+str(ullon)+','+str(ullat)+','+\
+        csvOut.write(   sceneList[fileCounter]      +','+\
+                        str(yearList[fileCounter])   +','+\
+                        str(monthList[fileCounter])  +','+\
+                        str(doyList[fileCounter])    +','+\
+                                                str(ullon)+','+str(ullat)+','+\
                                                 str(lllon)+','+str(lllat)+','+\
                                                 str(urlon)+','+str(urlat)+','+\
                                                 str(lrlon)+','+str(lrlat)+'\n')
@@ -147,7 +161,7 @@ def foot_tiles(
     ###############################################
     # Prep to export csv contents to shp
 
-    csvDBF = open(direct+'/'+fileName +'_metadata.csv','r') #output from NTF-2_build_csv.py
+    csvDBF = open(os.path.dirname(direct) + '/'+fileName +'_metadata.csv','r') #output from NTF-2_build_csv.py
     shpOut = shp.Writer(shp.POLYGON)
 
     ###############################################
@@ -176,37 +190,47 @@ def foot_tiles(
     countRast = 0
     for line in csvDBF.readlines():
         # Extract corner coords
-        polyUL = [float(line.split(',')[1]),float(line.split(',')[2])]
-        polyLL = [float(line.split(',')[3]),float(line.split(',')[4])]
-        polyUR = [float(line.split(',')[5]),float(line.split(',')[6])]
-        polyLR = [float(line.split(',')[7]),float(line.split(',')[8])]
+        try:
+            polyUL = [float(line.split(',')[4]),float(line.split(',')[5])]
+            polyLL = [float(line.split(',')[6]),float(line.split(',')[7])]
+            polyUR = [float(line.split(',')[8]),float(line.split(',')[9])]
+            polyLR = [float(line.split(',')[10]),float(line.split(',')[11])]
 
-        # Length of record has to equal number of fields
+            # Length of record has to equal number of fields
 
-        file_name=line.split(',')[0]
+            file_name=line.split(',')[0]
+            yr=line.split(',')[1]
+            mo=line.split(',')[2]
+            doy=line.split(',')[3]
 
-        #LL=line.split(',')[10].split(' ')[0]+','+line.split(',')[10].split(' ')[1]
-        UL1 = float(line.split(',')[1])
-        UL2 = float(line.split(',')[2])
-        UL = "%.5f" % UL1 + ',' + "%.5f" % UL2
+            #LL=line.split(',')[10].split(' ')[0]+','+line.split(',')[10].split(' ')[1]
+            UL1 = polyUL[0] ##float(line.split(',')[4])
+            UL2 = polyUL[1] ##float(line.split(',')[5])
+            UL = "%.5f" % UL1 + ',' + "%.5f" % UL2
 
-        LL1 = float(line.split(',')[3])
-        LL2 = float(line.split(',')[4])
-        LL = "%.5f" % LL1 + ',' + "%.5f" % LL2
+            LL1 = polyLL[0] ##float(line.split(',')[6])
+            LL2 = polyLL[1] ##float(line.split(',')[7])
+            LL = "%.5f" % LL1 + ',' + "%.5f" % LL2
 
-        UR1 = float(line.split(',')[5])
-        UR2 = float(line.split(',')[6])
-        UR = "%.5f" % UR1 + ',' + "%.5f" % UR2
+            UR1 = polyUR[0] ##float(line.split(',')[8])
+            UR2 = polyUR[1] ##float(line.split(',')[9])
+            UR = "%.5f" % UR1 + ',' + "%.5f" % UR2
 
-        LR1 = float(line.split(',')[7])
-        LR2 = float(line.split(',')[8])
-        LR = "%.5f" % LR1 + ',' + "%.5f" % LR2
+            LR1 = polyLR[0] ##float(line.split(',')[10])
+            LR2 = polyLR[1] ##float(line.split(',')[11])
+            LR = "%.5f" % LR1 + ',' + "%.5f" % LR2
 
-        # Create shp DBF and record geometry
-        shpOut.record(file_name,UL1,UL2,LL1,LL2,UR1,UR2,LR1,LR2)
-        shpOut.poly(parts=[[polyLL, polyLR, polyUR, polyUL, polyLL]])
+            # Create shp DBF and record geometry
+            shpOut.record(file_name,yr,mo,doy,UL1,UL2,LL1,LL2,UR1,UR2,LR1,LR2)
+            shpOut.poly(parts=[[polyLL, polyLR, polyUR, polyUL, polyLL]])
 
-        countRast+=1
+            countRast+=1
+        except Exception, e:
+
+            print '\tError reading coords for line:'
+            print '\t'+line
+            print '\t' + str(e)
+
 
     print('shpOut: ' + direct+'/'+fileName)
     #shpOut.save(direct+'/'+fileName) #shp name is directory's name

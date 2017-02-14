@@ -29,7 +29,6 @@ import shutil
 
 def run_asp_smry(
     csv,
-    outDir,
     inDir,
     remove_inDir,
     prj='EPSG:32647'
@@ -256,7 +255,7 @@ def run_asp_smry(
 
             # -----------------------
             # For logging on the fly
-            lfile = os.path.join(outDir,'logs','run_smryDB_LOG_' + imageDir.split('/')[-1].rstrip('\n') +'_' + platform.node() + '_' + strftime("%Y%m%d_%H%M%S") + '.txt')
+            lfile = os.path.join(inDir,'logs','run_smryDB_LOG_' + imageDir.split('/')[-1].rstrip('\n') +'_' + platform.node() + '_' + strftime("%Y%m%d_%H%M%S") + '.txt')
             so = se = open(lfile, 'w', 0)                       # open our log file
             sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0) # re-open stdout without buffering
             os.dup2(so.fileno(), sys.stdout.fileno())           # redirect stdout and stderr to the log file opened above
@@ -313,4 +312,4 @@ def run_asp_smry(
 
 if __name__ == "__main__":
     import sys
-    run_asp_smry( sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4] )
+    run_asp_smry( sys.argv[1], sys.argv[2], sys.argv[3] )

@@ -38,14 +38,14 @@ import get_stereopairs_v3 as g
 import shapefile
 from distutils.util import strtobool
 
-##def run_parstereo(par, nodesList, imagePairs, imagePair_xmls, outStereoPre, mapprjDEM, test=False, mapprj=False):
 def run_stereo(par, nodesList, imagePairs, imagePair_xmls, outStereoPre, DEM, mapprj, test):
     start_ps = timer()
     """
     Try to OPTIMIZE this step
 
     """
-    cmdStr = "parallel_stereo --nodes-list=" + nodesList + " --processes 18 --threads-multiprocess 16 --threads-singleprocess 32 --corr-timeout 360 --job-size-w 6144 --job-size-h 6144 " + imagePairs + imagePair_xmls + outStereoPre
+    STEREO_IO = imagePairs + imagePair_xmls + outStereoPre
+    cmdStr = "parallel_stereo --nodes-list=" + nodesList + " --processes 18 --threads-multiprocess 16 --threads-singleprocess 32 --corr-timeout 360 --job-size-w 6144 --job-size-h 6144 " + STEREO_IO
 
     if par:         # PARALLEL_STEREO
         print("\n\tRunnning stereo on images: " + imagePairs)
@@ -55,28 +55,19 @@ def run_stereo(par, nodesList, imagePairs, imagePair_xmls, outStereoPre, DEM, ma
             cmdStr = cmdStr
     else:
         if test:    # TEST 'STEREO' on a small window
-##            # Clip to create small test input
-##            if os.path.lexists('left.tif'):
-##                os.remove('left.tif')
-##            if os.path.lexists('right.tif'):
-##                os.remove('right.tif')
-##            os.symlink(imagePairs.split(" ")[0], 'left.tif')
-##            os.symlink(imagePairs.split(" ")[1], 'right.tif')
-##            cmdStr = "gdal_translate -co compress=lzw -co TILED=yes -co INTERLEAVE=BAND -co BLOCKXSIZE=256 -co BLOCKYSIZE=256 -co compress=lzw -srcwin 15000 80000 10000 10000 left.tif left_clip.tif"
-##            wf.run_wait_os(cmdStr, print_stdOut=False)
-##            cmdStr = "gdal_translate -co compress=lzw -co TILED=yes -co INTERLEAVE=BAND -co BLOCKXSIZE=256 -co BLOCKYSIZE=256 -co compress=lzw -srcwin 15000 80000 10000 10000 right.tif right_clip.tif"
-##            wf.run_wait_os(cmdStr, print_stdOut=False)
-            ##outStereoPre = outStereoPre + "-sub"
-            ##
-            cmdStr = "stereo --threads 18 --subpixel-kernel 9 9 --corr-timeout 300 --left-image-crop-win 5000 80000 10000 10000 " + imagePairs + imagePair_xmls + outStereoPre
+            cmdStr = "stereo --threads 18 --subpixel-kernel 9 9 --corr-timeout 300 --left-image-crop-win 5000 80000 10000 10000 " + STEREO_IO
         else:       # STEREO
-            cmdStr = "stereo --threads 18 --corr-timeout 360 " + imagePairs + imagePair_xmls + outStereoPre
+            if 'GE01' in imagePairs:
+                cmdStr = "stereo -t rpc --threads 18 --corr-timeout 360 " + imagePairs + outStereoPre
+            else:
+                cmdStr = "stereo --threads 18 --corr-timeout 360 " + STEREO_IO
 
     print "\n\t" + cmdStr
 
     wf.run_wait_os(cmdStr, print_stdOut=False)
 
     end_ps = timer()
+
     print("\n\n\tEnd stereo run ")
     print("\tStereo run time (decimal minutes): " + str((end_ps - start_ps)/60) )
 
@@ -88,29 +79,24 @@ def runP2D(outStereoPre, prj, strip=True):
         # Output DSM has holes <50 pix filled with hole-fill-mode=2 (weighted avg of all valid pix within window of dem-hole-fill-len)
         # Ortho (-DRG.tif) produced
 
+        P2D_OPTS = "point2dem --threads=18 --t_srs " + prj + " --no-dem --nodata-value -99 --dem-hole-fill-len 50 "
+        P2D_IO = outStereoPre + "-PC.tif -o " + outStereoPre + "-holes-fill"
+
         print("\n\t [1] Create DEM: runnning point2dem (holes-fill) on: " + outStereoPre + "-PC.tif")
         start_p2d = timer()
-        cmdStrDEM = "point2dem --threads=18 --t_srs " + prj + " --nodata-value -99 --dem-hole-fill-len 50 " + outStereoPre + "-PC.tif -o " + outStereoPre + "-holes-fill"	## --orthoimage --errorimage " + outStereoPre + "-L.tif"        ## -r earth
+        cmdStrDEM = P2D_OPTS + P2D_IO        ## -r earth
         print("\n\t" + cmdStrDEM )
         p2dCmd2 = subp.Popen(cmdStrDEM.rstrip('\n'), stdout=subp.PIPE, shell=True)
 
         print("\n\t [2] Create Ortho Image")
-        cmdStrOrthoImage = "point2dem --threads=18 --t_srs " + prj + " --no-dem --nodata-value -99 --dem-hole-fill-len 50 " + outStereoPre + "-PC.tif -o " + outStereoPre + "-holes-fill --orthoimage " + outStereoPre + "-L.tif"
+        cmdStrOrthoImage = P2D_OPTS + P2D_IO + " --orthoimage " + outStereoPre + "-L.tif"
         wf.run_os(cmdStrOrthoImage)
         """
         Not sure if I still want an Error Image...
         """
         print("\n\t [3] Create Error Image")
-        cmdStrErrorImage = "point2dem --threads=18 --t_srs " + prj + " --no-dem --nodata-value -99 --dem-hole-fill-len 50 " + outStereoPre + "-PC.tif -o " + outStereoPre + "-holes-fill --errorimage "
+        cmdStrErrorImage = P2D_OPTS + P2D_IO + " --errorimage "
         wf.run_os(cmdStrErrorImage)
-
-##    # Communicate p2d holes
-##    if os.path.isfile(outStereoPre + "-PC.tif") and not os.path.isfile(outStereoPre + "-holes-DEM.tif"):
-##        stdOut, err = p2dCmd1.communicate()
-##        print(str(stdOut) + str(err))
-##        end_p2d = timer()
-##        print("\n\tpoint2dem (#1) run time (mins): %f . Completed %s" \
-##        % (   (end_p2d - start_p2d)/60, str(datetime.now() ) ))
 
     # Communicate p2d holes-fill
     if os.path.isfile(outStereoPre + "-PC.tif") and not os.path.isfile(outStereoPre + "-holes-fill-DEM.txt"):
@@ -365,24 +351,6 @@ def footprint_dsm(outRoot, inRoot, myDir, outShp):
         with open(os.path.join(outRoot,outShp.split('.')[0] + outStr), 'wb') as outCSV:
             for failline in failList[num]:
                 outCSV.write(failline + '\n')
-##
-##    # Ouput a CSV of incomplete DSM dirs
-##    outCSV = open(os.path.join(outRoot,outShp.split('.')[0] + '_failed_inc_DSM.csv'), 'wb')
-##    wr = csv.writer(outCSV)
-##    for fail in DSMincomplete:
-##        wr.writerow(fail)
-##
-##    # Ouput a CSV of DSMs with at least 1 failed catID searches
-##    outCSV = open(os.path.join(outRoot,outShp.split('.')[0] + '_failed_find_DSMcatID.csv'), 'wb')
-##    wr = csv.writer(outCSV)
-##    for fail in DSMcatIDfail:
-##        wr.writerow(fail)
-##
-##    # Ouput a CSV of failed DSM footprints to the same dir as the output Shapefile (outASP)
-##    outCSV = open(os.path.join(outRoot,outShp.split('.')[0] + '_failed_DSM_foots.csv'), 'wb')
-##    wr = csv.writer(outCSV)
-##    for DSMfail in DSMfootprintFail:
-##        wr.writerow(DSMfail)
 
 def runVALPIX(outStereoPre, root, newFieldsList, newAttribsList, outSHP):
         # -- Update Valid Pixels Shapefile
