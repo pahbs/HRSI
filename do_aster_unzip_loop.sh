@@ -4,6 +4,8 @@
 # [2] Create aster camera model
 # [3] Mapproject
 # [4] Footprint
+## Check email for "LPDAAC ECS Order Notification Order ID: *****"
+## ENTER THE PullDir NUMBER --> note, this is not the ORDERID or the REQUEST ID from the email
 ################################
 #_____Function Definitions_____
 ################################
@@ -27,25 +29,32 @@ run_mapprj () {
     fi
     echo "<><><><><>"$'\r' >> ${sceneName}_${now}.log
 }
+
+join_by() { local IFS="$1"; shift; echo "$*"; }
+
 ################################
+#
+# VARIABLES FOR RUN
+#
 
 topDir=/att/nobackup/pmontesa/ASTER
+topDir=/att/gpfsfs/atrepo01/data/hma_data/ASTER
 
-## Check email for "LPDAAC ECS Order Notification Order ID: *****"
-## ENTER THE PullDir NUMBER --> note, this is not the ORDERID or the REQUEST ID from the email
-#orderZip=030385335976111.zip
+inDEM=/att/gpfsfs/userfs02/ppl/pmontesa/HiMAT/hma_dem/HMA_ASTGTM2_pct100.tif
+#inDEM=/att/nobackup/pmontesa/projects/siberia/aster_dem/SIB_ASTGTM2_pct100.tif
 
-HMA_GDEM=/att/gpfsfs/userfs02/ppl/pmontesa/projects/HiMAT/hma_dem/HMA_ASTGTM2_pct100.tif
-## 10m
+# 10m
 pixResFineSize=0.0000898315284119
 
-now="$(date +'%Y%m%d')"
-orderDir=L1A_orders
-L1Adir=L1A
+# Cmd Line Args
+orderDir=$1
 
 #
 # Get data to the L1A_orders dir
 #
+
+L1Adir=L1A
+now="$(date +'%Y%m%d')"
 
 cd $topDir/$orderDir
 
@@ -62,10 +71,6 @@ for orderZip in *.zip
         cd ${topDir}/${L1Adir}
 
         # Unzip indiv scene zips to their own dirs in L1A dir
-        #
-
-        # ____FUNCTIONS_____
-        join_by() { local IFS="$1"; shift; echo "$*"; }
 
         echo "`date`"$'\r' >>                               $topDir/$orderDir/${orderZip%.zip}_${now}.log
         echo "User `whoami` started the script."$'\r' >>    $topDir/$orderDir/${orderZip%.zip}_${now}.log
@@ -80,11 +85,16 @@ for orderZip in *.zip
                 IFS='_' read -ra fileArr <<< "$file"
                 sceneName=`join_by _ ${fileArr[@]:0:3}`
 
-                if [ ! -d "${sceneName}" ]
+					 # Format date like this YYYmmdd
+					 sceneDate=`echo ${sceneName:11:8} | sed -E 's/(.{2})(.{2})(.{4})/\3\1\2/'`
+					 # Rename scene to this: AST_20000831_00308312000062611
+					 sceneName=AST_${sceneDate}_`join_by _ ${fileArr[@]:2:1}`
+
+                if [ ! -f "${sceneName}" ]
                     then
 
                         echo "[1] UNZIP SCENE..."
-                        unzip -d "${sceneName}" $file
+                        unzip -oj -d "${sceneName}" $file
                         echo "$file"$'\r' >>                $topDir/$orderDir/${orderZip%.zip}_${now}.log
 
                         echo "[2] CREATE CAMERA MODEL ..."
@@ -96,15 +106,19 @@ for orderZip in *.zip
                                 echo "Running aster2asp on $sceneName ..."$'\r' >> ${sceneName}_${now}.log
                                 aster2asp --threads=18 ${sceneName} -o ${sceneName}/in
                         fi
-
-                        echo "[3] MAPPROJECT EACH SCENE..."
-                        run_mapprj $HMA_GDEM $sceneName $now $pixResFineSize
-
-                        echo "${sceneName}" >>               $topDir/$orderDir/${orderZip%.zip}_${now}.list
+                        
                     else
                         echo "Dir exists:"
                         echo "${sceneName}"
                 fi
+					 if [ ! -f "${sceneName}/in-Band3N_proj.tif" ]
+						  then
+								echo "[3] MAPPROJECT EACH SCENE..."
+                        run_mapprj $inDEM $sceneName $now $pixResFineSize &
+								echo "${sceneName}" >>               $topDir/$orderDir/${orderZip%.zip}_${now}.list
+						  else
+								echo "Mapprojected files exists already."
+					 fi
             rm $file
             rm *.met
             rm checksum_report

@@ -79,7 +79,7 @@ def runP2D(outStereoPre, prj, strip=True):
         # Output DSM has holes <50 pix filled with hole-fill-mode=2 (weighted avg of all valid pix within window of dem-hole-fill-len)
         # Ortho (-DRG.tif) produced
 
-        P2D_OPTS = "point2dem --threads=18 --t_srs " + prj + " --no-dem --nodata-value -99 --dem-hole-fill-len 50 "
+        P2D_OPTS = "point2dem --threads=6 --t_srs " + prj + " --nodata-value -99 --dem-hole-fill-len 50 "
         P2D_IO = outStereoPre + "-PC.tif -o " + outStereoPre + "-holes-fill"
 
         print("\n\t [1] Create DEM: runnning point2dem (holes-fill) on: " + outStereoPre + "-PC.tif")
@@ -89,13 +89,13 @@ def runP2D(outStereoPre, prj, strip=True):
         p2dCmd2 = subp.Popen(cmdStrDEM.rstrip('\n'), stdout=subp.PIPE, shell=True)
 
         print("\n\t [2] Create Ortho Image")
-        cmdStrOrthoImage = P2D_OPTS + P2D_IO + " --orthoimage " + outStereoPre + "-L.tif"
+        cmdStrOrthoImage = P2D_OPTS + P2D_IO + " --no-dem --orthoimage " + outStereoPre + "-L.tif"
         wf.run_os(cmdStrOrthoImage)
         """
         Not sure if I still want an Error Image...
         """
         print("\n\t [3] Create Error Image")
-        cmdStrErrorImage = P2D_OPTS + P2D_IO + " --errorimage "
+        cmdStrErrorImage = P2D_OPTS + P2D_IO + " --no-dem --errorimage "
         wf.run_os(cmdStrErrorImage)
 
     # Communicate p2d holes-fill
@@ -574,9 +574,10 @@ def run_asp(
 
 
     # [2] From the header, get the indices of the attributes you need
-    catID_1_idx     = header.index('catalogid')
-    catID_2_idx     = header.index('stereopair')
-    sensor_idx      = header.index('platform')
+    #catID_1_idx     = header.index('catalogid')
+    #catID_2_idx     = header.index('stereopair')
+    pairname_idx        = header.index('pairname')
+    #sensor_idx      = header.index('platform')
     avSunElev_idx   = header.index('avsunelev')
     avSunAzim_idx   = header.index('avsunazim')
     imageDate_idx   = header.index('acqdate')
@@ -608,10 +609,10 @@ def run_asp(
             preLogText.append(line)
             preLogText.append(linesplit)
 
-            catID_1    = linesplit[catID_1_idx]
-            catID_2    = linesplit[catID_2_idx]
-            sensor     = str(linesplit[sensor_idx])
-            imageDate  = linesplit[imageDate_idx]
+            catID_1    = linesplit[pairname_idx].split('_')[2]
+            catID_2    = linesplit[pairname_idx].split('_')[3]
+            sensor     = linesplit[pairname_idx].split('_')[0]
+            imageDate  = linesplit[pairname_idx].split('_')[1]
             avSunElev  = round(float(linesplit[avSunElev_idx]),0)
             avSunAz    = round(float(linesplit[avSunAzim_idx]),0)
             avOffNadir = round(float(linesplit[avOffNadir_idx]),0)
@@ -636,6 +637,11 @@ def run_asp(
                         preLogText.append( '\tTry 2: ' + str(imageDate))
                     except Exception, e:
                         pass
+                        try:
+                            imageDate = datetime.strptime(imageDate,"%Y%m%d")
+                            preLogText.append( '\tTry 3: ' + str(imageDate))
+                        except Exception, e:
+                            pass
 
             # [4] Search ADAPT's NGA database for catID_1 and catid_2
 

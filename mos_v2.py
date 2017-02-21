@@ -33,6 +33,7 @@ def foot_tiles(
     pathroot = []
     sceneList = []
     roots = []
+    sceneFailList = []
     # for ASTER L1A footprints where date is grabbed form the scene name
     yearList = []
     monthList = []
@@ -46,9 +47,9 @@ def foot_tiles(
                     sceneList.append(root.split('/')[-1])
                     namesList.append(file)
                     pathroot.append(root)
-                    yearList.append(datetime.datetime.strptime(root.split('/')[-1].split('AST_L1A_003')[1][0:8],'%m%d%Y').year)
-                    monthList.append(datetime.datetime.strptime(root.split('/')[-1].split('AST_L1A_003')[1][0:8],'%m%d%Y').month)
-                    doyList.append(datetime.datetime.strptime(root.split('/')[-1].split('AST_L1A_003')[1][0:8],'%m%d%Y').timetuple().tm_yday)
+                    yearList.append(datetime.datetime.strptime(root.split('/')[-1].split('_003')[1][0:8],'%m%d%Y').year)
+                    monthList.append(datetime.datetime.strptime(root.split('/')[-1].split('_003')[1][0:8],'%m%d%Y').month)
+                    doyList.append(datetime.datetime.strptime(root.split('/')[-1].split('_003')[1][0:8],'%m%d%Y').timetuple().tm_yday)
 
     ###############################################
     # Use gdalinfo to make metadata txt from each raster
@@ -229,8 +230,14 @@ def foot_tiles(
 
             print '\tError reading coords for line:'
             print '\t'+line
+            sceneFailList.append(line.split(',')[0])
             print '\t' + str(e)
 
+    # Writes sceneFailList to txt
+    with open(os.path.join(direct,'scene_footprint_fail.list'),'wb') as writer:
+        for row in sceneFailList:
+            # Write out each row
+            writer.write(row + '\n')
 
     print('shpOut: ' + direct+'/'+fileName)
     #shpOut.save(direct+'/'+fileName) #shp name is directory's name

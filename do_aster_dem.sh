@@ -34,8 +34,8 @@ run_mapprj_coarse () {
     		  echo "......--------------------------------------"
             echo "[3] Running mapproject of fine input onto coarse DSM ..."$'\r' >> ${sceneName}_${now}.log
             # Map-project onto this DEM at 10 meters/pixel
-            mapproject --tr $pixResFineSize $outCoarse-DEM.tif $sceneName/in-Band3N.tif $sceneName/in-Band3N.xml $sceneName/in-Band3N_proj.tif &
-            mapproject --tr $pixResFineSize $outCoarse-DEM.tif $sceneName/in-Band3B.tif $sceneName/in-Band3B.xml $sceneName/in-Band3B_proj.tif
+            mapproject --threads=8 --tr $pixResFineSize $outCoarse-DEM.tif $sceneName/in-Band3N.tif $sceneName/in-Band3N.xml $sceneName/in-Band3N_proj.tif &
+            mapproject --threads=8 --tr $pixResFineSize $outCoarse-DEM.tif $sceneName/in-Band3B.tif $sceneName/in-Band3B.xml $sceneName/in-Band3B_proj.tif
 
     fi
     echo "<><><><><>"$'\r' >> ${sceneName}_${now}.log
@@ -56,8 +56,8 @@ run_mapprj () {
 		    echo "......--------------------------------------"
             echo "[3] Running mapproject of fine input onto coarse DSM ..."$'\r' >> ${sceneName}_${now}.log
             # Map-project onto this DEM
-            mapproject --tr $pixResFineSize $inDEM $sceneName/in-Band3N.tif $sceneName/in-Band3N.xml $sceneName/in-Band3N_proj.tif &
-            mapproject --tr $pixResFineSize $inDEM $sceneName/in-Band3B.tif $sceneName/in-Band3B.xml $sceneName/in-Band3B_proj.tif &
+            mapproject --threads=8 --tr $pixResFineSize $inDEM $sceneName/in-Band3N.tif $sceneName/in-Band3N.xml $sceneName/in-Band3N_proj.tif &
+            mapproject --threads=8 --tr $pixResFineSize $inDEM $sceneName/in-Band3B.tif $sceneName/in-Band3B.xml $sceneName/in-Band3B_proj.tif 
     fi
     echo "<><><><><>"$'\r' >> ${sceneName}_${now}.log
 }
@@ -71,48 +71,55 @@ run_asp_fine () {
     sceneName=$6
     now=$7
 
-    runDir=corr${corrKern}_subpix${subpixKern}
+    #runDir=corr${corrKern}_subpix${subpixKern}
 
-    echo "[4] Running stereo on $sceneName/outASP/$runDir ..."$'\r' >> ${sceneName}_${now}.log
+    echo "[4] Running stereo on $sceneName ..."$'\r' >> ${sceneName}_${now}.log
     echo "Stereo mode SGM = ${SGM}"
     echo "Input coarse DEM = ${inDEM}"
     echo "Tile size = ${tileSize}"
+
+	 outPrefix=$sceneName/outASP/out
+
+	 # Stereo Run Options
+	 par_opts="--corr-tile-size $tileSize --job-size-w $tileSize --job-size-h $tileSize --processes 18 --threads-multiprocess 10 --threads-singleprocess 32 --nodes-list=/att/gpfsfs/home/pmontesa/code/nodes_ecotone07"
+	 sgm_opts="-t aster --stereo-algorithm 1 --threads=10 --xcorr-threshold -1 --corr-kernel $corrKern $corrKern --cost-mode 4 --subpixel-mode 0 --median-filter-size 3 --texture-smooth-size 13 --texture-smooth-scale 0.13"
+	 reg_opts="-t aster --subpixel-mode 2 --corr-kernel $corrKern $corrKern --subpixel-kernel $subpixKern $subpixKern"
+	 stereo_opts="$sceneName/in-Band3N_proj.tif $sceneName/in-Band3B_proj.tif $sceneName/in-Band3N.xml $sceneName/in-Band3B.xml $outPrefix $inDEM"
+
     # Run stereo with the map-projected images
     #
     if $SGM
         then
-            echo "   Running parallel_stereo with SGM mode for Slopes and Ice/Snow ..."
-            echo "   Running parallel_stereo with SGM mode for Slopes and Ice/Snow ..."$'\r' >> ${sceneName}_${now}.log
-            parallel_stereo -t aster --stereo-algorithm 1 --nodes-list=/att/gpfsfs/home/pmontesa/code/nodes_ecotone07 \
-            --threads 1 --xcorr-threshold -1 --corr-kernel $corrKern $corrKern \
-            --corr-tile-size $tileSize --job-size-w $tileSize --job-size-h $tileSize --processes 18 --threads-multiprocess 10 --threads-singleprocess 32 \
-            --cost-mode 4 --subpixel-mode 0 --median-filter-size 3 --texture-smooth-size 13 --texture-smooth-scale 0.13 \
-            $sceneName/in-Band3N_proj.tif $sceneName/in-Band3B_proj.tif $sceneName/in-Band3N.xml $sceneName/in-Band3B.xml \
-            $sceneName/outASP/$runDir/out $inDEM
+            echo "   Running stereo with SGM mode for Slopes and Ice/Snow ..."
+            echo "   Running stereo with SGM mode for Slopes and Ice/Snow ..."$'\r' >> ${sceneName}_${now}.log
+				#parallel_stereo $par_opts $sgm_opts $stereo_opts
+            stereo $sgm_opts $stereo_opts
+            
         else
             echo "   Running stereo ..."
             echo "   Running stereo ..."$'\r' >> ${sceneName}_${now}.log
-            #parallel_stereo --nodes-list=/att/gpfsfs/home/pmontesa/code/nodes_ecotone07 --processes 18 --threads-multiprocess 16 --threads-singleprocess 32 -t aster --subpixel-mode 2 --corr-kernel $corrKern $corrKern --subpixel-kernel $subpixKern $subpixKern $sceneName/in-Band3N_proj.tif $sceneName/in-Band3B_proj.tif $sceneName/in-Band3N.xml $sceneName/in-Band3B.xml $sceneName/outASP/$runDir/out $inDEM
-            stereo -t aster --subpixel-mode 2 --corr-kernel $corrKern $corrKern --subpixel-kernel $subpixKern $subpixKern $sceneName/in-Band3N_proj.tif $sceneName/in-Band3B_proj.tif $sceneName/in-Band3N.xml $sceneName/in-Band3B.xml $sceneName/outASP/$runDir/out $inDEM
+            #parallel_stereo $par_opts $reg_opts $stereo_opts
+            stereo $reg_opts $stereo_opts 
     fi
 
     echo "[5] Running fine point2dem on $sceneName/outASP/$runDir ..."$'\r' >> ${sceneName}_${now}.log
     # Create the final DEM and ortho'd Pan
     #
-    outFine=$sceneName/outASP/$runDir/out
-    point2dem --threads=6 -r earth $sceneName/outASP/$runDir/out-PC.tif -o $outFine --orthoimage $sceneName/outASP/$runDir/out-L.tif
+    #outFine=$sceneName/outASP/$runDir/out
+    point2dem --threads=6 -r earth $outPrefix-PC.tif -o $outPrefix --orthoimage $outPrefix-L.tif
 
     # Final Viewing GeoTiffs
     #
-    echo "[6] Running final viewing GeoTiffs on $sceneName/outASP/$runDir ..."$'\r' >> ${sceneName}_${now}.log
-    hillshade $outFine-DEM.tif -o $outFine-DEM-hlshd-e25.tif -e 25
-    colormap $outFine-DEM.tif -s $outFine-DEM-hlshd-e25.tif -o $outFine-DEM-clr-shd.tif --colormap-style /att/gpfsfs/home/pmontesa/code/color_lut_hma.txt
+    echo "[6] Running final viewing GeoTiffs on $sceneName ..."$'\r' >> ${sceneName}_${now}.log
+    hillshade $outPrefix-DEM.tif -o $outPrefix-DEM-hlshd-e25.tif -e 25
+    colormap $outPrefix-DEM.tif -s $outPrefix-DEM-hlshd-e25.tif -o $outPrefix-DEM-clr-shd.tif --colormap-style /att/gpfsfs/home/pmontesa/code/color_lut_hma.txt
 
-    gdal_translate -of VRT ${topDir}/$outFine-DEM-clr-shd.tif ${topDir}/vrt_clr/${sceneName}_${runDir}_out-DEM-clr-shd.vrt
-    gdal_translate -of VRT ${topDir}/$outFine-DRG.tif ${topDir}/vrt_clr/${sceneName}_${runDir}_out-DRG.vrt
-    gdaladdo -r average ${topDir}/$outFine-DEM-clr-shd.tif 2 4 8 16 &
-    gdaladdo -r average ${topDir}/$outFine-DRG.tif 2 4 8 16 &
-    echo "[7] Finished processing ${sceneName}/outASP/$runDir."$'\r' >> ${sceneName}_${now}.log
+    gdal_translate -of VRT ${topDir}/$outPrefix-DEM-clr-shd.tif ${topDir}/clr/${sceneName}_out-DEM-clr-shd.vrt
+    gdal_translate -of VRT ${topDir}/$outPrefix-DRG.tif ${topDir}/drg/${sceneName}_out-DRG.vrt
+	 gdal_translate -of VRT ${topDir}/$outPrefix-DRG.tif ${topDir}/dsm/${sceneName}_out-DEM.vrt
+    gdaladdo -r average ${topDir}/$outPrefix-DEM-clr-shd.tif 2 4 8 16 &
+    gdaladdo -r average ${topDir}/$outPrefix-DRG.tif 2 4 8 16 &
+    echo "[7] Finished processing ${sceneName}."$'\r' >> ${sceneName}_${now}.log
     echo "----------}."$'\r' >> ${sceneName}_${now}.log
 }
 ##############################################
@@ -123,13 +130,16 @@ run_asp_fine () {
 #sceneName=$1
 
 topDir=/att/nobackup/pmontesa/ASTER/L1A
-HMA_GDEM=/att/gpfsfs/userfs02/ppl/pmontesa/projects/HiMAT/hma_dem/HMA_ASTGTM2_pct100.tif
+inDEM=/att/gpfsfs/userfs02/ppl/pmontesa/HiMAT/hma_dem/HMA_ASTGTM2_pct100.tif
+inDEM=/att/nobackup/pmontesa/projects/siberia/aster_dem/SIB_ASTGTM2_pct100.tif
 now="$(date +'%Y%m%d%T')"
 
 #
 # Process the AST_L1A dir indicated with the sceneName
 #
 cd $topDir
+
+hostN=`/bin/hostname -s` 
 
 # Read in sceneList of AST L1A scenes from an orderZip
 #
@@ -163,17 +173,17 @@ while read -r sceneName; do
     #_____Function calls_____
     ################################
 
-    #run_mapprj $HMA_GDEM $sceneName $now $pixResFineSize &
+    run_mapprj $inDEM $sceneName $now $pixResFineSize
 
     for corrKern in "${corrKernList[@]}"
         do
             for subpixKern in "${subpixKernList[@]}"
                 do
-                    run_asp_fine $corrKern $subpixKern $SGM $HMA_GDEM $tileSize $sceneName $now &
+                    run_asp_fine $corrKern $subpixKern $SGM $inDEM $tileSize $sceneName $now &
                 done
         done
 
-done < $1
+done < ${1%.csv}_${hostN}.csv
 
 
 
