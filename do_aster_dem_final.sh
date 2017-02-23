@@ -8,7 +8,6 @@
 #_____Function Definitions_____
 ################################
 
-
 run_asp_fine () {
 
     SGM=$1
@@ -25,29 +24,50 @@ run_asp_fine () {
 
     #runDir=corr${corrKern}_subpix${subpixKern}
 
-    echo "[4] Running stereo on $sceneName ..."$'\r' >> ${sceneName}_${now}.log
-    echo "Stereo mode SGM = ${SGM}"
+    echo "[4] Working on: $sceneName -- Checking for PC.tif ..."
     echo "Input coarse DEM = ${inDEM}"
-    echo "Tile size = ${tileSize}"
 
-	 outPrefix=$sceneName/outASP/out
+    outPrefix=$sceneName/outASP/out
 
-	 # Stereo Run Options
-	 # NOTE:  running MGM (--stereo-algorithm 2 instead of SGM)
-	 #
-	 par_opts="--corr-tile-size $tileSize --job-size-w $tileSize --job-size-h $tileSize --processes 18 --threads-multiprocess 10 --threads-singleprocess 32 --nodes-list=/att/gpfsfs/home/pmontesa/code/nodes_ecotone07"
-	 sgm_opts="-t aster --stereo-algorithm 2 --threads=10 --xcorr-threshold -1 --corr-kernel $corrKern $corrKern --cost-mode 4 --subpixel-mode 0 --median-filter-size 3 --texture-smooth-size 13 --texture-smooth-scale 0.13"
-	 reg_opts="-t aster --subpixel-mode 2 --corr-kernel $corrKern $corrKern --subpixel-kernel $subpixKern $subpixKern"
-	 stereo_opts="$sceneName/in-Band3N_proj.tif $sceneName/in-Band3B_proj.tif $sceneName/in-Band3N.xml $sceneName/in-Band3B.xml $outPrefix $inDEM"
+    # Stereo Run Options
+    # NOTE:  running MGM (--stereo-algorithm 2 instead of SGM)
+    #
+    par_opts="--corr-tile-size $tileSize --job-size-w $tileSize --job-size-h $tileSize --processes 18 --threads-multiprocess 10 --threads-singleprocess 32 --nodes-list=/att/gpfsfs/home/pmontesa/code/nodes_ecotone07"
+    sgm_opts="-t aster --threads=10 --xcorr-threshold -1 --corr-kernel $corrKern $corrKern --cost-mode 4 --subpixel-mode 0 --median-filter-size 3 --texture-smooth-size 13 --texture-smooth-scale 0.13"
+    reg_opts="-t aster --subpixel-mode 2 --corr-kernel $corrKern $corrKern --subpixel-kernel $subpixKern $subpixKern"
+    stereo_opts="$sceneName/in-Band3N_proj.tif $sceneName/in-Band3B_proj.tif $sceneName/in-Band3N.xml $sceneName/in-Band3B.xml $outPrefix $inDEM"
 
     # Run stereo with the map-projected images
     #
     if [ ! -f $outPrefix-PC.tif ]; then
+
+        echo "No PC.tif file -- determine which stereo algorithm to run ..."
+        echo "Tile size = ${tileSize}"
+
         if $SGM; then
-            echo "   Running stereo with SGM/MGM mode for Slopes and Ice/Snow ..."
-            echo "   Running stereo with SGM/MGM mode for Slopes and Ice/Snow ..."$'\r' >> ${sceneName}_${now}.log
-            #parallel_stereo $par_opts $sgm_opts $stereo_opts
-            stereo $sgm_opts $stereo_opts
+
+            echo "Stereo mode SGM or MGM = ${SGM}"
+
+            find $sceneName/outASP -type f -name out* -exec rm -rf {} \;
+
+            echo "   Running stereo with SGM mode ..."
+            echo "   Running stereo with SGM mode ..."$'\r' >> ${sceneName}_${now}.log
+            #parallel_stereo  --stereo-algorithm 1 $par_opts $sgm_opts $stereo_opts
+            stereo  --stereo-algorithm 1 $sgm_opts $stereo_opts
+            echo "   Finished stereo from SGM mode."
+
+            if [ ! -f $outPrefix-PC.tif ]; then
+
+                find $sceneName/outASP -type f -name out* -exec rm -rf {} \;
+
+                echo "   Running stereo with MGM mode b/c SGM failed to create a PC.tif ..."
+                echo "   Running stereo with MGM mode b/c SGM failed to create a PC.tif ..."$'\r' >> ${sceneName}_${now}.log
+                stereo  --stereo-algorithm 2 $sgm_opts $stereo_opts
+                echo "   Finished stereo from MGM mode."
+            else
+                echo "   Stereo successful from SGM mode."
+            fi
+
         else
             echo "   Running stereo ..."
             echo "   Running stereo ..."$'\r' >> ${sceneName}_${now}.log
@@ -60,29 +80,43 @@ run_asp_fine () {
     # Create the final DEM and ortho'd Pan
     #
     #outFine=$sceneName/outASP/$runDir/out
-    point2dem --threads=6 -r earth $outPrefix-PC.tif -o $outPrefix --orthoimage $outPrefix-L.tif
+    if [ -f $outPrefix-PC.tif ]; then
 
-    # Final Viewing GeoTiffs
-    #
-    echo "[6] Running final viewing GeoTiffs on $sceneName ..."$'\r' >> ${sceneName}_${now}.log
-    hillshade $outPrefix-DEM.tif -o $outPrefix-DEM-hlshd-e25.tif -e 25
-    colormap $outPrefix-DEM.tif -s $outPrefix-DEM-hlshd-e25.tif -o $outPrefix-DEM-clr-shd.tif --colormap-style /att/gpfsfs/home/pmontesa/code/color_lut_hma.txt
+        if [ ! -f $outPrefix-DEM-clr-shd.tif ]; then
 
-    gdal_translate -of VRT ${L1Adir}/$outPrefix-DEM-clr-shd.tif ${L1Adir}_out/clr/${sceneName}-CLR.vrt
-    gdal_translate -of VRT ${L1Adir}/$outPrefix-DRG.tif ${L1Adir}_out/drg/${sceneName}-DRG.vrt
-    gdal_translate -of VRT ${L1Adir}/$outPrefix-DRG.tif ${L1Adir}_out/dsm/${sceneName}-DEM.vrt
+            point2dem --threads=6 -r earth $outPrefix-PC.tif -o $outPrefix --orthoimage $outPrefix-L.tif
 
-    gdaladdo -r average ${L1Adir}/$outPrefix-DEM-clr-shd.tif 2 4 8 16 &
-    gdaladdo -r average ${L1Adir}/$outPrefix-DRG.tif 2 4 8 16 &
-    gdaladdo -r average ${L1Adir}/$outPrefix-DEM.tif 2 4 8 16 &
-    echo "[7] Finished processing ${sceneName}."$'\r' >> ${sceneName}_${now}.log
-    echo "----------}."$'\r' >> ${sceneName}_${now}.log
+            # Final Viewing GeoTiffs
+            #
+            echo "[6] Running final viewing GeoTiffs on $sceneName ..."$'\r' >> ${sceneName}_${now}.log
+            hillshade $outPrefix-DEM.tif -o $outPrefix-DEM-hlshd-e25.tif -e 25
+            colormap $outPrefix-DEM.tif -s $outPrefix-DEM-hlshd-e25.tif -o $outPrefix-DEM-clr-shd.tif --colormap-style /att/gpfsfs/home/pmontesa/code/color_lut_hma.txt
+
+            gdal_translate -of VRT ${L1Adir}/$outPrefix-DEM-clr-shd.tif ${L1Adir}_out/clr/${sceneName}-CLR.vrt
+            gdal_translate -of VRT ${L1Adir}/$outPrefix-DRG.tif ${L1Adir}_out/drg/${sceneName}-DRG.vrt
+            gdal_translate -of VRT ${L1Adir}/$outPrefix-DRG.tif ${L1Adir}_out/dsm/${sceneName}-DEM.vrt
+
+            gdaladdo -r average ${L1Adir}/$outPrefix-DEM-clr-shd.tif 2 4 8 16 &
+            gdaladdo -r average ${L1Adir}/$outPrefix-DRG.tif 2 4 8 16 &
+            gdaladdo -r average ${L1Adir}/$outPrefix-DEM.tif 2 4 8 16 &
+            echo "[7] Finished processing ${sceneName}."$'\r' >> ${sceneName}_${now}.log
+            echo "----------}."$'\r' >> ${sceneName}_${now}.log
+        else
+            echo "   CLR-SHD file exists, skipping point2dem."
+            echo "   CLR-SHD file exists, skipping point2dem."$'\r' >> ${sceneName}_${now}.log
+        fi
+    else
+        echo "   No PC.tif file !!! DEM not created."
+        echo "   No PC.tif file !!! DEM not created."$'\r' >> ${sceneName}_${now}.log
+    fi
 }
 ##############################################
 
 #
 # Hard coded stuff
 #
+
+batch=$1
 
 topDir=/att/gpfsfs/atrepo01/data/hma_data/ASTER
 
@@ -120,7 +154,7 @@ while read -r sceneName; do
     run_asp_fine $SGM $inDEM $tileSize $sceneName $now $topDir/L1A
 
 
-done < scenes.list_batch01_${hostN}
+done < scenes.list_${batch}_${hostN}
 
 
 
