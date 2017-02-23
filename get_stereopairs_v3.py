@@ -124,11 +124,12 @@ def stereopairs(imageDir):
             "ullon,ullat,lllon,lllat,urlon,urlat,lrlon,lrlat,ullon,ullat,lllon,lllat,urlon,urlat,lrlon,lrlat" + ",ang_conv,ang_bie,ang_asym\n"
 
     # Get pairname from input image dir
-    baseDir, pairname = os.path.split(imageDir)
+    baseDir, pairname = os.path.split(imageDir) # baseDir i.e. /discover/nobackup/projects/boreal_nga/inASP/batchtest1
     print("\tPairname: %s" %(pairname))
 
     # Split pairname into catids
-    cat1,cat2 = pairname.split("_")[2:]
+    cat1,cat2 = pairname.split("_")[2:] # get the last catIDs
+
 
     # Initialize lists
     cat1list = []
@@ -140,14 +141,21 @@ def stereopairs(imageDir):
             # Identify only xmls belonging to scenes
             if each.endswith('.xml') and '1BS' in each:
                 if cat1 in each:
-                    cat1list.append(each)
+                     cat1list.append(each)
                 if cat2 in each:
                     cat2list.append(each)
 
-    # Name output csv with the pairname and put in output ASP dir
-    outCSV = os.path.join(imageDir,pairname + ".csv")
-    ##print("\tOuput CSV file: %s" %(outCSV))
+    # cat1list/cat2list are lists of all the xml files in the imageDir
+    print cat1list #DEL
+    print cat2list
 
+
+
+
+    # Name output csv with the pairname and put in output ASP dir
+    outCSV = os.path.join(imageDir, "{}.csv".format(pairname))
+    ##print("\tOuput CSV file: %s" %(outCSV))
+    print "outCSV:", outCSV
     # Open a CSV for writing
     with open(outCSV,'wb') as csvfile:
 
@@ -274,8 +282,12 @@ def stereopairs(imageDir):
                                         str(centLon)    + ',' + str(centLat) + ','
 
                     # Calc stereo angles
+                    print "before stereoAngs call"
                     stereoAngs = stereoAngles(meanSatEl_1,meanSatAz_1,meanSatEl,meanSatAz,ephemX_1,ephemY_1,ephemZ_1,ephemX,ephemY,ephemZ,centLat,centLon)
+                    print "stereoAngs:"
+                    print stereoAngs
                     outCSVline = Names + SSGangles + centCoords + ephemeris + cornerCoords + str(stereoAngs[0]) + "," + str(stereoAngs[1]) + "," + str(stereoAngs[2])+'\n'
+                    print outCSVline
 
                     # Write line
                     csvfile.write(outCSVline)

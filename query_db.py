@@ -29,7 +29,14 @@ import get_stereopairs_v3 as g
 import shapefile
 from distutils.util import strtobool
 
-def main(csv, inDir, batchID, mapprj=True, doP2D=True, rp=100): #* batchID to keep track of groups of pairs for processing
+
+def find_elapsed_time(start, end):
+    elapsed_min = (end-start)/60
+    return str(elapsed_min)
+
+
+#def main(csv, inDir, batchID, mapprj=True, doP2D=True, rp=100): #* batchID to keep track of groups of pairs for processing # old way- without argparse
+def main(csv, inDir, batchID, mapprj, noP2D, rp): #the 3 latter args are optional
 
 ##    def run_asp(
 ##    csv,
@@ -50,6 +57,12 @@ def main(csv, inDir, batchID, mapprj=True, doP2D=True, rp=100): #* batchID to ke
 ##    test=False,                                                                         ## for testing
 ##    rp=100):
 
+
+
+    start_main = timer() # start timer object for entire batch
+
+    # set variables using CL args
+    doP2D = not noP2D # doP2D is the opposite of noP2D
     DEMdir = '/att/pubrepo/ASTERGDEM/'
     DISCdir = '/discover/nobackup/projects/boreal_nga' # DISCOVER path, for writing the job scripts
     batchDir = os.path.join(inDir, 'batch%s' % batchID)
@@ -78,12 +91,19 @@ def main(csv, inDir, batchID, mapprj=True, doP2D=True, rp=100): #* batchID to ke
     csvStereo = open(csv, 'r')
 
     # Get the header
-    header = csvStereo.readline().lower().rstrip().split(',')  #moved the split to this stage to prevent redudant processing - SSM
+    header = csvStereo.readline().lower().rstrip().replace('shape *', 'shape').split(',')  #moved the split to this stage to prevent redudant processing - SSM
+    # 2/13 if SHAPE* is in the header, replace with shape to header can be passed
 
 
     # [2] From the header, get the indices of the attributes you need
-    catID_1_idx     = header.index('catalogid')
-    catID_2_idx     = header.index('stereopair')
+    # 2/13: there are two possible input csv types - one with a stereopair column and one with a pairname column. if stereopair column exists catID_2_idx will exist, if not, it will be false
+    catID_1_idx     = header.index('catalogid') # this column should always exist
+    catID_2_idx = False # set this to false for now unless this column exists. only way it will be set to True is if pairname fieldn does not exist
+    try:
+        catID_2_idx     = header.index('stereopair') # this may not exist, so just try
+    except ValueError: # this will happen if it doesn't exist
+        pairname_idx = header.index('pairname') # in which case we have a pairname idx and catID_2_idx is False
+
     sensor_idx      = header.index('platform')
     avSunElev_idx   = header.index('avsunelev')
     avSunAzim_idx   = header.index('avsunazim')
@@ -91,7 +111,7 @@ def main(csv, inDir, batchID, mapprj=True, doP2D=True, rp=100): #* batchID to ke
     avOffNadir_idx  = header.index('avoffnadir')
     avTargetAz_idx  = header.index('avtargetaz')
 
-    # Save all csv lines; close file
+    # Save all the rest of the csv lines; close file
     csvLines = csvStereo.readlines()
     csvStereo.close()
 
@@ -105,7 +125,7 @@ def main(csv, inDir, batchID, mapprj=True, doP2D=True, rp=100): #* batchID to ke
     # Set up an output summary CSV that matches input CSV
     # csvOutFile = csv.split(".")[0] + "_output_smry.csv" ##* old way, below is the same thing but more readable
     csvOutFile = csv.replace('.csv', '_query_smry.csv')
-    print ''
+
 
     #csvOutFile = [] # this will store the out attributes so we can write to summary csv
     with open(csvOutFile, 'w') as c: c.write(outHeader)
@@ -127,8 +147,11 @@ def main(csv, inDir, batchID, mapprj=True, doP2D=True, rp=100): #* batchID to ke
     pair_count = 0 # to print which pair we are at
     n_pair_copy = 0 # number of succeffully copied pairs
     for line in csvLines: # AKA for pair, or record in the input table # TEST just 2 lines for now
+
+        start_pair = timer()
+
         pair_count += 1
-        print "Attemping to copy data for pair %d of %d" % (pair_count, n_lines) # print to ADAPT screen
+        print "Attemping to query and copy data for pair %d of %d" % (pair_count, n_lines) # print to ADAPT screen
         #print line
 
         preLogText = [] # start over with new preLog everytime you go to another pair
@@ -143,10 +166,16 @@ def main(csv, inDir, batchID, mapprj=True, doP2D=True, rp=100): #* batchID to ke
         #preLogText.append(linesplit)
 
 
+        catID_1 = linesplit[catID_1_idx]
+        # get catID_2 either from catID_2 field or pairname field
+        if catID_2_idx: # if this is True (i.e. it's something other than False), then catalog ID field exists
+            catID_2    = linesplit[catID_2_idx]
+        else: # if catID_2_idx is false (ie stereopair field does not exist), pairname_idx should exist
+            csv_pairname = linesplit[pairname_idx] # pairname from the csv
+            catID_2 = csv_pairname.split('_')[3] # fourth piece of i.e. WV01_20130604_102001002138EC00_1020010021AA3000
+            if catID_2 == catID_1: # make sure this is not the same as the original catID
+                catID_2 = csv_pairname.split('_')[2] # if it is, then get the other piece of the pairname
 
-
-        catID_1    = linesplit[catID_1_idx]
-        catID_2    = linesplit[catID_2_idx]
         sensor     = str(linesplit[sensor_idx])
         imageDate  = linesplit[imageDate_idx]
         avSunElev  = round(float(linesplit[avSunElev_idx]),0)
@@ -174,14 +203,17 @@ def main(csv, inDir, batchID, mapprj=True, doP2D=True, rp=100): #* batchID to ke
         if imageDate != '':
             try:
                 imageDate = datetime.strptime(imageDate,"%m/%d/%Y")
-                preLogText.append( '\tTry 1: ' + str(imageDate))
+                #preLogText.append( '\tTry 1: ' + str(imageDate))
+                preLogText.append( '\tDate format 1: ' + str(imageDate))
             except Exception, e:
                 pass
                 try:
                     imageDate = datetime.strptime(imageDate,"%Y-%m-%d")
-                    preLogText.append( '\tTry 2: ' + str(imageDate))
+                    #preLogText.append( '\tTry 2: ' + str(imageDate))
+                    preLogText.append( '\tDate format 2: ' + str(imageDate))
                 except Exception, e:
                     pass
+
 
 ##        # DEL
 ##        print "if first imageDate was '':"
@@ -189,7 +221,6 @@ def main(csv, inDir, batchID, mapprj=True, doP2D=True, rp=100): #* batchID to ke
 ##        print ''
 
         # [4] Search ADAPT's NGA database for catID_1 and catid_2
-
         # Establish the database connection
         with psycopg2.connect(database="NGAdb01", user="anon", host="ngadb01", port="5432") as dbConnect:
 
@@ -210,8 +241,10 @@ def main(csv, inDir, batchID, mapprj=True, doP2D=True, rp=100): #* batchID to ke
 ##            lonlist = [-999, -999]
             for num, catID in enumerate([catID_1,catID_2]): #* loop thru catID of the pairs
 
-                selquery =  "SELECT s_filepath, sensor, acq_time, cent_lat, cent_long FROM nga_files_footprint WHERE catalog_id = '%s'" %(catID)
+               # selquery =  "SELECT s_filepath, sensor, acq_time, cent_lat, cent_long FROM nga_files_footprint WHERE catalog_id = '%s'" %(catID)
+                selquery =  "SELECT s_filepath, sensor, acq_time, cent_lat, cent_long FROM nga_inventory WHERE catalog_id = '%s'" %(catID) # 2/13 change nga_inventory_footprint to nga_inventory
                 preLogText.append( "\n\t Now executing database query on catID '%s' ..." % catID)
+                print "Executing database query on catID '%s' ..." % catID
                 cur.execute(selquery)
                 """
                 'selected' will be a list of all raw scene matching the catid and their associated attributes that you asked for above
@@ -240,9 +273,8 @@ def main(csv, inDir, batchID, mapprj=True, doP2D=True, rp=100): #* batchID to ke
                 pID = os.path.split(os.path.split(selected[0][0])[0])[1].split('_')[-2] # get pID from first entry in selected
                 pIDlist[num] = pID
                 found_catID[num] = True
-                selected_list[num] = selected
+                selected_list[num] = selected # selected list is a list of len 2, where the first index contains the matching files from the first catID, and second index contains from second catID
 
-                print ''
                # for select in selected: selected_list.append(select) ##** add the list of scenes to the list of lists (index0 for catID 1, index1 fir catID2)
 
 ##        # DEL
@@ -356,7 +388,7 @@ def main(csv, inDir, batchID, mapprj=True, doP2D=True, rp=100): #* batchID to ke
 ##
 ##        print ""
 
-
+        start_copy = timer()
         #** we will only get to this point if there is data for both catIDs- ##Q is that OK?
         # now that we have data for both, loop thru the strips again
         for num, catID in enumerate([catID_1,catID_2]):
@@ -364,6 +396,7 @@ def main(csv, inDir, batchID, mapprj=True, doP2D=True, rp=100): #* batchID to ke
 
             ##Q does the info below (NGA path/pID/lat/lon) need to be printed to log if pairs arent going to be processed? If so, this block below needs to be moved up before if len(catIDlist) < 2
 
+            print "Copying data for pair %d of %d, catalog ID %s" % (pair_count, n_lines, catID) # print to ADAPT screen
             # retrieve list of scenes for catID
             selected = selected_list[num]
 
@@ -430,6 +463,9 @@ def main(csv, inDir, batchID, mapprj=True, doP2D=True, rp=100): #* batchID to ke
             """
               Now we have all the raw data in the inASP subdir identified with the pairname
             """
+        end_copy = timer()
+        copy_time = round((end_copy - start_copy)/60, 3)
+        print "Elapsed time to copy pair {} of {}, pairname {}: {}".format(pair_count, n_lines, pairname, copy_time)
 
 ##        # DEL
 ##        print "After looping through catIDs to copy data:"
@@ -459,6 +495,9 @@ def main(csv, inDir, batchID, mapprj=True, doP2D=True, rp=100): #* batchID to ke
         else:
             ew = "E"
 
+        print '\n\npairname:', pairname
+        print 'prj:', prj #DEL
+        continue
         # [4.3] Get list for ASTER GDEM vrt
         DEMlist = []
         DEM_inputs = ''
@@ -560,9 +599,7 @@ def main(csv, inDir, batchID, mapprj=True, doP2D=True, rp=100): #* batchID to ke
             c.write(outAttributes)
 
         discover_imageDir = os.path.join(DISCdir, 'inASP/batch%s/%s' % (batchID, pairname)) # where data will be copied to (and thus the imageDir we need to pass)
-        # DEL
-        print 'discover_imageDir:', discover_imageDir
-        print ''
+
 
         # write preLogText to a text file
         preLogTextFile = os.path.join(imageDir, 'preLogText_%s.txt' % pairname)
@@ -573,22 +610,27 @@ def main(csv, inDir, batchID, mapprj=True, doP2D=True, rp=100): #* batchID to ke
 
         # get the pair arguments that we need to send to DISCOVER:
         arg1 = '"{}"'.format(line.strip())
-        #arg2 = header
         arg2 = '::join::'.join(header).strip() # header is a list arg
         arg3 = discover_imageDir # imageDir on workflow side
         arg4 = mapprj
         #arg5 = mapprjRes - on workflow, do we need?
+        arg5 = prj
         #arg6 = par - do we need? always false? #*
         #arg7 = test # do we need? always false?
         #arg8 = searchExtList = ...
         arg9 = doP2D
         #arg10 = stereoDef = ...
         #arg11 = dirDEM = ...
-        #arg12 = prj = ...
         arg13 = str(rp)
         #arg14 = preLogText # list arg
         arg14 = preLogTextFile_DISC
         arg15 = batchID
+        arg16 = utm_zone
+        arg17 = '::join::'.join(catIDlist)
+        arg18 = '::join::'.join(pIDlist)
+        arg19 = imageDate.strftime("%Y-%m-%d") # pass along imageDate as dtring in format yyyy-mm-dd
+        print arg19
+        print type(arg19)
 
         # imageDir
         # inDir/outDir
@@ -606,10 +648,10 @@ def main(csv, inDir, batchID, mapprj=True, doP2D=True, rp=100): #* batchID to ke
 
         # CHANGE THESE ?:
         job_name = '%s_%s_job' % (batchID, pairname) # identify job with batchID and pairname??
-        time_limit = '36:00:00'
+        time_limit = '24:00:00'
         num_nodes = '1'
         #python_script_args = '%s %s %s arg3 etc' % (os.path.join(DISCdir, 'code', '<scriptName.py>'), arg1, arg2)
-        python_script_args = 'python %s %s %s %s %s %s %s %s %s' % (os.path.join(DISCdir, 'code', workflowCodeName), arg1, arg2, arg3, arg4, arg9, arg13, arg14, arg15)
+        python_script_args = 'python %s %s %s %s %s %s %s %s %s %s %s %s %s %s' % (os.path.join(DISCdir, 'code', workflowCodeName), arg1, arg2, arg3, arg4, arg5, arg9, arg13, arg14, arg15, arg16, arg17, arg18, arg19)
         #print python_script_args
 
 ##        print '----'
@@ -618,7 +660,7 @@ def main(csv, inDir, batchID, mapprj=True, doP2D=True, rp=100): #* batchID to ke
 
         # slurm.j file (calls the python code in discover for just one pair)
         with open(job_script, 'w') as f:
-            f.write('#!/bin/csh -f\n#SBATCH --job-name=%s\n#SBATCH --time=%s\n#SBATCH --nodes=%s\n#SBATCH --constraint=hasw\n\nsource /usr/share/modules/init/csh\n\nunlimit\nmodule load other/comp/gcc-5.3-sp3\nmodule load other/SSSO_Ana-PyD/SApd_4.2.0_py2.7_gcc-5.3-sp3\n\n%s' % (job_name, time_limit, num_nodes, python_script_args))
+            f.write('#!/bin/csh -f\n#SBATCH --job-name=%s\n#SBATCH --time=%s\n#SBATCH --nodes=%s\n#SBATCH --constraint=hasw\n#SBATCH --qos=long\n\nsource /usr/share/modules/init/csh\n\nunlimit\nmodule load other/comp/gcc-5.3-sp3\nmodule load other/SSSO_Ana-PyD/SApd_4.2.0_py2.7_gcc-5.3-sp3\n\n%s' % (job_name, time_limit, num_nodes, python_script_args))
 
 
         #TD: do I need to add arguments to the slurm.j call? don't think so because all it does is call the slurm.j script which WILL have args
@@ -633,6 +675,7 @@ def main(csv, inDir, batchID, mapprj=True, doP2D=True, rp=100): #* batchID to ke
 
     # NOW TAR everything in the batchDir into archive
 
+    start_tarzip = timer()
     archive = os.path.join(inDir, 'batch%s-archive.tar.gz' % batchID)
     print archive
     if not os.path.exists(archive): # if data has not yet been tarred up (careful with this)
@@ -644,9 +687,38 @@ def main(csv, inDir, batchID, mapprj=True, doP2D=True, rp=100): #* batchID to ke
         os.system(tarComm)
         print "\nFinish archiving:", datetime.now().strftime("%I:%M%p  %a, %m-%d-%Y")
     else: print "%s already exists" % archive
+    end_tarzip = timer()
+    print "Elapsed time for tarring/zipping %d pairs: %s min" % (n_pair_copy, round(find_elapsed_time(start_tarzip, end_tarzip),3))
 
-
+    end_main = timer()
+    print "Elapsed time for entire run (%d out of %d pairs): %s min" % (n_pair_copy, n_lines, round(find_elapsed_time(start_main, end_main), 3))
 
 if __name__ == '__main__':
-    import sys
-    main(sys.argv[1], sys.argv[2], sys.argv[3])
+
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument("csv", help = "Input CSV with pairs to be queried and processed") #required
+    ap.add_argument("inDir", help = "inASP directory where batch/pair input data will be stored") # required
+    ap.add_argument("batchID", help = "Batch identifier") #required
+    ap.add_argument("-mapprj", action='store_true', help="Include -mapprj tag at the command line if you wish to mapproject") # if "-mapprj" is NOT included at the command line, it defaults to False. if it IS, mapprj gets set to True
+    ap.add_argument("-noP2D", action='store_true', help="Include -noP2D tag at the command line if you do NOT wish to run P2D") # if "-noP2D" is NOT included at the CL, it defaults to False. doP2D = not noP2D
+    ap.add_argument("-rp", default=100, type=int, help="Reduce Percent, default = 100")
+
+    kwargs = vars(ap.parse_args()) # parse args and convert to dict
+
+    main(**kwargs) # run main with arguments
+
+
+##    if len(sys.argv) == 4: # i.e. 3 arguments are supplied
+##        main(sys.argv[1], sys.argv[2], sys.argv[3])
+##
+##    if len(sys.argv) == 5: # i.e. 4 arguments are supplied
+##        main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
+##
+##    if len(sys.argv) == 6: # i.e. 5 arguments are supplied
+##        main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5])
+##
+##    if len(sys.argv) == 7: # i.e. 6 arguments are supplied
+##        main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6])
+##
+##    #main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6])#, sys.argv[4], sys.argv[5], sys.argv[6])
