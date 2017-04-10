@@ -52,42 +52,34 @@ def run_stereo(par, nodesList, imagePairs, imagePair_xmls, outStereoPre, DEM, ma
     Try to OPTIMIZE this step
 
     """
-    cmdStr = "parallel_stereo --nodes-list=" + nodesList + " --processes 18 --threads-multiprocess 16 --threads-singleprocess 32 --corr-timeout 360 --job-size-w 6144 --job-size-h 6144 " + imagePairs + imagePair_xmls + outStereoPre
+##    cmdStr = "parallel_stereo --nodes-list=" + nodesList + " --processes 18 --threads-multiprocess 16 --threads-singleprocess 32 --corr-timeout 360 --job-size-w 6144 --job-size-h 6144 " + imagePairs + imagePair_xmls + outStereoPre
     print("\n\tRunnning stereo on images: " + imagePairs)
 
-    if par:         # PARALLEL_STEREO
+##    if par:         # PARALLEL_STEREO
+##
+##        if mapprj:
+##            cmdStr = cmdStr + " " + DEM
+##        else:
+##            cmdStr = cmdStr
+##    else:
 
-        if mapprj:
-            cmdStr = cmdStr + " " + DEM
-        else:
-            cmdStr = cmdStr
-    else:
-        if test:    # TEST 'STEREO' on a small window
-##            # Clip to create small test input
-##            if os.path.lexists('left.tif'):
-##                os.remove('left.tif')
-##            if os.path.lexists('right.tif'):
-##                os.remove('right.tif')
-##            os.symlink(imagePairs.split(" ")[0], 'left.tif')
-##            os.symlink(imagePairs.split(" ")[1], 'right.tif')
-##            cmdStr = "gdal_translate -co compress=lzw -co TILED=yes -co INTERLEAVE=BAND -co BLOCKXSIZE=256 -co BLOCKYSIZE=256 -co compress=lzw -srcwin 15000 80000 10000 10000 left.tif left_clip.tif"
-##            wf.run_wait_os(cmdStr, print_stdOut=False)
-##            cmdStr = "gdal_translate -co compress=lzw -co TILED=yes -co INTERLEAVE=BAND -co BLOCKXSIZE=256 -co BLOCKYSIZE=256 -co compress=lzw -srcwin 15000 80000 10000 10000 right.tif right_clip.tif"
-##            wf.run_wait_os(cmdStr, print_stdOut=False)
-            ##outStereoPre = outStereoPre + "-sub"
-            ##
-            #cmdStr = "stereo --threads 18 --subpixel-kernel 9 9 --corr-timeout 300 --left-image-crop-win 5000 80000 10000 10000 " + imagePairs + imagePair_xmls + outStereoPre
-            cmdStr = "stereo --threads 18 --subpixel-kernel 9 9 --corr-kernel 21 21 {} {} {}".format(imagePairs, imagePair_xmls, outStereoPre) # 2/13 edited test call per Paul gchat
-        else:       # STEREO
-            cmdStr = "stereo --threads 18 --corr-timeout 360 " + imagePairs + imagePair_xmls + outStereoPre
+    if test:    # TEST 'STEREO' on a small window
+        cmdStr = "stereo --threads 18 --subpixel-kernel 9 9 --corr-timeout 300 --left-image-crop-win 5000 80000 10000 10000 " + imagePairs + imagePair_xmls + outStereoPre
+        if 'GE01' in imagePairs: # if the images have sensor GE01, change command string to add -t rpc
+            cmdStr = "stereo -t rpc --threads 18 --subpixel-kernel 9 9 --corr-timeout 300 --left-image-crop-win 5000 80000 10000 10000 " + imagePairs + imagePair_xmls + outStereoPre
+    else:       # STEREO
+        cmdStr = "stereo --threads 18 --subpixel-kernel 9 9 --corr-kernel 21 21 {} {} {}".format(imagePairs, imagePair_xmls, outStereoPre) # 2/13 edited test call per Paul gchat
+        if 'GE01' in imagePairs: # if the images have sensor GE01, change command string to add -t rpc
+            cmdStr = "stereo -t rpc --threads 18 --subpixel-kernel 9 9 --corr-kernel 21 21 {} {} {}".format(imagePairs, imagePair_xmls, outStereoPre)
+
 
     print "\n\t" + cmdStr
 
     wf.run_wait_os(cmdStr, print_stdOut=False)
 
-    end_ps = timer()
-    print("\n\n\tEnd stereo run ")
-    print("\tStereo run time (decimal minutes): " + str((end_ps - start_ps)/60) )
+##    end_ps = timer()
+##    print("\n\n\tEnd stereo run ")
+##    print("\tStereo run time (decimal minutes): " + str((end_ps - start_ps)/60) )
 
 def runP2D(outStereoPre, prj, strip=True):
 
@@ -95,34 +87,34 @@ def runP2D(outStereoPre, prj, strip=True):
     colormapFile = '/discover/nobackup/projects/boreal_nga/code/color_hrsi_dsm.txt' #hardcode
 
     PC_tif = '{}-PC.tif'.format(outStereoPre)
-    holesDEM_tif = '{}-holes-fill-DEM.tif'.format(outStereoPre)
+    holesDEM_tif = '{}-DEM.tif'.format(outStereoPre)
     holesDEM_txt = holesDEM_tif.replace('tif', 'txt')
     holesDEM_vrt = holesDEM_tif.replace('tif', 'vrt')
-    hillshade_tif = '{}-holes-fill-DEM-hlshd-e25.tif'.format(outStereoPre)
+    hillshade_tif = '{}-DEM-hlshd-e25.tif'.format(outStereoPre)
     hillshade_txt = hillshade_tif.replace('tif', 'txt')
-    colorshade_tif = '{}-holes-fill-DEM-clr-shd.tif'.format(outStereoPre)
+    colorshade_tif = '{}-DEM-clr-shd.tif'.format(outStereoPre)
     colorshade_txt = colorshade_tif.replace('tif', 'txt')
-    DRG_tif = '{}-holes-fill-DRG.tif'.format(outStereoPre)
+    DRG_tif = '{}-DRG.tif'.format(outStereoPre)
 
 
     # [5.4] point2dem
-    # Launch p2d holes-fill
+    # Launch p2d
     #if os.path.isfile(outStereoPre + "-PC.tif") and not os.path.isfile(outStereoPre + "-holes-fill-DEM.txt"):
     if os.path.isfile(PC_tif) and not os.path.isfile(holesDEM_txt):
         # Output DSM has holes <50 pix filled with hole-fill-mode=2 (weighted avg of all valid pix within window of dem-hole-fill-len)
         # Ortho (-DRG.tif) produced
 
 
-        print("\n\t [1] Create DEM: runnning point2dem (holes-fill) on: {}".format(PC_tif))
+        print("\n\t [1] Create DEM: runnning point2dem on: {}".format(PC_tif))
         start_p2d = timer()
         #cmdStrDEM = "point2dem --threads=0 --t_srs " + prj + " --nodata-value -99 --dem-hole-fill-len 50 " + outStereoPre + "-PC.tif -o " + outStereoPre + "-holes-fill"	## --orthoimage --errorimage " + outStereoPre + "-L.tif"        ## -r earth
-        cmdStrDEM = "point2dem --threads=0 --t_srs {} --nodata-value -99 --dem-hole-fill-len 50 {} -o {}-holes-fill".format(prj, PC_tif, outStereoPre)
+        cmdStrDEM = "point2dem --threads=0 --t_srs {} --nodata-value -99 --dem-hole-fill-len 50 {} -o {}".format(prj, PC_tif, outStereoPre)
         print("\n\t{}".format(cmdStrDEM)) #DEL (above command)
         p2dCmd2 = subp.Popen(cmdStrDEM.rstrip('\n'), stdout=subp.PIPE, shell=True)
 
         print("\n\t [2] Create Ortho Image")
         #cmdStrOrthoImage = "point2dem --threads=0 --t_srs " + prj + " --no-dem --nodata-value -99 --dem-hole-fill-len 50 " + outStereoPre + "-PC.tif -o " + outStereoPre + "-holes-fill --orthoimage " + outStereoPre + "-L.tif"
-        cmdStrOrthoImage = "point2dem --threads=0 --t_srs {} --no-dem --nodata-value -99 --dem-hole-fill-len 50 {} -o {}-holes-fill --orthoimage {}-L.tif".format(prj, PC_tif, outStereoPre, outStereoPre)
+        cmdStrOrthoImage = "point2dem --threads=0 --t_srs {} --no-dem --nodata-value -99 --dem-hole-fill-len 50 {} -o {} --orthoimage {}-L.tif".format(prj, PC_tif, outStereoPre, outStereoPre)
         #print("\n\t{}".format(cmdStrOrthoImage)) #DEL gets printed in wf.run_os
         wf.run_os(cmdStrOrthoImage)
         """
@@ -130,7 +122,7 @@ def runP2D(outStereoPre, prj, strip=True):
         """
 ##        print("\n\t [3] Create Error Image")
 ##        #cmdStrErrorImage = "point2dem --threads=0 --t_srs " + prj + " --no-dem --nodata-value -99 --dem-hole-fill-len 50 " + outStereoPre + "-PC.tif -o " + outStereoPre + "-holes-fill --errorimage "
-##        cmdStrErrorImage = "point2dem --threads=0 --t_srs {} --no-dem --nodata-value -99 --dem-hole-fill-len 50 {} -o {}-holes-fill --errorimage ".format(prj, PC_tif, outStereoPre)
+##        cmdStrErrorImage = "point2dem --threads=0 --t_srs {} --no-dem --nodata-value -99 --dem-hole-fill-len 50 {} -o {} --errorimage ".format(prj, PC_tif, outStereoPre)
 ##        #print("\n\t{}".format(cmdStrErrorImage)) #DEL get printed in wf.run_os
 ##        wf.run_os(cmdStrErrorImage)
 
@@ -155,14 +147,14 @@ def runP2D(outStereoPre, prj, strip=True):
         if str(stdOut) != "None":
             #with open(outStereoPre + "-holes-fill-DEM.txt",'w') as out_hf_txt:
             with open(holesDEM_txt,'w') as out_hf_txt:
-                out_hf_txt.write("holes-fill-DEM processed")
+                out_hf_txt.write("DEM processed")
     else: # else holes-fill-DEM does exist
-        print "\n\tholes-fill-DEM already exists"
+        print "\n\tDEM already exists"
 
     # Avoid 'TIFF file size exceeded' errors with reduced-size Hillshades & VRTs
     # Logic to build VRTs from strip-holes-fill-DEM and the hillshade at 50% resolution in order to run colormap successfully
     if not os.path.isfile(holesDEM_vrt): #* 2/16 deleting if strip because strip will always be True now
-        print("\n\tLaunching gdal_translate to create out-strip-holes-fill-DEM.vrt ")
+        print("\n\tLaunching gdal_translate to create out-DEM.vrt ")
         #cmdStr = "gdal_translate -outsize 30% 30% -of VRT " + outStereoPre + "-holes-fill-DEM.tif " + outStereoPre + "-holes-fill-DEM.vrt"
         cmdStr = "gdal_translate -outsize 30% 30% -of VRT {} {}".format(holesDEM_tif, holesDEM_vrt)
         #print("\n\t{}".format(cmdStr)) #DEL gets printed below
@@ -176,11 +168,8 @@ def runP2D(outStereoPre, prj, strip=True):
 
         print("hillshade")
         #cmdStr = "hillshade  " + outStereoPre + "-holes-fill-DEM.vrt -o  " + outStereoPre + "-holes-fill-DEM-hlshd-e25.tif -e 25"
-        cmdStr = "hillshade  {0}-holes-fill-DEM.vrt -o  {0}-holes-fill-DEM-hlshd-e25.tif -e 25".format(outStereoPre)
-        print "SAME?" #DEL top
-        print cmdStr
+        #cmdStr = "hillshade  {0}-holes-fill-DEM.vrt -o  {0}-holes-fill-DEM-hlshd-e25.tif -e 25".format(outStereoPre)
         cmdStr = "hillshade  {} -o  {} -e 25".format(holesDEM_vrt, hillshade_tif)
-        print cmdStr
         hshCmd = subp.Popen(cmdStr.rstrip('\n'), stdout=subp.PIPE, shell=True)
         stdOut_hill, err_hill = hshCmd.communicate()
         print(str(stdOut_hill) + str(err_hill))
@@ -196,11 +185,8 @@ def runP2D(outStereoPre, prj, strip=True):
     if os.path.isfile(holesDEM_vrt) and os.path.isfile(hillshade_tif) and not os.path.isfile(colorshade_txt):
         print("colormap")
         #cmdStr = "colormap  " + outStereoPre + "-holes-fill-DEM.vrt -s " + outStereoPre + "-holes-fill-DEM-hlshd-e25.tif -o " + outStereoPre + "-holes-fill-DEM-clr-shd.tif" + " --colormap-style " + colormapFile
-        cmdStr = "colormap  {0}-holes-fill-DEM.vrt -s {0}-holes-fill-DEM-hlshd-e25.tif -o {0}-holes-fill-DEM-clr-shd.tif --colormap-style {1}".format(outStereoPre,  colormapFile)
-        print "SAME??" #DEL top
-        print cmdStr
+        #cmdStr = "colormap  {0}-holes-fill-DEM.vrt -s {0}-holes-fill-DEM-hlshd-e25.tif -o {0}-holes-fill-DEM-clr-shd.tif --colormap-style {1}".format(outStereoPre,  colormapFile)
         cmdStr = "colormap  {} -s {} -o {} --colormap-style {}".format(holesDEM_vrt, hillshade_tif, colorshade_tif, colormapFile)
-        print cmdStr
         clrCmd = subp.Popen(cmdStr.rstrip('\n'), stdout=subp.PIPE, shell=True)
         stdOut_clr, err_clr = clrCmd.communicate()
         print(str(stdOut_clr) + str(err_clr))
@@ -223,16 +209,16 @@ def runP2D(outStereoPre, prj, strip=True):
     pyrCmd2 = subp.Popen(pyrcmdStr2.rstrip('\n'), stdout=subp.PIPE, shell=True)
     pyrCmd3 = subp.Popen(pyrcmdStr3.rstrip('\n'), stdout=subp.PIPE, shell=True)
     print("\n\tDon't communicate gdaladdos")
-##    stdOut_pyr1, err_py1 = pyrCmd1.communicate()
+    stdOut_pyr1, err_py1 = pyrCmd1.communicate()
 ##    print(str(stdOut_pyr1) + str(err_py1))
     stdOut_pyr2, err_py2 = pyrCmd2.communicate()    # The clr-shd needs to finish before being used by gdal_polygonize
 ##    print(str(stdOut_pyr2) + str(err_py2))
-##    stdOut_pyr3, err_py3 = pyrCmd3.communicate()
+    stdOut_pyr3, err_py3 = pyrCmd3.communicate()
 ##    print(str(stdOut_pyr3) + str(err_py3))
 
     # Remove txt files
     try:
-        print "\tRemoving asp log txt files..."
+        print "\n\tRemoving asp log txt files..."
 
         #cmdStr ='rm ' + outStereoPre + '-log*txt'
         cmdStr = 'rm {}-log*txt'.format(outStereoPre)
@@ -287,244 +273,244 @@ def runP2D(outStereoPre, prj, strip=True):
 ##
 ##    print "\tCopied xml to %s" %(os.path.join(inRoot,subdir,os.path.split(file_path)[1]))
 
-def footprint_dsm(outRoot, inRoot, myDir, outShp):
-    """
-    outRoot     eg, outASP dir
-    inRoot      eg, inASP dir
-    myDir       a top level input dir in my NOBACKUP space in which to search for catIDs if the NGA dB doesnt find them
-    outShp      the name (not full path) of output DSM footprint shapefile
-
-    Find all DSM in subdirs of an outRoot dir.
-    Find matching input files in corresponding dirs of inRoot
-    Gather list of image level attributes
-    Output to shp with runVALPIX
-    """
-    import os
-    from os import listdir
-    import get_stereopairs_v3 as g
-    DSMincomplete = []      # list of incomplete DSMs (subdirs exist, but interrupted processing)
-    DSMcatIDfail = []       # list of subdirs with at least 1 catID not found --> send to Julien
-    catIDfails = []         # list of catIDs not found
-    catIDsuccess = []       # list of catIDs found in my dB that werent in NGA db
-    DSMfootprintFail = []   # list of DSMs that seem ok but failed to get footprinted
-    i = 0
-    for root, subdirs, files in os.walk(outRoot):
-
-        for subdir in subdirs:
-
-            # Get the outASP subdir of WV DSMs
-            if subdir.startswith('WV'):
-                DSMok = False
-
-                outASPdir = os.path.join(outRoot,subdir)
-                print '\n\tHRSI DSM dir: %s' %(outASPdir)
-
-                # Look for clr-shd: If exists, then DSM was likely output ok
-                for root, dirs, files in os.walk(outASPdir):
-                    for each in files:
-                        if 'holes-fill-DEM-clr-shd' in each and '.tif' in each:
-                            print '\tDEM and Color-shaded relief exist'
-                            DSMok = True
-                if not DSMok:
-                    print "\n\tSubdir %s has no DSM yet." %(subdir)
-                    DSMincomplete.append(subdir)
-                    DSMok = False
-                else:
-                    # Copy the XMLs to inASP
-                    catID_1 = subdir.split('_')[2]
-                    catID_2 = subdir.split('_')[3]
-
-                    have_info = False
-
-                    # Get the inASP dir
-                    inASPdir = os.path.join(inRoot,subdir)
-
-                    # Get image-level & stereopair acquisition info
-                    try:
-                        print "\n\t[1] Trying to calc DSM attributes."
-                        c,b,a,hdr,line = g.stereopairs(inASPdir)
-                        have_info = True
-
-                    except Exception, e:
-                        print "\n\t First try: stereo angles NOT calc'd."
-                        print "\t Querying the NGA db for each catID..."
-
-                        if not os.path.isdir(inASPdir):
-                            os.mkdir(inASPdir)
-
-                        for num, catID in enumerate([catID_1,catID_2]):
-                            # Query the db
-                            sList = db_query([catID])
-                            print "\tcatID is %s" %(catID)
-
-                            if len(sList[0]) == 0:
-                                catIDmyDir = False
-                                print "\tThis catID not found in NGA dB...searching personal dir %s" %(myDir)
-                                for root, dirs, files in os.walk(myDir):
-                                    for each in files:
-                                        if 'P1BS' in each and catID in each and '.xml' in each and not 'cor' in each and not 'orth' in each:
-                                            # Function to copy XML from myDir into inASP
-                                            copy_over_symlink(os.path.join(root+'/'+ each), inRoot, subdir)
-                                            catIDmyDir = True
-                                if not catIDmyDir:
-                                    print "\n\tFailed to find %s in personal dir" %(catID)
-                                    catIDfails.append(catID)
-                                else:
-                                    catIDsuccess.append(catID)
-                            else:
-                                # Get file_paths of all images assoc'd with catID
-                                for numimg, img in enumerate(range(0,len(sList[num-1])-1)):
-                                    print "\tScene number is %s" %(numimg)
-                                    file_path = sList[num-1][numimg-1][0]   # third position is the file_path
-                                    file_path = file_path.replace('.ntf','.xml').replace('.tif','.xml')
-                                    # Function to copy XML from NGA dB into inASP
-                                    copy_over_symlink(file_path, inRoot, subdir)
-
-                        # Get image-level & stereopair acquisition info
-                        try:
-                            print "\n\t[2] Trying again to calc DSM attributes, after NGA dB query."
-                            c,b,a,hdr,line = g.stereopairs(inASPdir)
-                            have_info = True
-
-                        except Exception, e:
-                            print "\n\tStereo angles not calc'd b/c there is no input for both catIDs. You're done with this one."
-                            DSMcatIDfail.append(subdir)
-                            have_info = False
-
-                    if have_info:
-                        # Reconfigure hdr and attribute line
-                        hdr = 'pairname,year,month,day,' + hdr
-                        pairname    = os.path.split(outASPdir)[1]
-                        year        = pairname.split('_')[1].rstrip()[0:-4]
-                        month       = pairname.split('_')[1].rstrip()[4:-2]
-                        day         = pairname.split('_')[1].rstrip()[6:]
-                        line = pairname + ',' + year + ',' + month + ',' + day + ',' + line
-
-                        try:
-                            print "\n\tMake/update a shapefile of DSM footprints\n"
-                            runVALPIX(outASPdir+'/out-strip', os.path.split(outASPdir)[0], hdr.split(','), line.split(','), outShp)
-                            i = i + 1
-                            print "\n\n\t\t -- Just footprinted DSM number %s -- \n" %(i)
-                        except Exception,e:
-                            print "\n\tCould not get footprint of %s" %(pairname)
-                            DSMfootprintFail.append(subdir)
-
-    # [1] Output a CSV of catIDs not found in nga db or personal
-    # [2] Output a CSV of catIDs not found in nga db but successfully found in personal db
-    # [2] Output a CSV of incomplete DSM dirs
-    # [3] Output a CSV of DSMs with at least 1 failed catID searches
-    # [4] Output a CSV of failed DSM footprints to the same dir as the output Shapefile (outASP)
-    outCSVFileStrings = ['_failed_find_catID.csv', '_success_find_catID_personal.csv', '_failed_inc_DSM.csv', '_failed_find_DSMcatID.csv', '_failed_DSM_foots.csv']
-    failList = [catIDfails, catIDsuccess, DSMincomplete, DSMcatIDfail, DSMfootprintFail]
-    for num, outStr in enumerate(outCSVFileStrings):
-        # Ouput a CSV, 1 line for each fail
-        with open(os.path.join(outRoot,outShp.split('.')[0] + outStr), 'wb') as outCSV:
-            for failline in failList[num]:
-                outCSV.write(failline + '\n')
+##def footprint_dsm(outRoot, inRoot, myDir, outShp):
+##    """
+##    outRoot     eg, outASP dir
+##    inRoot      eg, inASP dir
+##    myDir       a top level input dir in my NOBACKUP space in which to search for catIDs if the NGA dB doesnt find them
+##    outShp      the name (not full path) of output DSM footprint shapefile
 ##
-##    # Ouput a CSV of incomplete DSM dirs
-##    outCSV = open(os.path.join(outRoot,outShp.split('.')[0] + '_failed_inc_DSM.csv'), 'wb')
-##    wr = csv.writer(outCSV)
-##    for fail in DSMincomplete:
-##        wr.writerow(fail)
+##    Find all DSM in subdirs of an outRoot dir.
+##    Find matching input files in corresponding dirs of inRoot
+##    Gather list of image level attributes
+##    Output to shp with runVALPIX
+##    """
+##    import os
+##    from os import listdir
+##    import get_stereopairs_v3 as g
+##    DSMincomplete = []      # list of incomplete DSMs (subdirs exist, but interrupted processing)
+##    DSMcatIDfail = []       # list of subdirs with at least 1 catID not found --> send to Julien
+##    catIDfails = []         # list of catIDs not found
+##    catIDsuccess = []       # list of catIDs found in my dB that werent in NGA db
+##    DSMfootprintFail = []   # list of DSMs that seem ok but failed to get footprinted
+##    i = 0
+##    for root, subdirs, files in os.walk(outRoot):
 ##
-##    # Ouput a CSV of DSMs with at least 1 failed catID searches
-##    outCSV = open(os.path.join(outRoot,outShp.split('.')[0] + '_failed_find_DSMcatID.csv'), 'wb')
-##    wr = csv.writer(outCSV)
-##    for fail in DSMcatIDfail:
-##        wr.writerow(fail)
+##        for subdir in subdirs:
 ##
-##    # Ouput a CSV of failed DSM footprints to the same dir as the output Shapefile (outASP)
-##    outCSV = open(os.path.join(outRoot,outShp.split('.')[0] + '_failed_DSM_foots.csv'), 'wb')
-##    wr = csv.writer(outCSV)
-##    for DSMfail in DSMfootprintFail:
-##        wr.writerow(DSMfail)
-
-def runVALPIX(outStereoPre, root, newFieldsList, newAttribsList, outSHP):
-        # -- Update Valid Pixels Shapefile
-        # Updates a merged SHP of all valid pixels from individual DSM strips
-        #   example:
-        #       outStereoPre --> /att/nobackup/pmontesa/outASP/WV01_20130617_1020010022894400_1020010022BB6400/out-strip
-        # [1] Create out-strip-holes-fill-DEM-clr-shd_VALID.shp files for each strip
-        srcSHD = outStereoPre + "-holes-fill-DEM-clr-shd.tif"
-        print "\n\t--Running valid Pixels Footprintings--\n"
-        print(outStereoPre.split('/')[-2])
-        outValTif_TMP = os.path.join(root,outStereoPre.split('/')[-2], "VALIDtmp.tif")
-        outValShp_TMP = os.path.join(root,outStereoPre.split('/')[-2], "VALIDtmp.shp")
-        outValShp     = os.path.join(root,outStereoPre.split('/')[-2], "VALID.shp")
-        outValShp_prj = os.path.join(root,outStereoPre.split('/')[-2], "VALID_WGS84.shp")
-        outValShp_agg = os.path.join(root,outStereoPre.split('/')[-2], "VALID_agg.shp")
-        # Coarsen the CLR-SHD
-    	cmdStr = "gdal_translate -outsize 1% 1% -co compress=lzw -b 4 -ot byte -scale 1 1 "  + srcSHD + " " + outValTif_TMP
-        wf.run_wait_os(cmdStr)
-        # POLYGONIZE
-    	cmdStr = "gdal_polygonize.py " + outValTif_TMP + " -f 'ESRI Shapefile' " + outValShp_TMP
-        wf.run_wait_os(cmdStr)
-        # REMOVE NODATA HOLES
-    	cmdStr = "ogr2ogr " + outValShp + " " + outValShp_TMP + " -where 'DN>0' -overwrite"
-        wf.run_wait_os(cmdStr)
-
-        # [2] Reproject to WGS and merge
-        cmdStr = "ogr2ogr -f 'ESRI Shapefile' -t_srs EPSG:4326 " + outValShp_prj + " " + outValShp + " -overwrite"
-        wf.run_wait_os(cmdStr)
-
-        # [3] Dissolve/Aggregate Polygons into 1 feature
-        input_basename = os.path.split(outValShp_prj)[1].replace(".shp","")
-        cmdStr = "ogr2ogr " + outValShp_agg + " " + outValShp_prj + " -dialect sqlite -sql 'SELECT ST_Union(geometry), DN FROM " + input_basename + " GROUP BY DN'"
-        wf.run_wait_os(cmdStr)
-
-        # Add fields
-        ##https://gis.stackexchange.com/questions/3623/how-to-add-custom-feature-attributes-to-shapefile-using-python
-        # Open a Shapefile, and get field names
-        shp = ogr.Open(outValShp_agg, 1)
-        layer = shp.GetLayer()
-
-        for newfieldStr in newFieldsList:
-            if 'pair' in newfieldStr or 'left' in newfieldStr or 'right' in newfieldStr:
-                fieldType = ogr.OFTString
-            elif 'year' or 'month' or 'day' in newfieldStr:
-                fieldType = ogr.OFTInteger
-            else:
-                fieldType = ogr.OFTReal
-            # Add a new field
-            new_field = ogr.FieldDefn(newfieldStr, fieldType)
-            layer.CreateField(new_field)
-
-        # Update fields based on attributes
-        ## http://www.digital-geography.com/create-and-edit-shapefiles-with-python-only/#.V8hlLfkrLRY
-        layer_defn = layer.GetLayerDefn()
-        field_names = [layer_defn.GetFieldDefn(i).GetName() for i in range(layer_defn.GetFieldCount())]
-        feature = layer.GetFeature(0)   # Gets first, and only, feature
-
-        for num, f in enumerate(field_names):
-            i = feature.GetFieldIndex(f)
-            if num > 0:
-                feature.SetField(i, newAttribsList[num-1])
-                layer.SetFeature(feature)
-        shp = None
-
-        mainVALID = os.path.join(root,outSHP)
-        if os.path.isfile(mainVALID):
-            print("\n\t Updating VALID shp with this individual file...")
-            cmdStr = "ogr2ogr -f 'ESRI Shapefile' -update -append " + mainVALID + " " + outValShp_agg  #-nln merge
-            wf.run_wait_os(cmdStr)
-        else:
-            print("\n\t Creating a main VALID shp...")
-            cmdStr = "ogr2ogr -f 'ESRI Shapefile' " + mainVALID + " " + outValShp_agg
-            wf.run_wait_os(cmdStr)
-
-        # Clean up tmp files
-        cleanUPdir = os.path.join(root,outStereoPre.split('/')[-2])
-        files = os.listdir(cleanUPdir)
-        for f in files:
-            if "VALID" in os.path.join(cleanUPdir,f):
-    	       os.remove(os.path.join(cleanUPdir,f))
-               print("\t Removed: "+ f)
+##            # Get the outASP subdir of WV DSMs
+##            if subdir.startswith('WV'):
+##                DSMok = False
+##
+##                outASPdir = os.path.join(outRoot,subdir)
+##                print '\n\tHRSI DSM dir: %s' %(outASPdir)
+##
+##                # Look for clr-shd: If exists, then DSM was likely output ok
+##                for root, dirs, files in os.walk(outASPdir):
+##                    for each in files:
+##                        if 'holes-fill-DEM-clr-shd' in each and '.tif' in each:
+##                            print '\tDEM and Color-shaded relief exist'
+##                            DSMok = True
+##                if not DSMok:
+##                    print "\n\tSubdir %s has no DSM yet." %(subdir)
+##                    DSMincomplete.append(subdir)
+##                    DSMok = False
+##                else:
+##                    # Copy the XMLs to inASP
+##                    catID_1 = subdir.split('_')[2]
+##                    catID_2 = subdir.split('_')[3]
+##
+##                    have_info = False
+##
+##                    # Get the inASP dir
+##                    inASPdir = os.path.join(inRoot,subdir)
+##
+##                    # Get image-level & stereopair acquisition info
+##                    try:
+##                        print "\n\t[1] Trying to calc DSM attributes."
+##                        c,b,a,hdr,line = g.stereopairs(inASPdir)
+##                        have_info = True
+##
+##                    except Exception, e:
+##                        print "\n\t First try: stereo angles NOT calc'd."
+##                        print "\t Querying the NGA db for each catID..."
+##
+##                        if not os.path.isdir(inASPdir):
+##                            os.mkdir(inASPdir)
+##
+##                        for num, catID in enumerate([catID_1,catID_2]):
+##                            # Query the db
+##                            sList = db_query([catID])
+##                            print "\tcatID is %s" %(catID)
+##
+##                            if len(sList[0]) == 0:
+##                                catIDmyDir = False
+##                                print "\tThis catID not found in NGA dB...searching personal dir %s" %(myDir)
+##                                for root, dirs, files in os.walk(myDir):
+##                                    for each in files:
+##                                        if 'P1BS' in each and catID in each and '.xml' in each and not 'cor' in each and not 'orth' in each:
+##                                            # Function to copy XML from myDir into inASP
+##                                            copy_over_symlink(os.path.join(root+'/'+ each), inRoot, subdir)
+##                                            catIDmyDir = True
+##                                if not catIDmyDir:
+##                                    print "\n\tFailed to find %s in personal dir" %(catID)
+##                                    catIDfails.append(catID)
+##                                else:
+##                                    catIDsuccess.append(catID)
+##                            else:
+##                                # Get file_paths of all images assoc'd with catID
+##                                for numimg, img in enumerate(range(0,len(sList[num-1])-1)):
+##                                    print "\tScene number is %s" %(numimg)
+##                                    file_path = sList[num-1][numimg-1][0]   # third position is the file_path
+##                                    file_path = file_path.replace('.ntf','.xml').replace('.tif','.xml')
+##                                    # Function to copy XML from NGA dB into inASP
+##                                    copy_over_symlink(file_path, inRoot, subdir)
+##
+##                        # Get image-level & stereopair acquisition info
+##                        try:
+##                            print "\n\t[2] Trying again to calc DSM attributes, after NGA dB query."
+##                            c,b,a,hdr,line = g.stereopairs(inASPdir)
+##                            have_info = True
+##
+##                        except Exception, e:
+##                            print "\n\tStereo angles not calc'd b/c there is no input for both catIDs. You're done with this one."
+##                            DSMcatIDfail.append(subdir)
+##                            have_info = False
+##
+##                    if have_info:
+##                        # Reconfigure hdr and attribute line
+##                        hdr = 'pairname,year,month,day,' + hdr
+##                        pairname    = os.path.split(outASPdir)[1]
+##                        year        = pairname.split('_')[1].rstrip()[0:-4]
+##                        month       = pairname.split('_')[1].rstrip()[4:-2]
+##                        day         = pairname.split('_')[1].rstrip()[6:]
+##                        line = pairname + ',' + year + ',' + month + ',' + day + ',' + line
+##
+##                        try:
+##                            print "\n\tMake/update a shapefile of DSM footprints\n"
+##                            runVALPIX(outASPdir+'/out-strip', os.path.split(outASPdir)[0], hdr.split(','), line.split(','), outShp)
+##                            i = i + 1
+##                            print "\n\n\t\t -- Just footprinted DSM number %s -- \n" %(i)
+##                        except Exception,e:
+##                            print "\n\tCould not get footprint of %s" %(pairname)
+##                            DSMfootprintFail.append(subdir)
+##
+##    # [1] Output a CSV of catIDs not found in nga db or personal
+##    # [2] Output a CSV of catIDs not found in nga db but successfully found in personal db
+##    # [2] Output a CSV of incomplete DSM dirs
+##    # [3] Output a CSV of DSMs with at least 1 failed catID searches
+##    # [4] Output a CSV of failed DSM footprints to the same dir as the output Shapefile (outASP)
+##    outCSVFileStrings = ['_failed_find_catID.csv', '_success_find_catID_personal.csv', '_failed_inc_DSM.csv', '_failed_find_DSMcatID.csv', '_failed_DSM_foots.csv']
+##    failList = [catIDfails, catIDsuccess, DSMincomplete, DSMcatIDfail, DSMfootprintFail]
+##    for num, outStr in enumerate(outCSVFileStrings):
+##        # Ouput a CSV, 1 line for each fail
+##        with open(os.path.join(outRoot,outShp.split('.')[0] + outStr), 'wb') as outCSV:
+##            for failline in failList[num]:
+##                outCSV.write(failline + '\n')
+####
+####    # Ouput a CSV of incomplete DSM dirs
+####    outCSV = open(os.path.join(outRoot,outShp.split('.')[0] + '_failed_inc_DSM.csv'), 'wb')
+####    wr = csv.writer(outCSV)
+####    for fail in DSMincomplete:
+####        wr.writerow(fail)
+####
+####    # Ouput a CSV of DSMs with at least 1 failed catID searches
+####    outCSV = open(os.path.join(outRoot,outShp.split('.')[0] + '_failed_find_DSMcatID.csv'), 'wb')
+####    wr = csv.writer(outCSV)
+####    for fail in DSMcatIDfail:
+####        wr.writerow(fail)
+####
+####    # Ouput a CSV of failed DSM footprints to the same dir as the output Shapefile (outASP)
+####    outCSV = open(os.path.join(outRoot,outShp.split('.')[0] + '_failed_DSM_foots.csv'), 'wb')
+####    wr = csv.writer(outCSV)
+####    for DSMfail in DSMfootprintFail:
+####        wr.writerow(DSMfail)
+##
+##def runVALPIX(outStereoPre, root, newFieldsList, newAttribsList, outSHP):
+##        # -- Update Valid Pixels Shapefile
+##        # Updates a merged SHP of all valid pixels from individual DSM strips
+##        #   example:
+##        #       outStereoPre --> /att/nobackup/pmontesa/outASP/WV01_20130617_1020010022894400_1020010022BB6400/out-strip
+##        # [1] Create out-strip-holes-fill-DEM-clr-shd_VALID.shp files for each strip
+##        srcSHD = outStereoPre + "-holes-fill-DEM-clr-shd.tif"
+##        print "\n\t--Running valid Pixels Footprintings--\n"
+##        print(outStereoPre.split('/')[-2])
+##        outValTif_TMP = os.path.join(root,outStereoPre.split('/')[-2], "VALIDtmp.tif")
+##        outValShp_TMP = os.path.join(root,outStereoPre.split('/')[-2], "VALIDtmp.shp")
+##        outValShp     = os.path.join(root,outStereoPre.split('/')[-2], "VALID.shp")
+##        outValShp_prj = os.path.join(root,outStereoPre.split('/')[-2], "VALID_WGS84.shp")
+##        outValShp_agg = os.path.join(root,outStereoPre.split('/')[-2], "VALID_agg.shp")
+##        # Coarsen the CLR-SHD
+##    	cmdStr = "gdal_translate -outsize 1% 1% -co compress=lzw -b 4 -ot byte -scale 1 1 "  + srcSHD + " " + outValTif_TMP
+##        wf.run_wait_os(cmdStr)
+##        # POLYGONIZE
+##    	cmdStr = "gdal_polygonize.py " + outValTif_TMP + " -f 'ESRI Shapefile' " + outValShp_TMP
+##        wf.run_wait_os(cmdStr)
+##        # REMOVE NODATA HOLES
+##    	cmdStr = "ogr2ogr " + outValShp + " " + outValShp_TMP + " -where 'DN>0' -overwrite"
+##        wf.run_wait_os(cmdStr)
+##
+##        # [2] Reproject to WGS and merge
+##        cmdStr = "ogr2ogr -f 'ESRI Shapefile' -t_srs EPSG:4326 " + outValShp_prj + " " + outValShp + " -overwrite"
+##        wf.run_wait_os(cmdStr)
+##
+##        # [3] Dissolve/Aggregate Polygons into 1 feature
+##        input_basename = os.path.split(outValShp_prj)[1].replace(".shp","")
+##        cmdStr = "ogr2ogr " + outValShp_agg + " " + outValShp_prj + " -dialect sqlite -sql 'SELECT ST_Union(geometry), DN FROM " + input_basename + " GROUP BY DN'"
+##        wf.run_wait_os(cmdStr)
+##
+##        # Add fields
+##        ##https://gis.stackexchange.com/questions/3623/how-to-add-custom-feature-attributes-to-shapefile-using-python
+##        # Open a Shapefile, and get field names
+##        shp = ogr.Open(outValShp_agg, 1)
+##        layer = shp.GetLayer()
+##
+##        for newfieldStr in newFieldsList:
+##            if 'pair' in newfieldStr or 'left' in newfieldStr or 'right' in newfieldStr:
+##                fieldType = ogr.OFTString
+##            elif 'year' or 'month' or 'day' in newfieldStr:
+##                fieldType = ogr.OFTInteger
+##            else:
+##                fieldType = ogr.OFTReal
+##            # Add a new field
+##            new_field = ogr.FieldDefn(newfieldStr, fieldType)
+##            layer.CreateField(new_field)
+##
+##        # Update fields based on attributes
+##        ## http://www.digital-geography.com/create-and-edit-shapefiles-with-python-only/#.V8hlLfkrLRY
+##        layer_defn = layer.GetLayerDefn()
+##        field_names = [layer_defn.GetFieldDefn(i).GetName() for i in range(layer_defn.GetFieldCount())]
+##        feature = layer.GetFeature(0)   # Gets first, and only, feature
+##
+##        for num, f in enumerate(field_names):
+##            i = feature.GetFieldIndex(f)
+##            if num > 0:
+##                feature.SetField(i, newAttribsList[num-1])
+##                layer.SetFeature(feature)
+##        shp = None
+##
+##        mainVALID = os.path.join(root,outSHP)
+##        if os.path.isfile(mainVALID):
+##            print("\n\t Updating VALID shp with this individual file...")
+##            cmdStr = "ogr2ogr -f 'ESRI Shapefile' -update -append " + mainVALID + " " + outValShp_agg  #-nln merge
+##            wf.run_wait_os(cmdStr)
+##        else:
+##            print("\n\t Creating a main VALID shp...")
+##            cmdStr = "ogr2ogr -f 'ESRI Shapefile' " + mainVALID + " " + outValShp_agg
+##            wf.run_wait_os(cmdStr)
+##
+##        # Clean up tmp files
+##        cleanUPdir = os.path.join(root,outStereoPre.split('/')[-2])
+##        files = os.listdir(cleanUPdir)
+##        for f in files:
+##            if "VALID" in os.path.join(cleanUPdir,f):
+##    	       os.remove(os.path.join(cleanUPdir,f))
+##               print("\t Removed: "+ f)
 
 def runVRT(outStereoPre,
-            root,
-            newFieldsForVALPIX,
-            newAttributesForVALPIX
+            root#,
+##            newFieldsForVALPIX,
+##            newAttributesForVALPIX
             ):
 
     # Build a VRT of the strip clr-shd file
@@ -533,11 +519,11 @@ def runVRT(outStereoPre,
     # Note: VRTs need absolute paths!
 
     # --CLR
-    srcSHD = outStereoPre + "-holes-fill-DEM-clr-shd.tif"
+    srcSHD = outStereoPre + "-DEM-clr-shd.tif"
     #path = os.path.join(root,"vrt_clr_v7")
     clrpath = os.path.join(root, "clr")
     os.system('mkdir -p %s' % clrpath)
-    dst = os.path.join(clrpath, outStereoPre.split('/')[-2] + '_' + outStereoPre.split('/')[-1] + "-holes-fill-DEM-clr-shd.vrt")
+    dst = os.path.join(clrpath, outStereoPre.split('/')[-2] + '_' + outStereoPre.split('/')[-1] + "-DEM-clr-shd.vrt")
     if os.path.isfile(dst):
         os.remove(dst)
     cmdStr = "gdal_translate -of VRT " + srcSHD + " " + dst
@@ -549,10 +535,10 @@ def runVRT(outStereoPre,
     #run_os(cmdStr)
 
     # --DRG
-    srcDRG = outStereoPre + "-holes-fill-DRG.tif"
+    srcDRG = outStereoPre + "-DRG.tif"
     drgpath = os.path.join(root, "drg")
     os.system('mkdir -p %s' % drgpath)
-    dst = os.path.join(drgpath, outStereoPre.split('/')[-2] + '_' + outStereoPre.split('/')[-1] + "-holes-fill-DRG.vrt")
+    dst = os.path.join(drgpath, outStereoPre.split('/')[-2] + '_' + outStereoPre.split('/')[-1] + "-DRG.vrt")
     if os.path.isfile(dst):
         os.remove(dst)
     cmdStr = "gdal_translate -of VRT " + srcDRG + " " + dst
@@ -564,25 +550,28 @@ def runVRT(outStereoPre,
     #run_os(cmdStr)
 
     # --DSM
-    srcDSM = outStereoPre + "-holes-fill-DSM.tif"
-    dsmpath = os.path.join(root, "dsm")
-    os.system('mkdir -p %s' % dsmpath)
-    dst = os.path.join(dsmpath, outStereoPre.split('/')[-2] + '_' + outStereoPre.split('/')[-1] + "-holes-fill-DRG.vrt")
+    srcDEM = outStereoPre + "-DEM.tif"
+    dempath = os.path.join(root, "dem")
+    os.system('mkdir -p %s' % dempath)
+    dst = os.path.join(dempath, outStereoPre.split('/')[-2] + '_' + outStereoPre.split('/')[-1] + "-DEM.vrt")
     if os.path.isfile(dst):
         os.remove(dst)
-    cmdStr = "gdal_translate -of VRT " + srcDSM + " " + dst
+    cmdStr = "gdal_translate -of VRT " + srcDEM + " " + dst
     wf.run_os(cmdStr)
+
     print("\tWriting VRT " + dst)
+    #print("\t ---------------")
+
 
 
     #runVALPIX(outStereoPre,root,newFieldsForVALPIX, newAttributesForVALPIX, "outASP_strips_valid_areas.shp")
 
-
-    print("\n\t ---------------")
-    print("\n\t ")
-    print("\n\t -- Finished processing " + outStereoPre.split('/')[-2])
-    print("\n\t ")
-    print("\n\t ---------------")
+#* moving this to the bottom of the main runASP function 2/24
+##    print("\n\t ---------------")
+##    print("\n\t ")
+##    print("\n\t -- Finished processing " + outStereoPre.split('/')[-2])
+##    print("\n\t ")
+##    print("\n\t ---------------")
 
 #* 1/17 removed nodesList, csvSplit
 #* 1/17 changed csv input to line
@@ -611,11 +600,11 @@ def run_asp(
     imageDir,     ##  ='/att/gpfsfs/userfs02/ppl/pmontesa/inASP/
     mapprj,
     prj,
+    utm_zone,
     doP2D,
     rp, # reduce percent value (100 when making real runs)
     preLogTextFile,
     batchID, # file arg to be written to list
-    utm_zone,
     catIDlist, # list as string
     pIDlist, # list as string
     imageDate, # imageDate is a string in the format YYYY-mm-dd. to convert to datetime object: datetime.strptime(imageDate, "%Y-%m-%d")
@@ -627,9 +616,10 @@ def run_asp(
     start_main = timer()
 
     # hardcode stuff for now
+    nodeName = platform.node()
     par = False #DEL or edit these 3 lines of code depending on what we wanna do with stereo
-    nodesList = '/att/gpfsfs/home/pmontesa/code/nodes_' + platform.node()
-    test = True # for now
+    nodesList = '/att/gpfsfs/home/pmontesa/code/nodes_' + nodeName
+    test = False
     found_catID = [True, True] # hardcode for now, should always be the case if we are running workflow
 
     # first we need to convert all list-->str arguments back to list
@@ -651,12 +641,12 @@ def run_asp(
     outDir = os.path.dirname(imageDir).replace('inASP/batch{}'.format(batchID), 'outASP') # don't want the batch subdir for outASP. This does not include the pairname # out imageDir will be outASPcur
     pairname = os.path.basename(imageDir)
 
-    mapprjDEM = os.path.join(imageDir, "dem-%s.tif" % pairname)
+    mapprjDEM = os.path.join(imageDir, "dem-%s.tif" % pairname) # may or may not exist
 
     # get date components from imageDate
     year = imageDate.split('-')[0]
     month = imageDate.split('-')[1]
-    month = imageDate.split('-')[2]
+    day = imageDate.split('-')[2]
 
 
     # For logging on the fly
@@ -664,7 +654,8 @@ def run_asp(
     os.system('mkdir -p %s' % logdir) # make log dir if it doesn't exist
    # lfile = os.path.join(outDir, 'logs', 'run_asp_LOG_' + imageDir.split('/')[-1].rstrip('\n') +'_' + platform.node() + '_' + strftime("%Y%m%d_%H%M%S") + '.txt') # old way
     #lfile = os.path.join(outDir, 'logs', 'run_asp_LOG_%s__%s_%s.txt' % (pairname, platform.node(), strftime("%Y%m%d-%H%M%S")))
-    lfile = os.path.join(outDir, 'logs', 'run_asp_LOG_%s__%s_%s.txt' % (pairname, strftime("%Y%m%d-%H%M%S"), platform.node())) #* 2/8: putting date/time before node so it's in chrono order
+    start_time = strftime("%Y%m%d-%H%M%S")
+    lfile = os.path.join(outDir, 'logs', 'run_asp_LOG_%s__%s_%s.txt' % (pairname, start_time, nodeName)) #* 2/8: putting date/time before node so it's in chrono order
 
     so = se = open(lfile, 'w', 0)                       # open our log file
     sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0) # re-open stdout without buffering
@@ -672,7 +663,7 @@ def run_asp(
     os.dup2(se.fileno(), sys.stderr.fileno())
 
     # print some things to the log file
-    print "--LOGFILE---------------"
+    print "--LOGFILE------------------"
     print(lfile)
     print "\n"
     print "--PYTHON FILE-----------"
@@ -680,14 +671,14 @@ def run_asp(
     print "\n"
 
     # print input parameters to log file:
-    print '--runASP parameters:------- (move elsewhere? delete?)'
+    print '--runASP parameters:-------'
     print 'mapprj = {}'.format(mapprj)
     print 'doP2D = {}'.format(doP2D)
-    print 'par = {}'.format(par)
     print 'test = {}'.format(test)
     print 'rp = {}'.format(rp)
     print 'batchID = {}'.format(batchID)
-    print 'imageDir = {}\n\n'.format(imageDir)
+    print 'imageDir = {}'.format(imageDir)
+    print '\nBEGIN: {}\n\n'.format(start_time)
 ##    print "--Header Text-----------"
 ##    for row in LogHeaderText:
 ##        print row
@@ -698,33 +689,35 @@ def run_asp(
     print preLogText #mw 1/25: preLogText is now one big string
     print "\n"
 
-    print "\n\nNOW PRINTING VARIABLES:"
+    # for testing:
+##    print "\n\nNOW PRINTING VARIABLES:"
+##
+##    #import sys # STILL TESTING
+##    print "variables passed through from ADAPT:"
+##    print "line:", line
+##    print type(line)
+##    print len(line)
+##    print "linesplit:", linesplit
+##    print type(linesplit)
+##    print len(linesplit)
+##    print "header:", header
+##    print type(header)
+##    print len(header)
+##    print "prj:", prj
+##    print "imageDir:", imageDir
+##    print "mapprj:", mapprj
+##    print type(mapprj)
+##    print "doP2D:", doP2D
+##    print ''
+##    print "catIDlist:", catIDlist
+##    print type(catIDlist)
+##    print "pIDlist:", pIDlist
+##    print type(pIDlist)
+##    print ''
 
-    # --- end copy log
 
 
-    #import sys # STILL TESTING
-    print "variables passed through from ADAPT:"
-    print "line:", line
-    print type(line)
-    print len(line)
-    print "linesplit:", linesplit
-    print type(linesplit)
-    print len(linesplit)
-    print "header:", header
-    print type(header)
-    print len(header)
-    print "prj:", prj
-    print "imageDir:", imageDir
-    print "mapprj:", mapprj
-    print type(mapprj)
-    print "doP2D:", doP2D
-    print ''
-    print "catIDlist:", catIDlist
-    print type(catIDlist)
-    print "pIDlist:", pIDlist
-    print type(pIDlist)
-    print ''
+
 ##    print "preLogText:", preLogText
 ##    print type(preLogText)
 ##    print len(preLogText)
@@ -851,35 +844,68 @@ def run_asp(
 ##
 ##    # Get the header
 ##    header = csvStereo.readline().lower().rstrip().split(',')  #moved the split to this stage to prevent redudant processing - SSM
-    # we already have header from the input args but do it again instead of passing individual pieces
-    # [2] From the header, get the indices of the attributes you need
-    catID_1_idx     = header.index('catalogid') # this column should always exist
-    catID_2_idx = False # set this to false for now unless this column exists
-    try:
-        catID_2_idx     = header.index('stereopair') # this may not exist, so just try
-    except ValueError: # this will happen if it doesn't exist
-        pairname_idx = header.index('pairname') # then we have a pairname idx and catID_2_idx is False
+#
+## second old way
+##    # we already have header from the input args but do it again instead of passing individual pieces
+##    # [2] From the header, get the indices of the attributes you need
+##    catID_1_idx     = header.index('catalogid') # this column should always exist
+##    catID_2_idx = False # set this to false for now unless this column exists
+##    try:
+##        catID_2_idx     = header.index('stereopair') # this may not exist, so just try
+##    except ValueError: # this will happen if it doesn't exist
+##        pairname_idx = header.index('pairname') # then we have a pairname idx and catID_2_idx is False
+##
+##    sensor_idx      = header.index('platform')
+##    avSunElev_idx   = header.index('avsunelev')
+##    avSunAzim_idx   = header.index('avsunazim')
+##    imageDate_idx   = header.index('acqdate')
+##    avOffNadir_idx  = header.index('avoffnadir')
+##    avTargetAz_idx  = header.index('avtargetaz')
 
-    sensor_idx      = header.index('platform')
+##    # doing this again as well
+##    catID_1 = linesplit[catID_1_idx]
+##    # get catID_2 either from catID_2 field or pairname field
+##    if catID_2_idx: # if this is True (i.e. it's something other than False), then catalog ID field exists
+##        catID_2    = linesplit[catID_2_idx]
+##    else: # if this is false, should be pairname field
+##        csv_pairname = linesplit[pairname_idx] # pairname from the csv
+##        catID_2 = csv_pairname.split('_')[3] # fourth piece of i.e. WV01_20130604_102001002138EC00_1020010021AA3000
+##        if catID_2 == catID_1:
+##            catID_2 = csv_pairname.split('_')[2] # then get the other piece of the pairname
+##
+##    #sensor     = str(linesplit[sensor_idx])
+##    #imageDate  = linesplit[imageDate_idx]
+
+    # get the header indices, try using pairname field first
+    pairname_idx = -999 # -999 is the new false. This will be overwritten if pairname_idx does exist in the input line
+    try:
+        pairname_idx = header.index('pairname')
+    except ValueError:
+        catID_1_idx = header.index('catalogid')
+        catID_2_idx = header.index('stereopair')
+        sensor_idx  = header.index('platform')
+        imageDate_idx  = header.index('acqdate')
+
     avSunElev_idx   = header.index('avsunelev')
     avSunAzim_idx   = header.index('avsunazim')
-    imageDate_idx   = header.index('acqdate')
     avOffNadir_idx  = header.index('avoffnadir')
     avTargetAz_idx  = header.index('avtargetaz')
 
-    # doing this again as well
-    catID_1 = linesplit[catID_1_idx]
-    # get catID_2 either from catID_2 field or pairname field
-    if catID_2_idx: # if this is True (i.e. it's something other than False), then catalog ID field exists
-        catID_2    = linesplit[catID_2_idx]
-    else: # if this is false, should be pairname field
-        csv_pairname = linesplit[pairname_idx] # pairname from the csv
-        catID_2 = csv_pairname.split('_')[3] # fourth piece of i.e. WV01_20130604_102001002138EC00_1020010021AA3000
-        if catID_2 == catID_1:
-            catID_2 = csv_pairname.split('_')[2] # then get the other piece of the pairname
+    # also get the information from the line using the indices from above
+    if pairname_idx != -999: # if there is a pairname idx, it will be something other than -999
+        pairname = linesplit[pairname_idx]
+        catID_1    = linesplit[pairname_idx].split('_')[2]
+        catID_2    = linesplit[pairname_idx].split('_')[3]
+        sensor     = linesplit[pairname_idx].split('_')[0]
+        #imageDate  = linesplit[pairname_idx].split('_')[1] # already got imageDate in query and passed it along
 
-    sensor     = str(linesplit[sensor_idx])
-    #imageDate  = linesplit[imageDate_idx]
+    else:
+        catID_1 = linesplit[catID_1_idx]
+        catID_2 = linesplit[catID_2_idx]
+        sensor = str(linesplit[sensor_idx])
+        #imageDate  = linesplit[imageDate_idx]
+
+    # keep all of this the same
     avSunElev  = round(float(linesplit[avSunElev_idx]),0)
     avSunAz    = round(float(linesplit[avSunAzim_idx]),0)
     avOffNadir = round(float(linesplit[avOffNadir_idx]),0)
@@ -895,15 +921,16 @@ def run_asp(
 ##    # Save all csv lines; close file
 ##    csvLines = csvStereo.readlines()
 ##    csvStereo.close()
-##
-    # Used for output CSV and VALPIX shapefile
-    outHeader = "pairname, catID_1, catID_2, mapprj, year, month, avsunelev, avsunaz, avoffnad, avtaraz, avsataz, conv_ang, bie_ang, asym_ang, DSM\n"
-    outHeaderList = outHeader.rstrip().split(',')
+
+# use a modified version of this now but do it earlier
+##    # Used for output CSV and VALPIX shapefile
+##    outHeader = "pairname, catID_1, catID_2, mapprj, year, month, avsunelev, avsunaz, avoffnad, avtaraz, avsataz, conv_ang, bie_ang, asym_ang, DSM\n"
+##    outHeaderList = outHeader.rstrip().split(',')
 
 
 
 
-# 1/17: no longer need this as its done in the quer_db script. This script is used to run just one pair
+# 1/17: no longer need this as its done in the query_db script. This script is used to run just one pair
 ##    # Set up an output summary CSV that matches input CSV
 ##    with open(csv.split(".")[0] + "_output_smry.csv",'w') as csvOut:
 ##        csvOut.write(outHeader)
@@ -1225,11 +1252,11 @@ def run_asp(
     try:
         print "\n\tStereo angles calc output:"
         conv_ang, bie_ang, asym_ang, hdr, attrbs = g.stereopairs(imageDir) #q this function returns pairname, output csv file, and the three angles, OK? Also giving error below. Why?
-        print conv_ang #DEL
-        print bie_ang
-        print asym_ang
-        print hdr
-        print attrbs
+##        print conv_ang #DEL
+##        print bie_ang
+##        print asym_ang
+##        print hdr
+##        print attrbs
 
     except Exception, e:
         print "\n\tStereo angles not calculated because there is no input for both catIDs"
@@ -1253,7 +1280,7 @@ def run_asp(
 ##    print("\tWorking on sym links to scenes in dir: " + imageDir)
 ##    print "\n"
     #* 1/17 replaced the above with:
-    print "\n\tWorking on scenes in dir: %s\n" % imageDir
+    print "\n\n\tWorking on scenes in dir: %s\n" % imageDir
 
     # Go to the dir that holds all the indiv pairs associated with both stereo strips
     os.chdir(imageDir)
@@ -1274,8 +1301,9 @@ def run_asp(
     dgCmdList = []
 
     # Establish stripList with each catalog ID of the pair
+    fullPathStrips = [] # (4/4/17) also create a list to hold the full paths of the output strips for recording purposes
     for catNum, catID in enumerate(catIDlist): # catNum is 0 or 1, catID is the corresponding catID
-        print "CATID:", catID
+        print "\n\tCATID:", catID
 
         # Set search string
         end = ""
@@ -1307,12 +1335,15 @@ def run_asp(
 ##        print type(imageDate)
 ##        print catID
         #outPref = sensor.upper() + "_" + imageDate.strftime("%y%b%d").upper() + "_" + catID ## e.g., WV01_JUN1612_102001001B6B7800
+
         outPref = sensor.upper() + "_" + datetime.strptime(imageDate, "%Y-%m-%d").strftime("%y%b%d").upper() + "_" + catID ## e.g., WV01_JUN12_102001001B6B7800 # 2/2 had to change because imageDate is str
         outStrip = outPref + '.r' + str(rp) + imageExt
-        print "outPref:", outPref #DEL
-        print "outStrip:", outStrip                                      ## e.g., WV01_JUN1612_102001001B6B7800.r100.tif
+
+##        print "outPref:", outPref #DEL
+##        print "outStrip:", outStrip                                      ## e.g., WV01_JUN1612_102001001B6B7800.r100.tif
+        fullPathStrips.append(os.path.abspath(outStrip))
         stripList.append(outStrip)
-        print("\n\tCatID: " + catID)
+        #print "\n\tCatID: " + catID, "(like it here better?)"
 
         # On a catID: If the mosaic already exists, dont do it again, dummy
         #q is there a better way to do this? why do we do this here? if dg_mosaic already exists, can we skip to the next catID-nothing else needs to be done?
@@ -1429,8 +1460,8 @@ def run_asp(
         end_dgm = timer()
         print "\n\tElapsed time to run dgmosaic {} times: {} minutes".format(dgm_cnt, find_elapsed_time(start_dgm, end_dgm))
 
-    print "\n\t Now, delete *cor.tif files (space management)..."
-    print "\t imageDir: %s" % imageDir
+    print "\n\tNow, delete *cor.tif files (space management)..."
+##    print "\timageDir: %s" % imageDir
     corList = glob.glob("*cor.*")
     #print "\tList of cor files to delete: %s" % corList #q do we need this since we have the below statement?
     print "\tNumber of cor files to delete: {}".format(len(corList)) #q is this ok instead
@@ -1443,13 +1474,13 @@ def run_asp(
 
     # Use stripList: copy XMLs to new name
     #   Update stripList with the names of the cor versions of the strips
-    print("\tStripList: %s" %(stripList))
-    print "looping through stripList" #DEL
+    print("\n\tStripList: %s" %(stripList))
+    #print "looping through stripList" #DEL
     #for n,i in enumerate(stripList): # looping thru the left and right mosaics - #* 2/8 mw just do for outStrip in stripList
     for outStrip in stripList: # looping thru the left and right mosaics
 ##        print n, i
 ##        outStrip = stripList[n]
-        print "outStrip:", outStrip
+        #print "outStrip:", outStrip
 
 
         """
@@ -1561,9 +1592,9 @@ def run_asp(
         rightScene = stripList[1]
         imagePairs = leftScene + " " + rightScene + " "
         imagePair_xmls = leftScene.replace(imageExt,'.xml') + " " + rightScene.replace(imageExt,'.xml') + " "
-        print "imagePair_xmls:", imagePair_xmls #DEL line
-        print("--------------")
-        print("--------------")
+##        print "imagePair_xmls:", imagePair_xmls #DEL line
+##        print("--------------")
+        print("\n--------------")
         print("\tImage pairs for stereo run: " + imagePairs)
         print("\tNodelist = " + nodesList)
         print("--------------")
@@ -1576,14 +1607,15 @@ def run_asp(
 
         # Out ASP dir with out file prefix
         """
-        outASPcur will look like this: outDir/WV01_20150610_102001003EBA8900_102001003E8CA400
+                                       outDir var is outASP
+        outASPcur will look like this: outASP/batch$batchID/WV01_20150610_102001003EBA8900_102001003E8CA400
         """
         # outASP/pairname:
         #outASPcur = outDir + "/" + imageDir.split('/')[-1].rstrip('\n')
-        outASPcur = os.path.join(outDir, pairname) #* 1/22 same thing?
-        print "outASPcur:", outASPcur #DEL prob
+        outASPcur = os.path.join(outDir, 'batch{}'.format(batchID), pairname) #* 1/22 same thing?
+##        print "outASPcur:", outASPcur #DEL prob
         """
-        outStereoPre looks like this: outDir/WV01_20150610_102001003EBA8900_102001003E8CA400/out-strip
+        outStereoPre looks like this: outASP/batch$batchID/WV01_20150610_102001003EBA8900_102001003E8CA400/out-strip
         """
         #outStereoPre = outASPcur + "/out-" + outType
         outStereoPre = outASPcur + "/out-strip" #* 1/22
@@ -1602,12 +1634,12 @@ def run_asp(
         # If PC file doesnt exist, run stereo
         # Sometimes PC file may exist, but is incomplete.
         PC_tif = "{}-PC.tif".format(outStereoPre) # this will be created with stereo process
-        print "PC_tif=", PC_tif #DEL
+##        print "PC_tif=", PC_tif #DEL
         #if not os.path.isfile(outStereoPre + "-PC.tif"):
         if not os.path.isfile(PC_tif):
             doStereo = True
 
-        print("--------------")
+        #print("--------------")
         print("\n\n\t Do stereo? " + str(doStereo))
         if doStereo:
             print("\t\tparallel? " + str(par) )
@@ -1653,7 +1685,7 @@ def run_asp(
                 mp_start = timer()
                 for num, unPrj in enumerate([os.path.join(imageDir,leftScene), os.path.join(imageDir, rightScene)]):
 
-                    print "\n\t Running mapproject on strip %s..." %(num + 1) #q but this isn't actually running yet, it's just preparing the commands
+                    print "\nRunning mapproject on strip %s..." %(num + 1) #q but this isn't actually running yet, it's just preparing the commands
                     mapPrj_img = unPrj.replace('.tif', '_mapprj.tif')
                     if not os.path.exists(mapPrj_img):
                         #cmdStr = "mapproject --nodata-value=-99 -t rpc --t_srs " + prj + " " + mapprjDEM + " " + unPrj + " " + unPrj.replace('tif','xml') + " " + mapPrj_img
@@ -1674,7 +1706,7 @@ def run_asp(
                 """
                 start_mp = timer()
                 mp_cnt = 0
-                print "\nRUNNING MAPPRJ NOW" #DEL ?
+                #print "\nRUNNING MAPPRJ NOW" #DEL ?
                 for num, c in enumerate(CmdList):
                     # Now communicate both so they have been launched in parallel but will be reported in serial
                     print "\n\tWaiting to communicate results of mapprojects..."
@@ -1685,51 +1717,98 @@ def run_asp(
                     print("\tEnd of mapproject %s"%str(num+1))
                 if not "None" in str(stdOut): mp_cnt += 1
                 end_mp = timer()
-                print "Elapsed time to run mapproject {} times: {} minutes".format(mp_cnt, find_elapsed_time(start_mp, end_mp))
+                print "\nElapsed time to run mapproject {} times: {} minutes\n".format(mp_cnt, find_elapsed_time(start_mp, end_mp))
 
-            print("\n\t Beginning stereo processing...")
+            #print("\n\t Beginning stereo processing...")
             """
             we'll probably gonna set par=False and no run parallel_stereo; stereo instead
             """
-            print "RUNNING STEREO" #DEL ?
+##            print "RUNNING STEREO" #DEL ?
             start_stereo = timer()
-            print '\nBegin Stereo: %s\n' % (datetime.now().strftime("%I:%M%p  %a, %m-%d-%Y"))
+            print '\nBegin Stereo processing: %s\n' % (datetime.now().strftime("%I:%M%p  %a, %m-%d-%Y"))
             run_stereo(par, nodesList, imagePairs, imagePair_xmls, outStereoPre, mapprjDEM, mapprj, test) #* fix this function call and function
             #if os.path.isfile(mapprjDEM):
             #    os.remove(mapprjDEM)
             end_stereo = timer()
-            print "Elapsed time to run stereo: {} minutes".format(find_elapsed_time(start_stereo, end_stereo))
+            print "End Stereo processing: %s" % (datetime.now().strftime("%I:%M%p  %a, %m-%d-%Y"))
+            print "Elapsed time to run stereo: {} minutes\n".format(round(find_elapsed_time(start_stereo, end_stereo),3))
 
         if doP2D and os.path.isfile(PC_tif):
-            print("\n\t Running p2d function...")
+            print("\nRunning p2d function...\n")
             #runP2D(outStereoPre, prj, strip=True)
             start_p2d = timer()
             runP2D(outStereoPre, prj) #* 1/22: removing strip=True assuming we don't need it anymore
             end_p2d = timer()
-            print "Elapsed time to run point2dem: {} minutes".format(find_elapsed_time(start_p2d, end_p2d))
+            print "\nElapsed time to run point2dem: {} minutes\n".format(round(find_elapsed_time(start_p2d, end_p2d),3))
 
-            if os.path.isfile("{}-holes-fill-DEM.tif".format(outStereoPre)):
+            if os.path.isfile("{}-DEM.tif".format(outStereoPre)):
                 DSMdone = True
 
             outAttributes = pairname + "," + str(found_catID[0]) + "," + str(found_catID[1]) + "," + str(mapprj) + "," + str(year) + "," + str(month) + "," + str(avSunElev)+ "," + str(avSunAz) + "," + str(avOffNadir) + "," + str(avTargetAz) + "," + str(avSatAz) + "," +str(conv_ang) + "," + str(bie_ang) + "," + str(asym_ang) + "," + str(DSMdone) +"\n"
             outAttributesList = outAttributes.rstrip().split(',')
 
             if DSMdone:
-                print("\n\t Running VRT function...")
+                print("\nRunning VRT function...\n")
                 start_vrt = timer()
-                runVRT(outStereoPre,outDir, outHeaderList, outAttributesList)
+                runVRT(outStereoPre, outDir)#, outHeaderList, outAttributesList)
                 end_vrt = timer()
-                print "Elapsed time to run VRT: {} minutes".format(find_elapsed_time(start_vrt, end_vrt))
+                print "\nElapsed time to run VRT: {} minutes\n".format(round(find_elapsed_time(start_vrt, end_vrt),3))
             else:
-                print("\n\t VRTs not done b/c DSM not done. Moving on...")
+                print("\n\tVRTs not done b/c DSM not done. Moving on...")
         else:
-            print("\n\t No PC.tif file. Moving on...")
+            print("\n\tNo PC.tif file found")
 
 #    outAttributes = pairname + "," + str(found_catID[0]) + "," + str(found_catID[1]) + "," + str(mapprj) + "," + str(year) + "," + str(month) + "," + str(avSunElev)+ "," + str(avSunAz) + "," + str(avOffNadir) + "," + str(avTargetAz) + "," + str(avSatAz) + "," +str(conv_ang) + "," + str(bie_ang) + "," + str(asym_ang) + "," + str(DSMdone) +"\n"
     # Write out CSV summary info
 #    csvOut.write(outAttributes)
+
+    # remove all the unneeded files, but first move to the outASP/batch/pairname
+    os.chdir(outASPcur)
+    print "\n\nDeleting the following files from %s:" % os.getcwd()
+    os.system('find . -type f -name "*.tif" ! -newer out-strip-F.tif')
+
+
+    cmdDelete = 'find . -type f -name "*.tif" ! -newer out-strip-F.tif -exec rm -rf {} \;'
+    print "Delete files using command:", cmdDelete
+    os.system(cmdDelete)
+
+
+    print("\n\n-----------------------------")
+    print("\n\t ")
+    print("Finished processing {}".format(pairname))
+    print 'End time: {}'.format(strftime("%Y%m%d-%H%M%S"))
     end_main = timer()
-    print "Elapsed time for one pair = {} min".format(find_elapsed_time(start_main, end_main))
+    total_time = find_elapsed_time(start_main, end_main)
+    print "Elapsed time = {} minutes".format(round(total_time, 3))
+    print("\n\t ")
+    print("-----------------------------\n\n")
+
+    # we got to this point, append the pairname to the completed pairs text file
+    comp_pair_dir = os.path.join(outDir, 'completedPairs')
+    os.system('mkdir -p %s' % comp_pair_dir)
+    completed_pairs_txt = os.path.join(comp_pair_dir, 'batch{}_completedPairs.txt'.format(batchID))
+    with open (completed_pairs_txt, 'a') as cp:
+        cp.write('{}\n'.format(pairname))
+
+    # add some info to the run_times csv for NCCS
+    # then print batchID, pairname, total_time (minutes and hours) to csv
+    strip1size = round(os.path.getsize(fullPathStrips[0])/1024.0/1024/1024, 3)
+    strip2size = round(os.path.getsize(fullPathStrips[1])/1024.0/1024/1024, 3)
+    run_times_csv = os.path.join(outDir, 'run_times.csv')
+    with open(run_times_csv, 'a') as rt:
+        rt.write('{}, {}, {}, {}\n'.format(batchID, pairname, total_time, (total_time/60), strip1size, strip2size, nodeName))
+
+
+
+    # try to close the out/err files-- http://stackoverflow.com/questions/7955138/addressing-sys-excepthook-error-in-bash-script
+    try:
+        sys.stdout.close()
+    except:
+        pass
+    try:
+        sys.stderr.close()
+    except:
+        pass
 
 
 if __name__ == "__main__":

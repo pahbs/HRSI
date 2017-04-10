@@ -32,7 +32,7 @@ from distutils.util import strtobool
 
 def find_elapsed_time(start, end):
     elapsed_min = (end-start)/60
-    return str(elapsed_min)
+    return float(elapsed_min)
 
 
 #def main(csv, inDir, batchID, mapprj=True, doP2D=True, rp=100): #* batchID to keep track of groups of pairs for processing # old way- without argparse
@@ -91,44 +91,90 @@ def main(csv, inDir, batchID, mapprj, noP2D, rp): #the 3 latter args are optiona
     csvStereo = open(csv, 'r')
 
     # Get the header
-    header = csvStereo.readline().lower().rstrip().replace('shape *', 'shape').split(',')  #moved the split to this stage to prevent redudant processing - SSM
+    hdr = csvStereo.readline().lower() # this is what will get written to the new query csv
+    header = hdr.rstrip().replace('shape *', 'shape').split(',')  #moved the split to this stage to prevent redudant processing - SSM
+
     # 2/13 if SHAPE* is in the header, replace with shape to header can be passed
 
 
     # [2] From the header, get the indices of the attributes you need
     # 2/13: there are two possible input csv types - one with a stereopair column and one with a pairname column. if stereopair column exists catID_2_idx will exist, if not, it will be false
-    catID_1_idx     = header.index('catalogid') # this column should always exist
-    catID_2_idx = False # set this to false for now unless this column exists. only way it will be set to True is if pairname fieldn does not exist
-    try:
-        catID_2_idx     = header.index('stereopair') # this may not exist, so just try
-    except ValueError: # this will happen if it doesn't exist
-        pairname_idx = header.index('pairname') # in which case we have a pairname idx and catID_2_idx is False
 
-    sensor_idx      = header.index('platform')
+    pairname_idx = -999 # this will be something other than -999 if the try statement below does not fail (ie if there is pairname field)
+    try:
+        pairname_idx = header.index('pairname')
+    except ValueError:
+        catID_1_idx = header.index('catalogid')
+        catID_2_idx = header.index('stereopair')
+        sensor_idx  = header.index('platform')
+        imageDate_idx  = header.index('acqdate')
+
     avSunElev_idx   = header.index('avsunelev')
     avSunAzim_idx   = header.index('avsunazim')
-    imageDate_idx   = header.index('acqdate')
     avOffNadir_idx  = header.index('avoffnadir')
     avTargetAz_idx  = header.index('avtargetaz')
+
+
+
+##    catID_1_idx     = header.index('catalogid') # this column should always exist
+##    catID_2_idx = False # set this to false for now unless this column exists. only way it will be set to True is if pairname fieldn does not exist
+##    try:
+##        catID_2_idx     = header.index('stereopair') # this may not exist, so just try
+##    except ValueError: # this will happen if it doesn't exist
+##        pairname_idx = header.index('pairname') # in which case we have a pairname idx and catID_2_idx is False
+##
+##    sensor_idx      = header.index('platform')
+##    avSunElev_idx   = header.index('avsunelev')
+##    avSunAzim_idx   = header.index('avsunazim')
+##    imageDate_idx   = header.index('acqdate')
+##    avOffNadir_idx  = header.index('avoffnadir')
+##    avTargetAz_idx  = header.index('avtargetaz')
 
     # Save all the rest of the csv lines; close file
     csvLines = csvStereo.readlines()
     csvStereo.close()
+    n_lines = len(csvLines) # number of pairs we are attempting to process
 
-    # Used for output CSV and VALPIX shapefile
-    outHeader = "pairname, catID_1, catID_2, mapprj, year, month, avsunelev, avsunaz, avoffnad, avtaraz, avsataz, conv_ang, bie_ang, asym_ang\n"
+    # go ahead and get the name for the reQuery csv file. This csv will be a subset of the incsv, but including only those lines that had data missing and could not be processed # 4/5/2017
+    oldQvers = int(os.path.basename(csv).split('_')[-1].split('.')[0][1]) # this will grab the ? from the *_q_?.csv to figure out which query version we are on (0 is initial)
+    newQvers = oldQvers + 1 # we will only need this if there are pairs with no data
+    newQcsv = csv.replace('q{}.csv'.format(oldQvers), 'q{}.csv'.format(newQvers))
+
+    # log ADAPT output for bash
+    logdir = os.path.join(os.path.dirname(inDir.rstrip('/')), 'queryLogs')
+    os.system('mkdir -p %s' % logdir)
+    lfile = os.path.join(logdir, 'batch%s_ADAPT_query_log.txt' % batchID)
+    print "Attempting to process {} pairs for batch {}. See log file for output:\n{}".format(n_lines, batchID, lfile)
+    so = se = open(lfile, 'a', 0)                       # open our log file
+    sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0) # re-open stdout without buffering
+    os.dup2(so.fileno(), sys.stdout.fileno())           # redirect stdout and stderr to the log file opened above
+    os.dup2(se.fileno(), sys.stderr.fileno())
+
+    print "BATCH: %s" % batchID
+    print "Attempting to process %d pairs\n" % n_lines
+    print "Begin:", datetime.now().strftime("%m%d%y-%I%M%p"), "\n"
+
+    # Used for output failed pairs
+    outHeader = "batchID, pairname, catID_1_exists, catID_2_exists, mapprj, year, month, avsunelev, avsunaz, avoffnad, avtaraz, avsataz, conv_ang, bie_ang, asym_ang\n"
     outHeaderList = outHeader.rstrip().split(',')
-
 
     ##* everything up until now has stayed (pretty much) the same
     ##* here I am removing the rest of the runASP code outside of the "with open output summary csv as csvOut" and will simply store the out Attrbiutes in a table then write them to the outCsv at the end
     # Set up an output summary CSV that matches input CSV
     # csvOutFile = csv.split(".")[0] + "_output_smry.csv" ##* old way, below is the same thing but more readable
-    csvOutFile = csv.replace('.csv', '_query_smry.csv')
+    # set up batch level failure csv. this is where outAtributes will go unless the pair succeeded
+##    summary_csv = os.path.join(os.path.dirname(inDir.rstrip('/')), 'batch_failure_csvs', 'batch%s_failed_pairs.csv' % batchID) # old batch failure script
+    summary_csv = os.path.join(batchDir, 'batch%s_output_summary.csv' % batchID)
+    # if summary csv does not exist, create it and write header:
+    if not os.path.isfile(summary_csv):
+        with open(summary_csv, 'w') as sc:
+            sc.write("batchID, pairname, catID_1, catID_1_found, catID_2, catID_2_found, mapprj, year, month, queryResult\n")
+##  #csvOutFile = [] # this will store the out attributes so we can write to summary csv
+##    with open(summary_csv, 'a') as c: c.write(outHeader)
 
-
-    #csvOutFile = [] # this will store the out attributes so we can write to summary csv
-    with open(csvOutFile, 'w') as c: c.write(outHeader)
+    # also set up text file that will contain list of catIDs that are missing data
+    missing_catID_file = os.path.join(os.path.dirname(inDir.rstrip('/')), 'missing_catID_lists', 'batch%s_missing_catIDs.txt' % batchID)
+    n_missing_catIDs = 0 # count starts at 0
 
 
     # create submission script file which will contain all commands needed to submit the job to slurm
@@ -143,15 +189,15 @@ def main(csv, inDir, batchID, mapprj, noP2D, rp): #the 3 latter args are optiona
     #       CSV Loop --> runs parallel_stereo for each line of CSV across all VMs
     #------------------------------------------------------------------
     # [3] Loop through the lines (the records in the csv table), get the attributes and run the ASP commands
-    n_lines = len(csvLines) # number of pairs we are attempting to process
     pair_count = 0 # to print which pair we are at
     n_pair_copy = 0 # number of succeffully copied pairs
+    unique_pairnames = [] # to store the pairnames you copy for the batch
     for line in csvLines: # AKA for pair, or record in the input table # TEST just 2 lines for now
 
         start_pair = timer()
 
         pair_count += 1
-        print "Attemping to query and copy data for pair %d of %d" % (pair_count, n_lines) # print to ADAPT screen
+        print "\nAttemping to query and copy data for pair %d of %d" % (pair_count, n_lines) # print to ADAPT screen
         #print line
 
         preLogText = [] # start over with new preLog everytime you go to another pair
@@ -161,23 +207,56 @@ def main(csv, inDir, batchID, mapprj, noP2D, rp): #the 3 latter args are optiona
         linesplit = line.rstrip().split(',')
         #print linesplit
         # 1/30: Edited pre-Log text to account for getting rid of LogHEader text in workflow
-        preLogText.append("--DB Querying Text (ADAPT)------\nInput csv file:\n%s\n\nLine from CSV file:\n%s\nBatch ID: %s\n\n\n" %(csv, line, batchID))
+        preLogText.append("--DB Querying Text (ADAPT)------\nInput csv file:\n%s\n\nLine from CSV file:\n%s\nBatch ID: %s\n\n" %(os.path.abspath(csv), line, batchID))
         #preLogText.append(line)
         #preLogText.append(linesplit)
 
 
-        catID_1 = linesplit[catID_1_idx]
-        # get catID_2 either from catID_2 field or pairname field
-        if catID_2_idx: # if this is True (i.e. it's something other than False), then catalog ID field exists
-            catID_2    = linesplit[catID_2_idx]
-        else: # if catID_2_idx is false (ie stereopair field does not exist), pairname_idx should exist
-            csv_pairname = linesplit[pairname_idx] # pairname from the csv
-            catID_2 = csv_pairname.split('_')[3] # fourth piece of i.e. WV01_20130604_102001002138EC00_1020010021AA3000
-            if catID_2 == catID_1: # make sure this is not the same as the original catID
-                catID_2 = csv_pairname.split('_')[2] # if it is, then get the other piece of the pairname
+        if pairname_idx != -999: # this statement will be True if
+            pairname   = linesplit[pairname_idx]
+            catID_1    = linesplit[pairname_idx].split('_')[2]
+            catID_2    = linesplit[pairname_idx].split('_')[3]
+            sensor     = linesplit[pairname_idx].split('_')[0]
+            imageDate  = linesplit[pairname_idx].split('_')[1]
 
-        sensor     = str(linesplit[sensor_idx])
-        imageDate  = linesplit[imageDate_idx]
+        else:
+            catID_1 = linesplit[catID_1_idx]
+            catID_2 = linesplit[catID_2_idx]
+            sensor = str(linesplit[sensor_idx])
+            imageDate  = linesplit[imageDate_idx]
+
+
+        #* ! at this point, imageDate is not in a consistent format, it's whatever format it was in on the csv
+##                #DEL :
+##        print "Variables from CSV:"
+##        print "catID_1:", catID_1
+##        print "catID_2:", catID_2
+##        print "sensor:", sensor
+##        print "imageDate:", imageDate
+##        print type(imageDate)
+##        print ''
+
+
+
+
+
+##
+##
+##        catID_1 = linesplit[catID_1_idx]
+##        # get catID_2 either from catID_2 field or pairname field
+##        if catID_2_idx: # if this is True (i.e. it's something other than False), then catalog ID field exists
+##            catID_2    = linesplit[catID_2_idx]
+##        else: # if catID_2_idx is false (ie stereopair field does not exist), pairname_idx should exist
+##            csv_pairname = linesplit[pairname_idx] # pairname from the csv
+##            catID_2 = csv_pairname.split('_')[3] # fourth piece of i.e. WV01_20130604_102001002138EC00_1020010021AA3000
+##            if catID_2 == catID_1: # make sure this is not the same as the original catID
+##                catID_2 = csv_pairname.split('_')[2] # if it is, then get the other piece of the pairname
+##
+##        sensor     = str(linesplit[sensor_idx])
+##        imageDate  = linesplit[imageDate_idx]
+
+
+
         avSunElev  = round(float(linesplit[avSunElev_idx]),0)
         avSunAz    = round(float(linesplit[avSunAzim_idx]),0)
         avOffNadir = round(float(linesplit[avOffNadir_idx]),0)
@@ -186,14 +265,6 @@ def main(csv, inDir, batchID, mapprj, noP2D, rp): #the 3 latter args are optiona
             avSatAz = avTargetAz + 180
         else:
             avSatAz = avTargetAz - 180
-
-##        #DEL :
-##        print "Variables from CSV:"
-##        print "catID_1:", catID_1
-##        print "catID_2:", catID_2
-##        print "sensor:", sensor
-##        print "imageDate:", imageDate
-##        print ''
 
 
         # Initialize DEM string
@@ -213,7 +284,12 @@ def main(csv, inDir, batchID, mapprj, noP2D, rp): #the 3 latter args are optiona
                     preLogText.append( '\tDate format 2: ' + str(imageDate))
                 except Exception, e:
                     pass
-
+                    try:
+                        imageDate = datetime.strptime(imageDate,"%Y%m%d")
+                        preLogText.append( '\tDate format 3: ' + str(imageDate))
+                    except Exception, e:
+                        pass
+        #* at this point, imageDate is not a datetime object
 
 ##        # DEL
 ##        print "if first imageDate was '':"
@@ -222,7 +298,7 @@ def main(csv, inDir, batchID, mapprj, noP2D, rp): #the 3 latter args are optiona
 
         # [4] Search ADAPT's NGA database for catID_1 and catid_2
         # Establish the database connection
-        with psycopg2.connect(database="NGAdb01", user="anon", host="ngadb01", port="5432") as dbConnect:
+        with psycopg2.connect(database="ngadb01", user="anon", host="ngadb01", port="5432") as dbConnect:
 
             cur = dbConnect.cursor() # setup the cursor
 ##            catIDlist = [] # build now to indicate which catIDs were found, used later
@@ -243,8 +319,8 @@ def main(csv, inDir, batchID, mapprj, noP2D, rp): #the 3 latter args are optiona
 
                # selquery =  "SELECT s_filepath, sensor, acq_time, cent_lat, cent_long FROM nga_files_footprint WHERE catalog_id = '%s'" %(catID)
                 selquery =  "SELECT s_filepath, sensor, acq_time, cent_lat, cent_long FROM nga_inventory WHERE catalog_id = '%s'" %(catID) # 2/13 change nga_inventory_footprint to nga_inventory
-                preLogText.append( "\n\t Now executing database query on catID '%s' ..." % catID)
-                print "Executing database query on catID '%s' ..." % catID
+                preLogText.append( "\n\tNow executing database query on catID '%s' ..." % catID)
+                print "  Executing database query on catID '%s' ..." % catID
                 cur.execute(selquery)
                 """
                 'selected' will be a list of all raw scene matching the catid and their associated attributes that you asked for above
@@ -256,6 +332,14 @@ def main(csv, inDir, batchID, mapprj, noP2D, rp): #the 3 latter args are optiona
                 #
                 if len(selected) == 0:
                     found_catID[num] = False
+                    print "    No data found for catID %s. Writing to missing catID text file" % catID
+                    #missing_catIDs.append(catID)
+                    # we can just assume we will never run batch more than once when we get shit figured out
+##                    write_method = 'a' # assume we are appending the file
+##                    if n_missing_catIDs == 0: write_method = 'w' # unless we havent yet found any missing catIDs yet this time around running the batch, in which case we wanna overwrite output file
+                    with open(missing_catID_file, 'a') as mf:
+                        mf.write(catID +'\n')
+                    n_missing_catIDs += 1 # add one to number of missing catIDs for batch
                     continue ##** if we don't have data for catID X, set it to false and move to the next catID
 
                 ##** removed else here because continue should take care of the flow
@@ -274,8 +358,8 @@ def main(csv, inDir, batchID, mapprj, noP2D, rp): #the 3 latter args are optiona
                 pIDlist[num] = pID
                 found_catID[num] = True
                 selected_list[num] = selected # selected list is a list of len 2, where the first index contains the matching files from the first catID, and second index contains from second catID
+##                print selected # selected will be emtpy if there was no data for catID, so selected_list[index of catID that was True] will give you a selected list
 
-               # for select in selected: selected_list.append(select) ##** add the list of scenes to the list of lists (index0 for catID 1, index1 fir catID2)
 
 ##        # DEL
 ##        print "After the db query:"
@@ -288,7 +372,10 @@ def main(csv, inDir, batchID, mapprj, noP2D, rp): #the 3 latter args are optiona
 
         conv_ang, bie_ang, asym_ang = ("" for i in range(3)) ##* set these to empty strings for later
 
-        if len(catIDlist) == 0: ##** if neither of the catIDs returned data
+        #if len(catIDlist) == 0: ##** if neither of the catIDs returned data
+        #* 2/24 the above won't work because catIDlist will at least be [XXXXXX, XXXXXX]
+        if found_catID.count(False) == 2: # if both values of found_catID are False, no data was found
+
             try:
                 year = "%04d" % imageDate.year
                 month = "%02d" % imageDate.month
@@ -300,18 +387,29 @@ def main(csv, inDir, batchID, mapprj, noP2D, rp): #the 3 latter args are optiona
                 day = 'XX'
                 date = year+month+day # so date will be 'XXXXXXXX'
 
-            pairname = sensor + "_" + date + "_" + catID_1 + "_" + catID_2
+           # pairname = sensor + "_" + date + "_" + catID_1 + "_" + catID_2
+            pairname = "{}_{}_{}_{}".format(sensor, date, catID_1, catID_2)
             imageDir = os.path.join(batchDir, pairname)
 
             mapprj = False
             DSMdone = False
 
-            outAttributes = pairname + "," + str(found_catID[0]) + "," + str(found_catID[1]) + "," + str(mapprj) + "," + str(year) + "," + str(month) + "," + str(avSunElev)+ "," + str(avSunAz) + "," + str(avOffNadir) + "," + str(avTargetAz) + "," + str(avSatAz) + "," +str(conv_ang) + "," + str(bie_ang) + "," + str(asym_ang) +"\n"
-            with open(csvOutFile, 'a') as c:
+            #outAttributes = batchID + "," + pairname + "," + str(found_catID[0]) + "," + str(found_catID[1]) + "," + str(mapprj) + "," + str(year) + "," + str(month) + "," + str(avSunElev)+ "," + str(avSunAz) + "," + str(avOffNadir) + "," + str(avTargetAz) + "," + str(avSatAz) + "," +str(conv_ang) + "," + str(bie_ang) + "," + str(asym_ang) +"\n"
+            outAttributes = '{},{},{},{},{},{},{},{},{},missingData\n'.format(batchID, pairname, catID_1, found_catID[0], catID_2, found_catID[1], mapprj, year, month)
+            with open(summary_csv, 'a') as c:
                 c.write(outAttributes) ##* append the attributes (mostly blank at this point) to the csv file list
 
+            # now write to input line of the missingData pair to the new query csv. but first, if it doesnt exist. write the header
+            if not os.path.exists(newQcsv):
+                with open(newQcsv, 'w') as nq:
+                    nq.write(hdr)
+
+            with open(newQcsv, 'a') as nq:
+                nq.write(line)
+
             ##Q Print statement here??? or do we just need to print one statement if one or both catID data is not present
-            preLogText.append("\n\t There is no data for either catID in our archive **review this print statement/placement\n\n")
+            preLogText.append("\n\t There is no data for either catID in our archive for pair {}\n\n".format(pairname))
+            print "Neither catID returned data from our query. Moving to next pair\n"
 
             continue ##* and move on to the next pair in the list
 
@@ -337,6 +435,16 @@ def main(csv, inDir, batchID, mapprj, noP2D, rp): #the 3 latter args are optiona
 ##        print "sensor:", sensor
 ##        print ""
         #sensor = str(selected[0][1])                        # eg. WV02
+##        print imageDate
+##        print date
+##        print selected_list
+##        print selected[0]
+##        print selected[0][2]
+##        print str(selected[0][2]).replace("-","")
+
+
+        # get a selected list (like from the query loop) that is definitely not empty
+        selected = selected_list[found_catID.index(True)] # this will give the selected list that has data (works for scenarios where one catID has data or both)
         date = str(selected[0][2]).replace("-","")          # eg. 20110604
         year = date.strip()[:-4]                            # e.g. 2011
         month = date.strip()[4:].strip()[:-2]               # e.g. 06
@@ -362,17 +470,28 @@ def main(csv, inDir, batchID, mapprj, noP2D, rp): #the 3 latter args are optiona
 
 
 
-        if len(catIDlist) < 2: ##** if there was one but not two catIDs of data for the pair, we want to get the info for the outCsv and move on to the next pair
+        #if len(catIDlist) < 2: ##** if there was one but not two catIDs of data for the pair, we want to get the info for the outCsv and move on to the next pair
+        if found_catID.count(False) == 1:
             #print "\n\tMissing a catalog_id, can't do stereogrammetry. **review this print statement/placement with the one below in mind\n\n"
             preLogText.append("\n\tMissing a catalog_id, can't do stereogrammetry. **review this print statement/placement with the one below in mind\n\n")
             mapprj = False
             DSMdone = False
-            outAttributes = pairname + "," + str(found_catID[0]) + "," + str(found_catID[1]) + "," + str(mapprj) + "," + str(year) + "," + str(month) + "," + str(avSunElev)+ "," + str(avSunAz) + "," + str(avOffNadir) + "," + str(avTargetAz) + "," + str(avSatAz) + "," +str(conv_ang) + "," + str(bie_ang) + "," + str(asym_ang) + "\n"
-            with open(csvOutFile, 'a') as c:
+            #outAttributes = batchID + "," + pairname + "," + str(found_catID[0]) + "," + str(found_catID[1]) + "," + str(mapprj) + "," + str(year) + "," + str(month) + "," + str(avSunElev)+ "," + str(avSunAz) + "," + str(avOffNadir) + "," + str(avTargetAz) + "," + str(avSatAz) + "," +str(conv_ang) + "," + str(bie_ang) + "," + str(asym_ang) + "\n"
+            outAttributes = '{},{},{},{},{},{},{},{},{},missingData\n'.format(batchID, pairname, catID_1, found_catID[0], catID_2, found_catID[1], mapprj, year, month)
+            with open(summary_csv, 'a') as c:
                 c.write(outAttributes)
             ##Q print statement here?
+
+            # now write to input line of the missingData pair to the new query csv. but first, if it doesnt exist. write the header
+            if not os.path.exists(newQcsv):
+                with open(newQcsv, 'w') as nq:
+                    nq.write(hdr)
+            with open(newQcsv, 'a') as nq:
+                nq.write(line)
+
             #* 1/17 print "\n\tMissing a catalog_id, can't do stereogrammetry." was how it was done in the workflow script
-            preLogText.append("\n\t One of the catIDs does not have data in our archive **review this print statement/placement\n\n")
+            preLogText.append("\n\t One of the catIDs does not have data in our archive for pair {}\n\n".format(pairname))
+            print "One of the catIDs returned no data from our query. Moving to next pair\n"
             continue ##* move on to the next pair
 
 
@@ -388,15 +507,26 @@ def main(csv, inDir, batchID, mapprj, noP2D, rp): #the 3 latter args are optiona
 ##
 ##        print ""
 
+##        # BEFORE doing copy, check to be sure imageDir does not exist. If it does, and there is at least two *ntf and *xml files in there, then skip.
+##        if os.path.isdir(imageDir) and len(glob.glob(os.path.join(imageDir, '*ntf'))) >= 2 and len(glob.glob(os.path.join(imageDir, '*xml'))) >= 2:
+##            print "imageDir (%s) already exists and contains at least two .ntf and .xml files. Skipping pair"
+##            continue
+
+        # let's be sure the pairname we are trying to run has not been run before in this batch:
+        if pairname in unique_pairnames: # if it's in our list already
+            print "Pairname %s has already been processed for this batch. Moving to next pair\n" % pairname
+            continue
+
         start_copy = timer()
         #** we will only get to this point if there is data for both catIDs- ##Q is that OK?
         # now that we have data for both, loop thru the strips again
+        pair_data_exists = [False, False] # keeps track of whether scene data for either catID exists in ADAPT or not
         for num, catID in enumerate([catID_1,catID_2]):
             ##Q do we need to be in a pair loop (i.e. looping through the two catIDs?)
 
             ##Q does the info below (NGA path/pID/lat/lon) need to be printed to log if pairs arent going to be processed? If so, this block below needs to be moved up before if len(catIDlist) < 2
 
-            print "Copying data for pair %d of %d, catalog ID %s" % (pair_count, n_lines, catID) # print to ADAPT screen
+            print "  Copying data for pair %d of %d, catalog ID %s" % (pair_count, n_lines, catID) # print to ADAPT screen
             # retrieve list of scenes for catID
             selected = selected_list[num]
 
@@ -435,37 +565,86 @@ def main(csv, inDir, batchID, mapprj, noP2D, rp): #the 3 latter args are optiona
             already got the necessary info above
             """
             # COPY data from archive to ADAPT
+
             os.system('mkdir -p %s' % imageDir)
             preLogText.append("\n\tMoving data from NGA database to %s" % imageDir)
 
+            scene_exist_cnt = 0 # if this remains 0, uh oh. skip pair
             for row in selected: ##** now we are looping through the list of selected scenes for catID X
                 ntf = row[0]
                 xml = ntf.replace('.ntf', '.xml')
 
                 # ** FOR NOW: copy files if it exists. assumming if it doesnt exist the path changed to NGA, copy that instead
                 if not os.path.isfile(os.path.join(imageDir, os.path.basename(ntf))): # if the file is not in the imageDir
+                    ntf_replace = ntf.replace('NGA_Incoming/NGA', 'NGA')
                     if os.path.isfile(ntf):
                         #print "Copying %s" % ntf
                         os.system('cp %s %s' % (ntf, imageDir))
-                    else:
-                        ntf = ntf.replace('NGA_Incoming/NGA', 'NGA')
+                    elif os.path.isfile(ntf_replace):
+                        ntf = ntf_replace
                        # print "Copying %s" % ntf
                         os.system('cp %s %s' % (ntf, imageDir))
+                    else: # if the file exists in none of these places
+                        #print "   file does not exist in (%s) - delete later?" % ntf
+                        continue # move to next scene, don't even try to get the xml
 
                 if not os.path.isfile(os.path.join(imageDir, os.path.basename(xml))):
+                    xml_replace = xml.replace('NGA_Incoming/NGA', 'NGA')
                     if os.path.isfile(xml):
                        # print "Copying %s" % xml
                         os.system('cp %s %s' % (xml, imageDir))
-                    else:
-                        xml = xml.replace('NGA_Incoming/NGA', 'NGA')
+                    elif os.path.isfile(xml_replace):
+                        xml = xml_replace
                        # print "Copying %s" % xml
                         os.system('cp %s %s' % (xml, imageDir))
+                    else:
+                        #print "   file does not exist in (%s) - delete later?" % xml
+                        os.remove(ntf) # remove ntf file if xml does not exist
+                        continue # move to next scene
+
+                    # if we get here, both xml and ntf existed (we bypassed both else - continue statements)
+                    # TD 4/5: we need to be sure the count goes up only if the above statements works
+                scene_exist_cnt += 1 # add one to count
+
+            if scene_exist_cnt == 0: # if no data was found in the NGA database for catID
+                print "No data was found in ADAPT archive for pair %s. Skipping to next catID\n\n"
+                continue
+            else:
+                pair_data_exists[num] = True # set catID side to True since scenes do exist
+
+
+        if pair_data_exists == [True, True]: # both pairs have data
+            #print "Data exists for each catID in pair"
+            pass # then keep going
+
+        else: # if there was no data for one or both catIDs
+            print "There was no data for one or both catIDs in the ADAPT archive. Skipping to next pair\n\n"
+
+            # now write to input line of the missingData pair to the new query csv. but first, if it doesnt exist. write the header
+            if not os.path.exists(newQcsv):
+                with open(newQcsv, 'w') as nq:
+                    nq.write(hdr)
+            with open(newQcsv, 'a') as nq:
+                nq.write(line)
+
+            # write out attributes to failue csv
+            #outAttributes = batchID + "," + pairname + "," + str(found_catID[0]) + "," + str(found_catID[1]) + "," + str(mapprj) + "," + str(year) + "," + str(month) + "," + str(avSunElev)+ "," + str(avSunAz) + "," + str(avOffNadir) + "," + str(avTargetAz) + "," + str(avSatAz) + "," +str(conv_ang) + "," + str(bie_ang) + "," + str(asym_ang) + ", data does not exist on ADAPT\n"
+            outAttributes = '{},{},{},{},{},{},{},{},{},missingData-ADAPT\n'.format(batchID, pairname, catID_1, found_catID[0], catID_2, found_catID[1], mapprj, year, month) # we should theoretically never get to this point but just in case have a separate queryResult value
+            with open(summary_csv, 'a') as c:
+                c.write(outAttributes)
+            continue
+
+
+
+
+
+
             """
               Now we have all the raw data in the inASP subdir identified with the pairname
             """
         end_copy = timer()
-        copy_time = round((end_copy - start_copy)/60, 3)
-        print "Elapsed time to copy pair {} of {}, pairname {}: {}".format(pair_count, n_lines, pairname, copy_time)
+        time_copy = round((end_copy - start_copy)/60, 3)
+        print "Elapsed time to copy data for pair {} of {}, pairname {}: {} minutes\n".format(pair_count, n_lines, pairname, time_copy)
 
 ##        # DEL
 ##        print "After looping through catIDs to copy data:"
@@ -495,9 +674,9 @@ def main(csv, inDir, batchID, mapprj, noP2D, rp): #the 3 latter args are optiona
         else:
             ew = "E"
 
-        print '\n\npairname:', pairname
-        print 'prj:', prj #DEL
-        continue
+##        print '\n\npairname:', pairname
+##        print 'prj:', prj #DEL
+
         # [4.3] Get list for ASTER GDEM vrt
         DEMlist = []
         DEM_inputs = ''
@@ -586,6 +765,8 @@ def main(csv, inDir, batchID, mapprj, noP2D, rp): #the 3 latter args are optiona
 
 
         n_pair_copy += 1 # if we get to this point we have successfully copied data for the pair
+        unique_pairnames.append(pairname) # add pairname to list
+       # print unique_pairnames, " (Delete)"
 
 ##        #DEL
 ##        print "After running if mapprj"
@@ -593,10 +774,10 @@ def main(csv, inDir, batchID, mapprj, noP2D, rp): #the 3 latter args are optiona
 ##        print "pair_DEM:", pair_DEM
 ##        print ''
 
-
-        outAttributes = pairname + "," + str(found_catID[0]) + "," + str(found_catID[1]) + "," + str(mapprj) + "," + str(year) + "," + str(month) + "," + str(avSunElev)+ "," + str(avSunAz) + "," + str(avOffNadir) + "," + str(avTargetAz) + "," + str(avSatAz) + "," +str(conv_ang) + "," + str(bie_ang) + "," + str(asym_ang) + "," + "\n"
-        with open(csvOutFile, 'a') as c:
-            c.write(outAttributes)
+        #* 2/23 only writing to csv if pair fails
+##        outAttributes = pairname + "," + str(found_catID[0]) + "," + str(found_catID[1]) + "," + str(mapprj) + "," + str(year) + "," + str(month) + "," + str(avSunElev)+ "," + str(avSunAz) + "," + str(avOffNadir) + "," + str(avTargetAz) + "," + str(avSatAz) + "," +str(conv_ang) + "," + str(bie_ang) + "," + str(asym_ang) + "," + "\n"
+##        with open(csvOutFile, 'a') as c:
+##            c.write(outAttributes)
 
         discover_imageDir = os.path.join(DISCdir, 'inASP/batch%s/%s' % (batchID, pairname)) # where data will be copied to (and thus the imageDir we need to pass)
 
@@ -609,28 +790,28 @@ def main(csv, inDir, batchID, mapprj, noP2D, rp): #the 3 latter args are optiona
         preLogTextFile_DISC = os.path.join(discover_imageDir, os.path.basename(preLogTextFile)) # the path to where it's stored on DISCOVER
 
         # get the pair arguments that we need to send to DISCOVER:
-        arg1 = '"{}"'.format(line.strip())
+        arg1 = '"{}"'.format(line.strip('"').strip().strip('"').strip()) # line is a string arg, remove any and all quotes or spaces then send it in double quotes
         arg2 = '::join::'.join(header).strip() # header is a list arg
         arg3 = discover_imageDir # imageDir on workflow side
         arg4 = mapprj
-        #arg5 = mapprjRes - on workflow, do we need?
         arg5 = prj
+        arg6 = utm_zone
         #arg6 = par - do we need? always false? #*
         #arg7 = test # do we need? always false?
         #arg8 = searchExtList = ...
-        arg9 = doP2D
+        arg7 = doP2D
         #arg10 = stereoDef = ...
         #arg11 = dirDEM = ...
-        arg13 = str(rp)
+        arg8 = str(rp)
         #arg14 = preLogText # list arg
-        arg14 = preLogTextFile_DISC
-        arg15 = batchID
-        arg16 = utm_zone
-        arg17 = '::join::'.join(catIDlist)
-        arg18 = '::join::'.join(pIDlist)
-        arg19 = imageDate.strftime("%Y-%m-%d") # pass along imageDate as dtring in format yyyy-mm-dd
-        print arg19
-        print type(arg19)
+        arg9 = preLogTextFile_DISC
+        arg10 = batchID
+
+        arg11 = '::join::'.join(catIDlist)
+        arg12 = '::join::'.join(pIDlist)
+        arg13 = '"{}"'.format(imageDate.strftime("%Y-%m-%d")) # pass along imageDate as dtring in format "yyyy-mm-dd"
+##        print arg19
+##        print type(arg19)
 
         # imageDir
         # inDir/outDir
@@ -647,51 +828,91 @@ def main(csv, inDir, batchID, mapprj, noP2D, rp): #the 3 latter args are optiona
         job_script = os.path.join(imageDir, 'slurm_batch%s_%s.j' % (batchID, pairname)) # do it like this instead?
 
         # CHANGE THESE ?:
-        job_name = '%s_%s_job' % (batchID, pairname) # identify job with batchID and pairname??
-        time_limit = '24:00:00'
+        job_name = '%s__%s__job' % (batchID, pairname) # identify job with batchID and pairname??
+        time_limit = '5-00:00:00'
         num_nodes = '1'
         #python_script_args = '%s %s %s arg3 etc' % (os.path.join(DISCdir, 'code', '<scriptName.py>'), arg1, arg2)
-        python_script_args = 'python %s %s %s %s %s %s %s %s %s %s %s %s %s %s' % (os.path.join(DISCdir, 'code', workflowCodeName), arg1, arg2, arg3, arg4, arg5, arg9, arg13, arg14, arg15, arg16, arg17, arg18, arg19)
+        python_script_args = 'python %s %s %s %s %s %s %s %s %s %s %s %s %s %s' % (os.path.join(DISCdir, 'code', workflowCodeName), arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13)
         #print python_script_args
 
-##        print '----'
-##        print 'python %s %s%s %s %s %s %s' % (os.path.join(DISCdir, 'code', workflowCodeName), arg1, arg2, arg3, arg4, arg9, arg13, arg14)
-
-
         # slurm.j file (calls the python code in discover for just one pair)
-        with open(job_script, 'w') as f:
-            f.write('#!/bin/csh -f\n#SBATCH --job-name=%s\n#SBATCH --time=%s\n#SBATCH --nodes=%s\n#SBATCH --constraint=hasw\n#SBATCH --qos=long\n\nsource /usr/share/modules/init/csh\n\nunlimit\nmodule load other/comp/gcc-5.3-sp3\nmodule load other/SSSO_Ana-PyD/SApd_4.2.0_py2.7_gcc-5.3-sp3\n\n%s' % (job_name, time_limit, num_nodes, python_script_args))
+        with open(job_script, 'wb') as f:
+            f.write('#!/bin/csh -f\n')
+            f.write('#SBATCH --job-name=%s\n' % job_name)
+            f.write('#SBATCH --nodes=%s\n' % num_nodes)
+            f.write('#SBATCH --constraint=hasw\n\n')
+            f.write('#SBATCH --time=%s\n' % time_limit)
+            f.write('#SBATCH --qos=boreal_b0217\n')
+            f.write('#SBATCH --partition=single\n\n')
+            f.write('source /usr/share/modules/init/csh\n\n')
+            f.write('unlimit\n')
+            f.write('module load other/comp/gcc-5.3-sp3\n')
+            #f.write('module load other/SSSO_Ana-PyD/SApd_4.2.0_py2.7_gcc-5.3-sp3\r\n') # test2
+            #f.write('module load other/SSSO_Ana-PyD/SApd_4.2.0_py2.7_gcc-5.3-sp3' + os.linesep + python_script_args) # test3
+            #f.write('module load other/SSSO_Ana-PyD/SApd_4.2.0_py2.7_gcc-5.3-sp3\n%s' % python_script_args) # test4
+            f.write('module load other/SSSO_Ana-PyD/SApd_4.2.0_py2.7_gcc-5.3-sp3\n\n') # test5
+##            f.write(' \n')
+            f.write(python_script_args + '\n')
+
+        #TD: write to summary csv
+        #outAttributes = batchID + "," + pairname + "," + str(found_catID[0]) + "," + str(found_catID[1]) + "," + str(mapprj) + "," + str(year) + "," + str(month) + "," + str(avSunElev)+ "," + str(avSunAz) + "," + str(avOffNadir) + "," + str(avTargetAz) + "," + str(avSatAz) + "," +str(conv_ang) + "," + str(bie_ang) + "," + str(asym_ang) +"\n"
+        outAttributes = '{},{},{},{},{},{},{},{},{},processing\n'.format(batchID, pairname, catID_1, found_catID[0], catID_2, found_catID[1], mapprj, year, month)
+        with open(summary_csv, 'a') as c:
+            c.write(outAttributes) ##* append the attributes (mostly blank at this point) to the csv file list
 
 
         #TD: do I need to add arguments to the slurm.j call? don't think so because all it does is call the slurm.j script which WILL have args
         with open(submission_file, 'a') as ff:
-            ff.write('\ncd %s\nsbatch %s' % (discover_imageDir, os.path.basename(job_script)))
+            #ff.write('\ncd %s\nchmod 755 %s\nsbatch %s' % (discover_imageDir, os.path.basename(job_script), os.path.basename(job_script)))
+            #ff.write("\ncd {0}\nchmod 755 {1}\nod -xc {1} | tail -5\nsed -i '$a\\' {1}\nod -xc {1} | tail -5\nsbatch {1}".format(discover_imageDir, os.path.basename(job_script))) # test5
+            #ff.write('\ncd %s\nchmod 755 %s\ndos2unix %s\nsbatch %s' % (discover_imageDir, os.path.basename(job_script), os.path.basename(job_script), os.path.basename(job_script)))
+            ff.write("\ncd {0}\nchmod 755 {1}\nsed -i '$a\\' {1}\nsbatch {1}".format(discover_imageDir, os.path.basename(job_script))) # do the sed just in case. this arg says add newline to end of file only if one is not already there
 
        # print ''
 
-    print "\nSuccessfully copied and tarred/zipped data for %d of %d pairs\n" % (n_pair_copy, n_lines)
+    #print "\n%d of the %d input pairs were successfully copied" % (n_pair_copy, n_lines)
 
-    #TD Lastly, print metrics on how long it took to copy X pairs
+    # now write list of catIDs that do not have data to the batch-level text file that was set up earlier. only if there are missing catIDs -- this is done above now
+##    n_missing_catIDs = len(missing_catIDs) # counting/writing to list as we go now
+    if n_missing_catIDs > 0: print "\n- Wrote %d catIDs to missing catID list %s" % (n_missing_catIDs, missing_catID_file) # only thing we wanna do is print how many files
+##        with open(missing_catID_file, 'w') as mf:
+##            for m in missing_catIDs: mf.write(m +'\n')
+##        print "\n- Wrote %d catIDs to missing catID list %s" % (n_missing_catIDs, missing_catID_file)
+
+    # copy summary csv to summary_csvs directory:
+    os.system('cp %s %s' % (summary_csv, os.path.join(os.path.dirname(inDir.rstrip('/')), 'batch_summary_csvs')))
 
     # NOW TAR everything in the batchDir into archive
-
     start_tarzip = timer()
     archive = os.path.join(inDir, 'batch%s-archive.tar.gz' % batchID)
-    print archive
+    print "\n\n--------------------------------------------\nAttempting to archive data now for entire batch (%d of %d pairs)..." % (n_pair_copy, n_lines)
     if not os.path.exists(archive): # if data has not yet been tarred up (careful with this)
-        print "\nBegin archiving:", datetime.now().strftime("%I:%M%p  %a, %m-%d-%Y")
+        print "\n Begin archiving:", datetime.now().strftime("%I:%M%p  %a, %m-%d-%Y")
        # tarComm = 'tar -zcvf %s %s' % (archive, batchDir) #TD get rid of -v possibly when doing real
        # tarComm = 'tar -zcvf %s %s -C %s batch%s' % (archive, batchDir, inDir, batchID) #TD get rid of -v possibly when doing real
-        tarComm = 'tar -zcvf %s -C %s batch%s' % (archive, inDir, batchID) # this might actually be the right way
-        print tarComm
+        tarComm = 'tar -zcf %s -C %s batch%s' % (archive, inDir, batchID) # archive=output archive; cd into inDir then tar up only batchdir (i.e. batch$batchID in the inDir )
+        print ' ' + tarComm
         os.system(tarComm)
-        print "\nFinish archiving:", datetime.now().strftime("%I:%M%p  %a, %m-%d-%Y")
-    else: print "%s already exists" % archive
-    end_tarzip = timer()
-    print "Elapsed time for tarring/zipping %d pairs: %s min" % (n_pair_copy, round(find_elapsed_time(start_tarzip, end_tarzip),3))
+        print " Finish archiving:", datetime.now().strftime("%I:%M%p  %a, %m-%d-%Y")
+        end_tarzip = timer()
+        time_tarzip = round(find_elapsed_time(start_tarzip, end_tarzip),3)
+        print "Elapsed time for tarring/zipping %d pairs: %s minutes" % (n_pair_copy, time_tarzip)
+    else:
+        print " Archive %s already exists" % archive
+        time_tarzip = 0
+
 
     end_main = timer()
-    print "Elapsed time for entire run (%d out of %d pairs): %s min" % (n_pair_copy, n_lines, round(find_elapsed_time(start_main, end_main), 3))
+    time_main = round(find_elapsed_time(start_main, end_main), 3)
+    print "\nElapsed time for entire run (%d out of %d pairs): %s minutes" % (n_pair_copy, n_lines, time_main)
+
+    # lastly we need to append to the main processing summary: batchID/date, input csv file, number of pairs attempted, number succeeded, time to zip, total time
+    main_summary = os.path.join(os.path.dirname(inDir.rstrip('/')), 'main_processing_summary.csv') # this is not in Paul_TTE/inASP but in Paul_TTE/
+    with open(main_summary, 'a') as ms:
+        ms.write('{}, {}, {}, {}, {}, {}, {}\n'.format(batchID, os.path.abspath(csv), n_pair_copy, n_lines, n_missing_catIDs, time_tarzip, time_main))
+
+
+    print "End:", datetime.now().strftime("%m%d%y-%I%M%p"), "\n\n"
 
 if __name__ == '__main__':
 

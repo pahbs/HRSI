@@ -145,9 +145,9 @@ def stereopairs(imageDir):
                 if cat2 in each:
                     cat2list.append(each)
 
-    # cat1list/cat2list are lists of all the xml files in the imageDir
-    print cat1list #DEL
-    print cat2list
+##    # cat1list/cat2list are lists of all the xml files in the imageDir
+##    print cat1list #DEL
+##    print cat2list
 
 
 
@@ -155,7 +155,7 @@ def stereopairs(imageDir):
     # Name output csv with the pairname and put in output ASP dir
     outCSV = os.path.join(imageDir, "{}.csv".format(pairname))
     ##print("\tOuput CSV file: %s" %(outCSV))
-    print "outCSV:", outCSV
+##    print "outCSV:", outCSV
     # Open a CSV for writing
     with open(outCSV,'wb') as csvfile:
 
@@ -282,12 +282,11 @@ def stereopairs(imageDir):
                                         str(centLon)    + ',' + str(centLat) + ','
 
                     # Calc stereo angles
-                    print "before stereoAngs call"
                     stereoAngs = stereoAngles(meanSatEl_1,meanSatAz_1,meanSatEl,meanSatAz,ephemX_1,ephemY_1,ephemZ_1,ephemX,ephemY,ephemZ,centLat,centLon)
-                    print "stereoAngs:"
-                    print stereoAngs
+##                    print "stereoAngs:" # testing
+##                    print stereoAngs
                     outCSVline = Names + SSGangles + centCoords + ephemeris + cornerCoords + str(stereoAngs[0]) + "," + str(stereoAngs[1]) + "," + str(stereoAngs[2])+'\n'
-                    print outCSVline
+##                    print outCSVline
 
                     # Write line
                     csvfile.write(outCSVline)
