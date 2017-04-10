@@ -47,9 +47,14 @@ def foot_tiles(
                     sceneList.append(root.split('/')[-1])
                     namesList.append(file)
                     pathroot.append(root)
-                    yearList.append(datetime.datetime.strptime(root.split('/')[-1].split('_003')[1][0:8],'%m%d%Y').year)
-                    monthList.append(datetime.datetime.strptime(root.split('/')[-1].split('_003')[1][0:8],'%m%d%Y').month)
-                    doyList.append(datetime.datetime.strptime(root.split('/')[-1].split('_003')[1][0:8],'%m%d%Y').timetuple().tm_yday)
+                    if 'AST_L1A' in file:
+                        yearList.append(datetime.datetime.strptime(root.split('/')[-1].split('_003')[1][0:8],'%m%d%Y').year)
+                        monthList.append(datetime.datetime.strptime(root.split('/')[-1].split('_003')[1][0:8],'%m%d%Y').month)
+                        doyList.append(datetime.datetime.strptime(root.split('/')[-1].split('_003')[1][0:8],'%m%d%Y').timetuple().tm_yday)
+                    else:
+                        yearList.append('----')
+                        monthList.append('----')
+                        doyList.append('----')
 
     ###############################################
     # Use gdalinfo to make metadata txt from each raster
