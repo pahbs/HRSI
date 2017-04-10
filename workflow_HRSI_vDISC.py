@@ -285,6 +285,38 @@ def runVRT(outStereoPre,
     #print("\t ---------------")
 
 
+    """
+    runASP() is the main function that wraps the AMES Stereo Pipeline  processing steps that:
+        1. Takes a csv footprint file input
+        2. Gets the catIDs of stereo strips
+        3. Finds all images belonging to each stereo strip
+        4. runs wv_correct and then mosaics them to strip pairs (*dg_mosaic)
+        5. processes these strip pairs: *mapproject, *parallel_stereo or stereo, point2dem
+        6. adds the areas (polygon) of processed data to a shp that holds all valid areas for all processed DSMs (like an index of what we've processed)
+
+        Args:
+
+            csv             = full path and name to the csv file from the footprint shapefile of stereo pairs
+            outDir          = an output dir used to place all ASP generated content
+            #searchDir       = (DONT NEED THIS ANYMORE with SQL database query) a top level dir under which all stereo pairs will be found
+            inDir           = dir in nobackup into which subdirs for each input stereo pair will be made for storing the symbolic link files and intermediate mosaics
+            nodeList        = list of processing nodes for parallel_stereo
+            mapprj          = boolean indicating whether or not to run mapproject (default = True)
+            mapprjRes       = res for mapprocted input to par_stereo
+            par             = run parallel_stereo instead of stereo (default = True)
+
+            strip           = run stereo on image strips (default = True)
+            searchExtList   = all extensions possible for input imagery
+            csvSplit        = boolean indicating whether or not the run is associated with multiple smaller subset csv files derived from a larger main csv file
+            doP2D           = boolean for running point2dem
+            stereoDef       = the 'stereo.default' file that specifies the stereo processing parameters for ASP
+            ##mapprjDEM       = an ASTER or SRTM dem to pre-align the stereo strips before stereo run
+            prj             = projection for the mapproject run  --- needs to be specified uniquely for each
+            test            = run stereo with a test window (default = False)
+            rp              = for strip processing, spatial resolution reduce-by percent (default = 100; no reduction)
+
+    """
+
 def run_asp(
     line,
     header, # added (from adapt) # list arg
@@ -373,38 +405,6 @@ def run_asp(
 
     print preLogText #mw 1/25: preLogText is now one big string
     print "\n"
-
-    """
-    Here is the main function that wraps the AMES Stereo Pipeline  processing steps that:
-        1. Takes a csv footprint file input
-        2. Gets the catIDs of stereo strips
-        3. Finds all images belonging to each stereo strip
-        4. runs wv_correct and then mosaics them to strip pairs (*dg_mosaic)
-        5. processes these strip pairs: *mapproject, *parallel_stereo or stereo, point2dem
-        6. adds the areas (polygon) of processed data to a shp that holds all valid areas for all processed DSMs (like an index of what we've processed)
-
-        Args:
-
-            csv             = full path and name to the csv file from the footprint shapefile of stereo pairs
-            outDir          = an output dir used to place all ASP generated content
-            #searchDir       = (DONT NEED THIS ANYMORE with SQL database query) a top level dir under which all stereo pairs will be found
-            inDir           = dir in nobackup into which subdirs for each input stereo pair will be made for storing the symbolic link files and intermediate mosaics
-            nodeList        = list of processing nodes for parallel_stereo
-            mapprj          = boolean indicating whether or not to run mapproject (default = True)
-            mapprjRes       = res for mapprocted input to par_stereo
-            par             = run parallel_stereo instead of stereo (default = True)
-
-            strip           = run stereo on image strips (default = True)
-            searchExtList   = all extensions possible for input imagery
-            csvSplit        = boolean indicating whether or not the run is associated with multiple smaller subset csv files derived from a larger main csv file
-            doP2D           = boolean for running point2dem
-            stereoDef       = the 'stereo.default' file that specifies the stereo processing parameters for ASP
-            ##mapprjDEM       = an ASTER or SRTM dem to pre-align the stereo strips before stereo run
-            prj             = projection for the mapproject run  --- needs to be specified uniquely for each
-            test            = run stereo with a test window (default = False)
-            rp              = for strip processing, spatial resolution reduce-by percent (default = 100; no reduction)
-
-    """
 
     # get the header indices, try using pairname field first
     pairname_idx = -999 # -999 is the new false. This will be overwritten if pairname_idx does exist in the input line
@@ -703,7 +703,7 @@ def run_asp(
         # outASP/pairname:
         #outASPcur = outDir + "/" + imageDir.split('/')[-1].rstrip('\n')
         outASPcur = os.path.join(outDir, 'batch{}'.format(batchID), pairname) #* 1/22 same thing?
-##        print "outASPcur:", outASPcur #DEL prob
+
         """
         outStereoPre looks like this: outASP/batch$batchID/WV01_20150610_102001003EBA8900_102001003E8CA400/out-strip
         """
@@ -833,12 +833,20 @@ def run_asp(
     # remove all the unneeded files, but first move to the outASP/batch/pairname
     os.chdir(outASPcur)
     print "\n\nDeleting the following files from %s:" % os.getcwd()
-    os.system('find . -type f -name "*.tif" ! -newer out-strip-F.tif')
+    os.system('find . -type f -name "*.tif" ! -newer out-strip-F.tif ! -iname "out-strip-L.tif"') # all tiffs F.tif, EXCLUDING anything newer than F.tif and L.tif
 
 
-    cmdDelete = 'find . -type f -name "*.tif" ! -newer out-strip-F.tif -exec rm -rf {} \;'
+    cmdDelete = 'find . -type f -name "*.tif" ! -newer out-strip-F.tif ! -iname "out-strip-L.tif" -exec rm -rf {} \;'
     print "Delete files using command:", cmdDelete
     os.system(cmdDelete)
+
+    # now copy all of the input XMLs into the outASP/batch/pairname/inXMLs
+    outXMLdir = os.path.join(outASPcur, 'inXMLs')
+    if not os.path.isdir(outXMLdir): # if dir does not exist
+        os.makedirs(outXMLdir)
+    globXMLs = os.path.join(imageDir, '*_*_*_*.xml') # this will exclude the mosaic xml's, which will only have 2 underscores
+    print '/n Copying XML files ({}) to outASP ({})'.format(globXMLs, outXMLdir)
+    os.system('cp {} {}'.format(globXMLs, outXMLdir))
 
 
     print("\n\n-----------------------------")
