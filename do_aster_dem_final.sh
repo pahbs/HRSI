@@ -76,25 +76,28 @@ run_asp_fine () {
         fi
     fi
 
-    echo "[5] Running fine point2dem on $sceneName/outASP/$runDir ..."$'\r' >> ${sceneName}_${now}.log
+
     # Create the final DEM and ortho'd Pan
-    #
-    #outFine=$sceneName/outASP/$runDir/out
     if [ -f $outPrefix-PC.tif ]; then
 
-        if [ ! -f $outPrefix-DEM-clr-shd.tif ]; then
+        echo "  PC.tif exists..."
+
+        if [ ! -f $outPrefix-DEM-hlshd-e25.tif ]; then
+
+            echo "  No hillshade, running point2dem..."
+
+            echo "[5] Running fine point2dem on $sceneName/outASP/$runDir ..."$'\r' >> ${sceneName}_${now}.log
 
             point2dem --threads=6 -r earth $outPrefix-PC.tif -o $outPrefix --orthoimage $outPrefix-L.tif
 
             # Final Viewing GeoTiffs
-            #
             echo "[6] Running final viewing GeoTiffs on $sceneName ..."$'\r' >> ${sceneName}_${now}.log
             hillshade $outPrefix-DEM.tif -o $outPrefix-DEM-hlshd-e25.tif -e 25
             colormap $outPrefix-DEM.tif -s $outPrefix-DEM-hlshd-e25.tif -o $outPrefix-DEM-clr-shd.tif --colormap-style /att/gpfsfs/home/pmontesa/code/color_lut_hma.txt
 
-            gdal_translate -of VRT ${L1Adir}/$outPrefix-DEM-clr-shd.tif ${L1Adir}_out/clr/${sceneName}-CLR.vrt
-            gdal_translate -of VRT ${L1Adir}/$outPrefix-DRG.tif ${L1Adir}_out/drg/${sceneName}-DRG.vrt
-            gdal_translate -of VRT ${L1Adir}/$outPrefix-DRG.tif ${L1Adir}_out/dsm/${sceneName}-DEM.vrt
+            gdal_translate -of VRT ${L1Adir}/$outPrefix-DEM-clr-shd.tif ${L1Adir}_out/clr/${sceneName}-CLR.vrt &
+            gdal_translate -of VRT ${L1Adir}/$outPrefix-DRG.tif ${L1Adir}_out/drg/${sceneName}-DRG.vrt &
+            gdal_translate -of VRT ${L1Adir}/$outPrefix-DRG.tif ${L1Adir}_out/dsm/${sceneName}-DEM.vrt &
 
             gdaladdo -r average ${L1Adir}/$outPrefix-DEM-clr-shd.tif 2 4 8 16 &
             gdaladdo -r average ${L1Adir}/$outPrefix-DRG.tif 2 4 8 16 &
@@ -102,13 +105,25 @@ run_asp_fine () {
             echo "[7] Finished processing ${sceneName}."$'\r' >> ${sceneName}_${now}.log
             echo "----------}."$'\r' >> ${sceneName}_${now}.log
         else
-            echo "   CLR-SHD file exists, skipping point2dem."
-            echo "   CLR-SHD file exists, skipping point2dem."$'\r' >> ${sceneName}_${now}.log
+            if [ ! -f $outPrefix-DEM-clr-shd.tif ]; then
+
+                echo "  Hillshade exists -- CLR-SHD needed ..."
+                colormap $outPrefix-DEM.tif -s $outPrefix-DEM-hlshd-e25.tif -o $outPrefix-DEM-clr-shd.tif --colormap-style /att/gpfsfs/home/pmontesa/code/color_lut_hma.txt
+            else
+                echo "   CLR-SHD exists."
+                echo "   CLR-SHD exists."$'\r' >> ${sceneName}_${now}.log
+            fi
+
+            echo "  Create output VRT files: CLR, DEM, DRG..."
+            gdal_translate -of VRT ${L1Adir}/$outPrefix-DEM-clr-shd.tif ${L1Adir}_out/clr/${sceneName}-CLR.vrt &
+            gdal_translate -of VRT ${L1Adir}/$outPrefix-DRG.tif ${L1Adir}_out/drg/${sceneName}-DRG.vrt &
+            gdal_translate -of VRT ${L1Adir}/$outPrefix-DRG.tif ${L1Adir}_out/dsm/${sceneName}-DEM.vrt &
         fi
     else
         echo "   No PC.tif file !!! DEM not created."
         echo "   No PC.tif file !!! DEM not created."$'\r' >> ${sceneName}_${now}.log
     fi
+
 }
 ##############################################
 
