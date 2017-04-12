@@ -20,9 +20,8 @@ def foot_tiles(
     direct,
     lookFor,    #='dem',
     srs,
-    rasterExt='.tif'):
-    #
-    ###############################################
+    rasterExt):
+
     """
     Footprint shapefile goes to dir just above the data
     """
@@ -47,7 +46,7 @@ def foot_tiles(
                     sceneList.append(root.split('/')[-1])
                     namesList.append(file)
                     pathroot.append(root)
-                    if 'AST_L1A' in file:
+                    if 'AST_' in root:
                         yearList.append(datetime.datetime.strptime(root.split('/')[-1].split('_003')[1][0:8],'%m%d%Y').year)
                         monthList.append(datetime.datetime.strptime(root.split('/')[-1].split('_003')[1][0:8],'%m%d%Y').month)
                         doyList.append(datetime.datetime.strptime(root.split('/')[-1].split('_003')[1][0:8],'%m%d%Y').timetuple().tm_yday)
@@ -66,8 +65,8 @@ def foot_tiles(
         if list(direct)[0] != list(textname)[0]:
             textname = list(direct)[0] + textname
         # If the metadata  txt doesnt exist, run gdalinfo
-        if not os.path.isfile(textname+'_metadata.txt'):
-            sys.stdout = open(textname+'_metadata.txt','w') #ready to collect gdalinfo output and dump into txt file
+        if not os.path.isfile('~/code/tmp/'+os.path.basename(textname)+'_metadata.txt'):
+            sys.stdout = open('~/code/tmp/'+os.path.basename(textname)+'_metadata.txt','w') #ready to collect gdalinfo output and dump into txt file
             gdal.SetConfigOption('NITF_OPEN_UNDERLYING_DS', 'NO')
             try:
                 gdalinfo.main(['foo',roots[a]]) #'foo' is a dummy variable
@@ -90,7 +89,8 @@ def foot_tiles(
     else: #script called at subdirectory
         fileName = direct.split('/')[len(direct.split('/'))-1]
 
-    csvOut = open(os.path.dirname(direct) +'/'+fileName+'_metadata.csv', 'w') #named for folder containing imagery
+    #csvOut = open(os.path.dirname(direct) +'/'+fileName+'_metadata.csv', 'w') #named for folder containing imagery
+    csvOut = open('~/code/tmp/'+fileName+'_metadata.csv', 'w')
     csvOut.write('Name,Year,Month,DOY,ullon,ullat,lllon,lllat,urlon,urlat,lrlon,lrlat\n') #header file_name,UL1,UL2,LL1,LL2,UR1,UR2,LR1,LR2)
 
     ###############################################
@@ -243,10 +243,12 @@ def foot_tiles(
         for row in sceneFailList:
             # Write out each row
             writer.write(row + '\n')
-
-    print('shpOut: ' + direct+'/'+fileName)
-    #shpOut.save(direct+'/'+fileName) #shp name is directory's name
-    shpOut.save(os.path.dirname(direct) + '/' + fileName)
+    ##fileName=fileName + "_update"
+    #print('shpOut: ' + direct+'/'+fileName)
+    print('shpOut: ' + '~/code/tmp/'+fileName)
+    ##shpOut.save(direct+'/'+fileName) #shp name is directory's name
+    #shpOut.save(os.path.dirname(direct) + '/' + fileName)
+    shpOut.save('~/code/tmp/' + fileName)
     csvDBF.close()
 
 

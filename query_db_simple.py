@@ -26,7 +26,7 @@ def main(csvlist):
 
     catIDlist = catIDlist[1:] # remove header
 
-    with psycopg2.connect(database="NGAdb01", user="anon", host="ngadb01", port="5432") as dbConnect:
+    with psycopg2.connect(database="ngadb01", user="anon", host="ngadb01", port="5432") as dbConnect:
 
         cur = dbConnect.cursor() # setup the cursor
 

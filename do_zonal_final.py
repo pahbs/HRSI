@@ -127,6 +127,13 @@ RasList = [\
 '/att/briskfs/pmontesa/outASP/WV01_20130606_1020010022B6A500_1020010021CF0600/out-strip-holes-fill-DEM.tif',\
 '/att/briskfs/pmontesa/outASP/WV01_20130916_10200100240DA200_1020010022E2E100/out-strip-holes-fill-DEM.tif']
 
+# luk2c
+#g,c
+# LiDAR file
+inZone = '/att/gpfsfs/userfs02/ppl/pmontesa/glas/tiles_5deg/csv_files/gla14_N70E100.shp'
+RasList = [\
+'/att/briskfs/pmontesa/outASP/WV02_20130724_1030010026964100_10300100251D9400/out-strip-holes-fill-DEM.tif',\
+'/att/briskfs/pmontesa/outASP/WV01_20130616_1020010021113E00_1020010022687600_mode2_subp9_/out-strip-holes-fill-DEM.tif']
 
 for num, Ras in enumerate(RasList):
     print(Ras)

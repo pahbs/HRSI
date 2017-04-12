@@ -60,7 +60,7 @@ def run_stereo(par, nodesList, imagePairs, imagePair_xmls, outStereoPre, DEM, ma
             if 'GE01' in imagePairs:
                 cmdStr = "stereo -t rpc --threads 18 --corr-timeout 360 " + imagePairs + outStereoPre
             else:
-                cmdStr = "stereo --threads 18 --corr-timeout 360 " + STEREO_IO
+                cmdStr = "stereo --threads 18 --corr-timeout 360 --subpixel-mode 2 --subpixel-kernel 9 9 " + STEREO_IO
 
     print "\n\t" + cmdStr
 
@@ -94,9 +94,9 @@ def runP2D(outStereoPre, prj, strip=True):
         """
         Not sure if I still want an Error Image...
         """
-        print("\n\t [3] Create Error Image")
-        cmdStrErrorImage = P2D_OPTS + P2D_IO + " --no-dem --errorimage "
-        wf.run_os(cmdStrErrorImage)
+        ##print("\n\t [3] Create Error Image")
+        ##cmdStrErrorImage = P2D_OPTS + P2D_IO + " --no-dem --errorimage "
+        ##wf.run_os(cmdStrErrorImage)
 
     # Communicate p2d holes-fill
     if os.path.isfile(outStereoPre + "-PC.tif") and not os.path.isfile(outStereoPre + "-holes-fill-DEM.txt"):
@@ -134,7 +134,16 @@ def runP2D(outStereoPre, prj, strip=True):
 
     if os.path.isfile(outStereoPre + "-holes-fill-DEM.vrt") and os.path.isfile(outStereoPre + "-holes-fill-DEM-hlshd-e25.tif") and not os.path.isfile(outStereoPre + "-holes-fill-DEM-clr-shd.txt"):
         print("colormap")
-        cmdStr = "colormap  " + outStereoPre + "-holes-fill-DEM.vrt -s " + outStereoPre + "-holes-fill-DEM-hlshd-e25.tif -o " + outStereoPre + "-holes-fill-DEM-clr-shd.tif" + " --colormap-style /att/gpfsfs/home/pmontesa/code/color_lut_v7.txt"
+
+        cmdStr = '''gdalinfo -stats " + outStereoPre + "-holes-fill-DEM.tif" + " | grep _MIN | awk -F "=" {print $2}'''
+        minCmd = subp.Popen(cmdStr.rstrip('\n'), stdout=subp.PIPE, shell=True)
+        stdOut_min, err_min = minCmd.communicate()
+
+        cmdStr = '''gdalinfo -stats " + outStereoPre + "-holes-fill-DEM.tif" + " | grep _MAX | awk -F "=" {print $2}'''
+        maxCmd = subp.Popen(cmdStr.rstrip('\n'), stdout=subp.PIPE, shell=True)
+        stdOut_max, err_max = maxCmd.communicate()
+
+        cmdStr = "colormap  " + outStereoPre + "-holes-fill-DEM.vrt -s " + outStereoPre + "-holes-fill-DEM-hlshd-e25.tif -o " + outStereoPre + "-holes-fill-DEM-clr-shd.tif" + " --min " + stdOut_min +" --max " + stdOut_max + " --colormap-style jet"#/att/gpfsfs/home/pmontesa/code/color_lut_v7.txt"
         print(cmdStr)
         clrCmd = subp.Popen(cmdStr.rstrip('\n'), stdout=subp.PIPE, shell=True)
         stdOut_clr, err_clr = clrCmd.communicate()
@@ -180,7 +189,7 @@ def db_query(catIDlist):
 
     import psycopg2
     # Establish the database connection
-    with psycopg2.connect(database="NGAdb01", user="anon", host="ngadb01", port="5432") as dbConnect:
+    with psycopg2.connect(database="ngadb01", user="anon", host="ngadb01", port="5432") as dbConnect:
 
         cur = dbConnect.cursor() # setup the cursor
         sel_list=[]
@@ -576,8 +585,8 @@ def run_asp(
     # [2] From the header, get the indices of the attributes you need
     #catID_1_idx     = header.index('catalogid')
     #catID_2_idx     = header.index('stereopair')
-    pairname_idx        = header.index('pairname')
-    #sensor_idx      = header.index('platform')
+    pairname_idx    = header.index('pairname')
+    #sensor_idx     = header.index('platform')
     avSunElev_idx   = header.index('avsunelev')
     avSunAzim_idx   = header.index('avsunazim')
     imageDate_idx   = header.index('acqdate')
@@ -609,14 +618,14 @@ def run_asp(
             preLogText.append(line)
             preLogText.append(linesplit)
 
-            catID_1    = linesplit[pairname_idx].split('_')[2]
-            catID_2    = linesplit[pairname_idx].split('_')[3]
-            sensor     = linesplit[pairname_idx].split('_')[0]
-            imageDate  = linesplit[pairname_idx].split('_')[1]
-            avSunElev  = round(float(linesplit[avSunElev_idx]),0)
-            avSunAz    = round(float(linesplit[avSunAzim_idx]),0)
-            avOffNadir = round(float(linesplit[avOffNadir_idx]),0)
-            avTargetAz = round(float(linesplit[avTargetAz_idx]),0)
+            catID_1     = linesplit[pairname_idx].split('_')[2]
+            catID_2     = linesplit[pairname_idx].split('_')[3]
+            sensor      = linesplit[pairname_idx].split('_')[0]
+            imageDate   = linesplit[pairname_idx].split('_')[1]
+            avSunElev   = round(float(linesplit[avSunElev_idx]),0)
+            avSunAz     = round(float(linesplit[avSunAzim_idx]),0)
+            avOffNadir  = round(float(linesplit[avOffNadir_idx]),0)
+            avTargetAz  = round(float(linesplit[avTargetAz_idx]),0)
             if avTargetAz <= 180:
                 avSatAz = avTargetAz + 180
             else:
@@ -624,9 +633,9 @@ def run_asp(
 
             # Initialize DEM string
             mapprjDEM = ''
-
+            print imageDate
             # Get Image Date
-            if imageDate != '':
+            if imageDate != "":
                 try:
                     imageDate = datetime.strptime(imageDate,"%m/%d/%Y")
                     preLogText.append( '\tTry 1: ' + str(imageDate))
@@ -646,7 +655,7 @@ def run_asp(
             # [4] Search ADAPT's NGA database for catID_1 and catid_2
 
             # Establish the database connection
-            with psycopg2.connect(database="NGAdb01", user="anon", host="ngadb01", port="5432") as dbConnect:
+            with psycopg2.connect(database="ngadb01", user="anon", host="ngadb01", port="5432") as dbConnect:
 
                 cur = dbConnect.cursor() # setup the cursor
                 catIDlist = [] # build now to indicate which catIDs were found, used later

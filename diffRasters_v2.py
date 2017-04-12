@@ -140,27 +140,37 @@ def diffRasters(outDir, inRaster1, inRaster2, res, kernelSize, ht_thresh, doFilt
     # Read in UTM projection info from first raster and put into -t_srs for gdalwarp of both rasters
     ds = gdal.Open(inRaster1)
     srs = osr.SpatialReference(wkt=ds.GetProjection())
-    zone = srs.GetAttrValue('projcs').split('zone ')[1][:-1]        # removes the last char, which is 'N' or 'S'
+    print srs
+    if 'zone' in str(srs):
+        zone = srs.GetAttrValue('projcs').split('zone ')[1][:-1]        # removes the last char, which is 'N' or 'S'
 
-    if int(zone) < 10:
-        zone = "0" + str(zone)
+        if int(zone) < 10:
+            zone = "0" + str(zone)
+
+        to_epsg = "EPSG:326" + zone
+    else:
+        to_epsg = "EPSG:4326"
 
     for inFile in [inRaster1, inRaster2]:
 
         if os.path.isfile(inFile.strip('.tif') + vrtExt):
             os.remove(inFile.strip('.tif') + vrtExt)
 
-        print(" ------- ")
+        print( to_epsg)
         print("\n\tInput Raster: " + inFile + "----")
         print(" ------- ")
 
-        cmdStr = "gdalwarp -srcnodata -99 -dstnodata -99 -of VRT -tr " + str(res) + " " + str(res) + " -t_srs EPSG:326" + zone + " " + inFile + " " + inFile.strip('.tif') + vrtExt
+        #cmdStr = "gdalwarp -srcnodata -99 -dstnodata -99 -of VRT -tr " + str(res) + " " + str(res) + " -t_srs EPSG:326" + zone + " " + inFile + " " + inFile.strip('.tif') + vrtExt
+        cmdStr = "gdalwarp -srcnodata -99 -dstnodata -99 -of VRT -tr " + str(res) + " " + str(res) + " -t_srs " + to_epsg + " " + inFile + " " + inFile.strip('.tif') + vrtExt
         run_wait_os(cmdStr)
 
     # Get the datasets from the input
-    inRaster1_ds = gdal.Open(inRaster1.strip('.tif') + vrtExt)
+    #inRaster1_ds = gdal.Open(inRaster1.strip('.tif') + vrtExt)
+    inRaster1_ds = gdal.Open(inRaster1)
     gt = inRaster1_ds.GetGeoTransform()
-    inRaster2_ds = gdal.Open(inRaster2.strip('.tif') + vrtExt)
+    #inRaster2_ds = gdal.Open(inRaster2.strip('.tif') + vrtExt)
+    inRaster2_ds = gdal.Open(inRaster2)
+
 
     # Set up Tiff output name
     path1, name1 = os.path.split(inRaster1)
