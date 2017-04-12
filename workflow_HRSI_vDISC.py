@@ -577,7 +577,7 @@ def run_asp(
                 print "\t\tStandard error: %s" %str(e)
                 if not "None" in str(s): wvc_cnt += 1 # if the command ran, add to counter
             end_wvc = timer()
-        print "\n\tElapsed time to run worldview correct {} times: {} minutes".format(wvc_cnt, round(find_elapsed_time(start_wvc, end_wvc), 2))
+            print "\n\tElapsed time to run worldview correct {} times: {} minutes".format(wvc_cnt, round(find_elapsed_time(start_wvc, end_wvc), 2))
         # --------
         # On a catID: dg_mosaic    This has to one once for each of the image strips.
         dg_mos = False
