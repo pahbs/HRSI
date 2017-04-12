@@ -140,93 +140,97 @@ def runVALPIX(root, pairname, src, newFieldsList, newAttribsList, outSHP):
         outValShp     = os.path.join(pairnameDir, "VALID.shp")
         outValShp_prj = os.path.join(pairnameDir, "VALID_WGS84.shp")
         outValShp_agg = os.path.join(pairnameDir, "VALID_agg.shp")
-        #print " [1] Create *VALID.shp files for each pairname"
-        #print "     [.a] Coarsen %s" %src
-    	##cmdStr = "gdal_translate -outsize 1% 1% -co compress=lzw -b 4 -ot byte -scale 1 1 "  + src + " " + outValTif_TMP
-        cmdStr = "gdal_translate -outsize 5% 5% -co compress=lzw -b 4 -ot byte -scale 1 1 "  + src + " " + outValTif_TMP
-        wf.run_wait_os(cmdStr,print_stdOut=False)
-        #print "     [.b] POLYGONIZE %s" %outValTif_TMP
-    	cmdStr = "gdal_polygonize.py " + outValTif_TMP + " -f 'ESRI Shapefile' " + outValShp_TMP
-        wf.run_wait_os(cmdStr,print_stdOut=False)
 
-        #print "     [.c] REMOVE NODATA HOLES: %s" %outValShp
-    	cmdStr = "ogr2ogr " + outValShp + " " + outValShp_TMP + " -where 'DN>0' -overwrite"
-        wf.run_wait_os(cmdStr,print_stdOut=False)
+        if not os.path.isfile(src):
+            print "\t Will not footprint: %s does not exist." %src
+        else:
+            #print " [1] Create *VALID.shp files for each pairname"
+            #print "     [.a] Coarsen %s" %src
+            ##cmdStr = "gdal_translate -outsize 1% 1% -co compress=lzw -b 4 -ot byte -scale 1 1 "  + src + " " + outValTif_TMP
+            cmdStr = "gdal_translate -outsize 5% 5% -co compress=lzw -b 4 -ot byte -scale 1 1 {} {}".format(src, outValTif_TMP)
+            wf.run_wait_os(cmdStr,print_stdOut=False)
+            #print "     [.b] POLYGONIZE %s" %outValTif_TMP
+            cmdStr = "gdal_polygonize.py {} -f 'ESRI Shapefile' {}".format(outValTif_TMP, outValShp_TMP)
+            wf.run_wait_os(cmdStr,print_stdOut=False)
 
-        #print " [2] Reproject to WGS and merge"
-        cmdStr = "ogr2ogr -f 'ESRI Shapefile' -t_srs EPSG:3995 " + outValShp_prj + " " + outValShp + " -overwrite"
-        wf.run_wait_os(cmdStr,print_stdOut=False)
+            #print "     [.c] REMOVE NODATA HOLES: %s" %outValShp
+            cmdStr = "ogr2ogr {} {} -where 'DN>0' -overwrite".format(outValShp, outValShp_TMP)
+            wf.run_wait_os(cmdStr,print_stdOut=False)
 
-        #print " [3] Dissolve/Aggregate Polygons into 1 feature"
-        input_basename = os.path.split(outValShp_prj)[1].replace(".shp","")
-        cmdStr = "ogr2ogr " + outValShp_agg + " " + outValShp_prj + " -dialect sqlite -sql 'SELECT GUnion(geometry), DN FROM " + input_basename + " GROUP BY DN'"
-        wf.run_wait_os(cmdStr,print_stdOut=False)
+            #print " [2] Reproject to WGS and merge"
+            cmdStr = "ogr2ogr -f 'ESRI Shapefile' -t_srs EPSG:3995 {} {} -overwrite".format(outValShp_prj, outValShp)
+            wf.run_wait_os(cmdStr,print_stdOut=False)
 
-        # Check to see if the pairname exists in the main shp
-        update = True
-        mainVALID = os.path.join(root,outSHP)
-        if os.path.isfile(mainVALID):
-            # Open a Shapefile, and get field names
-            shp = ogr.Open(mainVALID, 1)
-            layer = shp.GetLayer()
-            layer_defn = layer.GetLayerDefn()
-            field_names = [layer_defn.GetFieldDefn(i).GetName() for i in range(layer_defn.GetFieldCount())]
+            #print " [3] Dissolve/Aggregate Polygons into 1 feature"
+            input_basename = os.path.split(outValShp_prj)[1].replace(".shp","")
+            cmdStr = "ogr2ogr {} {} -dialect sqlite -sql 'SELECT GUnion(geometry), DN FROM {} GROUP BY DN'".format(outValShp_agg, outValShp_prj, input_basename)
+            wf.run_wait_os(cmdStr,print_stdOut=False)
 
-            for feature in layer:
-                if feature.GetField('pairname') == pairname:
-                    update = False
-                    print "\n\n\t\t !! Don't update; pairname exists in shapefile: %s" %pairname
-                    break
-                pass
-            shp, layer, layer_defn, field_names, feature = (None for i in range(5))
-
-        if update and os.path.isfile(outValShp_agg):
-            # Add fields to the pairname's shp (outValShp_agg)
-            ##https://gis.stackexchange.com/questions/3623/how-to-add-custom-feature-attributes-to-shapefile-using-python
-            # Open a Shapefile, and get field names
-            shp = ogr.Open(outValShp_agg, 1)
-            layer = shp.GetLayer()
-
-            for newfieldStr in newFieldsList:
-                if 'pair' in newfieldStr or 'left' in newfieldStr or 'right' in newfieldStr:
-                    fieldType = ogr.OFTString
-                elif 'year' or 'month' or 'day' in newfieldStr:
-                    fieldType = ogr.OFTInteger
-                else:
-                    fieldType = ogr.OFTReal
-                # Add a new field
-                new_field = ogr.FieldDefn(newfieldStr, fieldType)
-                layer.CreateField(new_field)
-
-            # Update fields based on attributes
-            ## http://www.digital-geography.com/create-and-edit-shapefiles-with-python-only/#.V8hlLfkrLRY
-            layer_defn = layer.GetLayerDefn()
-            field_names = [layer_defn.GetFieldDefn(i).GetName() for i in range(layer_defn.GetFieldCount())]
-            feature = layer.GetFeature(0)   # Gets first, and only, feature
-
-            for num, f in enumerate(field_names):
-                i = feature.GetFieldIndex(f)
-                if num > 0:
-                    feature.SetField(i, newAttribsList[num-1])
-                    layer.SetFeature(feature)
-            shp = None
-
-            # Append pairname shp to main shp
+            # Check to see if the pairname exists in the main shp
+            update = True
+            mainVALID = os.path.join(root,outSHP)
             if os.path.isfile(mainVALID):
-                print "\n\t Updating footprint shp %s with current %s" %(mainVALID,pairname)
-                cmdStr = "ogr2ogr -f 'ESRI Shapefile' -update -append " + mainVALID + " " + outValShp_agg  #-nln merge
-                wf.run_wait_os(cmdStr,print_stdOut=False)
-            else:
-                print "\n\t Creating footprint shp: %s" %mainVALID
-                cmdStr = "ogr2ogr -f 'ESRI Shapefile' " + mainVALID + " " + outValShp_agg
-                wf.run_wait_os(cmdStr,print_stdOut=False)
+                # Open a Shapefile, and get field names
+                shp = ogr.Open(mainVALID, 1)
+                layer = shp.GetLayer()
+                layer_defn = layer.GetLayerDefn()
+                field_names = [layer_defn.GetFieldDefn(i).GetName() for i in range(layer_defn.GetFieldCount())]
 
-            # Clean up tmp files
-            files = os.listdir(pairnameDir)
-            for f in files:
-                if "VALID" in os.path.join(pairnameDir,f):
-        	       os.remove(os.path.join(pairnameDir,f))
-                   ##print("\t Removed: "+ f)
+                for feature in layer:
+                    if feature.GetField('pairname') == pairname:
+                        update = False
+                        print "\n\n\t\t !! Don't update; pairname exists in shapefile: %s" %pairname
+                        break
+                    pass
+                shp, layer, layer_defn, field_names, feature = (None for i in range(5))
+
+            if update and os.path.isfile(outValShp_agg):
+                # Add fields to the pairname's shp (outValShp_agg)
+                ##https://gis.stackexchange.com/questions/3623/how-to-add-custom-feature-attributes-to-shapefile-using-python
+                # Open a Shapefile, and get field names
+                shp = ogr.Open(outValShp_agg, 1)
+                layer = shp.GetLayer()
+
+                for newfieldStr in newFieldsList:
+                    if 'pair' in newfieldStr or 'left' in newfieldStr or 'right' in newfieldStr:
+                        fieldType = ogr.OFTString
+                    elif 'year' or 'month' or 'day' in newfieldStr:
+                        fieldType = ogr.OFTInteger
+                    else:
+                        fieldType = ogr.OFTReal
+                    # Add a new field
+                    new_field = ogr.FieldDefn(newfieldStr, fieldType)
+                    layer.CreateField(new_field)
+
+                # Update fields based on attributes
+                ## http://www.digital-geography.com/create-and-edit-shapefiles-with-python-only/#.V8hlLfkrLRY
+                layer_defn = layer.GetLayerDefn()
+                field_names = [layer_defn.GetFieldDefn(i).GetName() for i in range(layer_defn.GetFieldCount())]
+                feature = layer.GetFeature(0)   # Gets first, and only, feature
+
+                for num, f in enumerate(field_names):
+                    i = feature.GetFieldIndex(f)
+                    if num > 0:
+                        feature.SetField(i, newAttribsList[num-1])
+                        layer.SetFeature(feature)
+                shp = None
+
+                # Append pairname shp to main shp
+                if os.path.isfile(mainVALID):
+                    print "\n\t Updating footprint shp %s with current %s" %(mainVALID,pairname)
+                    cmdStr = "ogr2ogr -f 'ESRI Shapefile' -update -append " + mainVALID + " " + outValShp_agg  #-nln merge
+                    wf.run_wait_os(cmdStr,print_stdOut=False)
+                else:
+                    print "\n\t Creating footprint shp: %s" %mainVALID
+                    cmdStr = "ogr2ogr -f 'ESRI Shapefile' " + mainVALID + " " + outValShp_agg
+                    wf.run_wait_os(cmdStr,print_stdOut=False)
+
+                # Clean up tmp files
+                files = os.listdir(pairnameDir)
+                for f in files:
+                    if "VALID" in os.path.join(pairnameDir,f):
+            	       os.remove(os.path.join(pairnameDir,f))
+                       ##print("\t Removed: "+ f)
 
 def getparser():
     parser = argparse.ArgumentParser(description="Create footprints of DSMs with sun-surface-target geometry attributes from XMLs")
@@ -241,9 +245,8 @@ def main(outRoot, outShp):
     outShp      the name (not full path) of output DSM footprint shapefile
 
     Find all DSM in subdirs of an outRoot dir.
-    Find matching input files in corresponding dirs of inRoot
-    Gather list of image level attributes
-    Output to shp with runVALPIX
+    Create a single footprint shapefile, KML
+    Create individual VRTs for each pairname (DEM, CLR, DRG)
     """
     from os import listdir
     import get_stereopairs_v3 as g
@@ -379,9 +382,9 @@ def main(outRoot, outShp):
                     print "\n\t\t >>>>> Fail on # %s: Could not get footprint of %s" %(i,pairname)
                     DSMfootprintFail.append(subdir)
 
-            # Make VRTs
-            runVRT(pairname,outRoot)
-            print "\n\n\n"
+                # Make VRTs
+                runVRT(pairname,outRoot)
+                print "\n\n\n"
 
     # [1] Output a CSV of catIDs not found in nga db or personal
     # [2] Output a CSV of catIDs not found in nga db but successfully found in personal db
