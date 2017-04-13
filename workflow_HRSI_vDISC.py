@@ -378,7 +378,7 @@ def run_asp(
    # lfile = os.path.join(outDir, 'logs', 'run_asp_LOG_' + imageDir.split('/')[-1].rstrip('\n') +'_' + platform.node() + '_' + strftime("%Y%m%d_%H%M%S") + '.txt') # old way
     #lfile = os.path.join(outDir, 'logs', 'run_asp_LOG_%s__%s_%s.txt' % (pairname, platform.node(), strftime("%Y%m%d-%H%M%S")))
     start_time = strftime("%Y%m%d-%H%M%S")
-    lfile = os.path.join(outDir, 'logs', 'run_asp_LOG_%s__%s_%s.txt' % (pairname, start_time, nodeName)) #* 2/8: putting date/time before node so it's in chrono order
+    lfile = os.path.join(outDir, 'logs', 'run_asp_LOG_%s__batch%s_%s_%s.txt' % (pairname, batchID, start_time, nodeName)) #* 2/8: putting date/time before node so it's in chrono order
 
     so = se = open(lfile, 'w', 0)                       # open our log file
     sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0) # re-open stdout without buffering
@@ -830,7 +830,7 @@ def run_asp(
     # Write out CSV summary info
 #    csvOut.write(outAttributes)
 
-    # remove all the unneeded files, but first move to the outASP/batch/pairname
+    # remove all the unneeded files, but first cd to the outASP/batch/pairname
     os.chdir(outASPcur)
     print "\n\nDeleting the following files from %s:" % os.getcwd()
     os.system('find . -type f -name "*.tif" ! -newer out-strip-F.tif ! -iname "out-strip-L.tif"') # all tiffs F.tif, EXCLUDING anything newer than F.tif and L.tif

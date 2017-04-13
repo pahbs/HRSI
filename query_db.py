@@ -318,7 +318,7 @@ def main(csv, inDir, batchID, mapprj, noP2D, rp): #the 3 latter args are optiona
             for num, catID in enumerate([catID_1,catID_2]): #* loop thru catID of the pairs
 
                # selquery =  "SELECT s_filepath, sensor, acq_time, cent_lat, cent_long FROM nga_files_footprint WHERE catalog_id = '%s'" %(catID)
-                selquery =  "SELECT s_filepath, sensor, acq_time, cent_lat, cent_long FROM nga_inventory WHERE catalog_id = '%s'" %(catID) # 2/13 change nga_inventory_footprint to nga_inventory
+                selquery =  "SELECT s_filepath, sensor, acq_time, cent_lat, cent_long FROM nga_inventory WHERE catalog_id = '%s' AND prod_code = 'P1BS'" %(catID) # 2/13 change nga_inventory_footprint to nga_inventory # 4/13 add AND prod_code so we only get Pan data
                 preLogText.append( "\n\tNow executing database query on catID '%s' ..." % catID)
                 print "  Executing database query on catID '%s' ..." % catID
                 cur.execute(selquery)
