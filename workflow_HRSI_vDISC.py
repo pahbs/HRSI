@@ -815,14 +815,14 @@ def run_asp(
             outAttributes = pairname + "," + str(found_catID[0]) + "," + str(found_catID[1]) + "," + str(mapprj) + "," + str(year) + "," + str(month) + "," + str(avSunElev)+ "," + str(avSunAz) + "," + str(avOffNadir) + "," + str(avTargetAz) + "," + str(avSatAz) + "," +str(conv_ang) + "," + str(bie_ang) + "," + str(asym_ang) + "," + str(DSMdone) +"\n"
             outAttributesList = outAttributes.rstrip().split(',')
 
-            if DSMdone:
-                print("\nRunning VRT function...\n")
-                start_vrt = timer()
-                runVRT(outStereoPre, outDir)#, outHeaderList, outAttributesList)
-                end_vrt = timer()
-                print "\nElapsed time to run VRT: {} minutes\n".format(round(find_elapsed_time(start_vrt, end_vrt),3))
-            else:
-                print("\n\tVRTs not done b/c DSM not done. Moving on...")
+##            if DSMdone:
+##                print("\nRunning VRT function...\n")
+##                start_vrt = timer()
+##                runVRT(outStereoPre, outDir)#, outHeaderList, outAttributesList)
+##                end_vrt = timer()
+##                print "\nElapsed time to run VRT: {} minutes\n".format(round(find_elapsed_time(start_vrt, end_vrt),3))
+##            else:
+##                print("\n\tVRTs not done b/c DSM not done. Moving on...")
         else:
             print("\n\tNo PC.tif file found")
 
@@ -837,7 +837,7 @@ def run_asp(
 
 
     cmdDelete = 'find . -type f -name "*.tif" ! -newer out-strip-F.tif ! -iname "out-strip-L.tif" -exec rm -rf {} \;'
-    print "Delete files using command:", cmdDelete
+    print "Deleted files using command:", cmdDelete
     os.system(cmdDelete)
 
     # now copy all of the input XMLs into the outASP/batch/pairname/inXMLs
@@ -845,7 +845,7 @@ def run_asp(
     if not os.path.isdir(outXMLdir): # if dir does not exist
         os.makedirs(outXMLdir)
     globXMLs = os.path.join(imageDir, '*_*_*_*.xml') # this will exclude the mosaic xml's, which will only have 2 underscores
-    print '/n Copying XML files ({}) to outASP ({})'.format(globXMLs, outXMLdir)
+    print '\n Copying XML files ({}) to outASP ({})'.format(globXMLs, outXMLdir)
     os.system('cp {} {}'.format(globXMLs, outXMLdir))
 
 
@@ -872,7 +872,7 @@ def run_asp(
     strip2size = round(os.path.getsize(fullPathStrips[1])/1024.0/1024/1024, 3)
     run_times_csv = os.path.join(outDir, 'run_times.csv')
     with open(run_times_csv, 'a') as rt:
-        rt.write('{}, {}, {}, {}\n'.format(batchID, pairname, total_time, (total_time/60), strip1size, strip2size, nodeName))
+        rt.write('{}, {}, {}, {}, {}, {}, {}\n'.format(batchID, pairname, total_time, (total_time/60), strip1size, strip2size, nodeName))
 
     # try to close the out/err files-- http://stackoverflow.com/questions/7955138/addressing-sys-excepthook-error-in-bash-script
     try:
