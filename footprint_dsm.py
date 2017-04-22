@@ -125,29 +125,33 @@ def runVALPIX(root, pairname, src, newFieldsList, newAttribsList, outSHP):
         # -- Update Valid Pixels Shapefile
         # Updates a merged SHP of all valid pixels from individual DSM strips
 
-        print "\n\t Running valid pixel footprints...\n"
+        print "\tRunning valid pixel footprints...\n"
 
         pairnameDir = os.path.join(root,pairname)
 
-        if"AST_" in pairname:
-            src = os.path.join(pairnameDir,'outASP',src)
-        else:
-            src = os.path.join(pairnameDir,src)
+##        if"AST_" in pairname:
+##            src = os.path.join(pairnameDir,'outASP',src)
+##        else:
+##            src = os.path.join(pairnameDir,src)
 
         #print("\t Source file: " + src + "\n")
         outValTif_TMP = os.path.join(pairnameDir, "VALIDtmp.tif")
         outValShp_TMP = os.path.join(pairnameDir, "VALIDtmp.shp")
         outValShp     = os.path.join(pairnameDir, "VALID.shp")
         outValShp_prj = os.path.join(pairnameDir, "VALID_WGS84.shp")
+        outValShp_aggtmp = os.path.join(pairnameDir, "VALID_aggtmp.shp")
         outValShp_agg = os.path.join(pairnameDir, "VALID_agg.shp")
 
         if not os.path.isfile(src):
-            print "\t Will not footprint: %s does not exist." %src
+            print "\tWill not footprint: %s does not exist." %src
         else:
             #print " [1] Create *VALID.shp files for each pairname"
             #print "     [.a] Coarsen %s" %src
-            ##cmdStr = "gdal_translate -outsize 1% 1% -co compress=lzw -b 4 -ot byte -scale 1 1 "  + src + " " + outValTif_TMP
-            cmdStr = "gdal_translate -outsize 5% 5% -co compress=lzw -b 4 -ot byte -scale 1 1 {} {}".format(src, outValTif_TMP)
+            if 'clr-shd' in src:
+                #Band 4 is the alpha channel
+                cmdStr = "gdal_translate -outsize 1% 1% -co compress=lzw -b 4 -ot byte -scale 1 1 {} {}".format(src, outValTif_TMP)
+            else:
+                cmdStr = "gdal_translate -outsize 1% 1% -co compress=lzw -b 1 -ot byte -scale 1 1 {} {}".format(src, outValTif_TMP)
             wf.run_wait_os(cmdStr,print_stdOut=False)
             #print "     [.b] POLYGONIZE %s" %outValTif_TMP
             cmdStr = "gdal_polygonize.py {} -f 'ESRI Shapefile' {}".format(outValTif_TMP, outValShp_TMP)
@@ -163,7 +167,10 @@ def runVALPIX(root, pairname, src, newFieldsList, newAttribsList, outSHP):
 
             #print " [3] Dissolve/Aggregate Polygons into 1 feature"
             input_basename = os.path.split(outValShp_prj)[1].replace(".shp","")
-            cmdStr = "ogr2ogr {} {} -dialect sqlite -sql 'SELECT GUnion(geometry), DN FROM {} GROUP BY DN'".format(outValShp_agg, outValShp_prj, input_basename)
+            cmdStr = "ogr2ogr {} {} -dialect sqlite -sql 'SELECT GUnion(geometry), DN FROM {} GROUP BY DN'".format(outValShp_aggtmp, outValShp_prj, input_basename)
+            wf.run_wait_os(cmdStr,print_stdOut=False)
+            #print " [4] Simplify"
+            cmdStr = "ogr2ogr {} {} -simplify .001".format(outValShp_agg, outValShp_aggtmp)
             wf.run_wait_os(cmdStr,print_stdOut=False)
 
             # Check to see if the pairname exists in the main shp
@@ -226,6 +233,7 @@ def runVALPIX(root, pairname, src, newFieldsList, newAttribsList, outSHP):
                     wf.run_wait_os(cmdStr,print_stdOut=False)
 
                 # Clean up tmp files
+                ##cmd = "find %s -type f -name VALID* -exec rm -rf {} \;" %pairnameDir
                 files = os.listdir(pairnameDir)
                 for f in files:
                     if "VALID" in os.path.join(pairnameDir,f):
@@ -236,13 +244,15 @@ def getparser():
     parser = argparse.ArgumentParser(description="Create footprints of DSMs with sun-surface-target geometry attributes from XMLs")
     parser.add_argument('-out_root', default=None, help='Specify HRSI DSM root dir')
     parser.add_argument('-out_shp', default='hrsi_dsm_footprints', help='Output shp of footprints')
+    parser.add_argument('--str_fp', type=str, default='', help='String indicating the file to be footprinted')
     parser.add_argument('-kml', action='store_true', help='Output kml of footprints for Google Earth')
     return parser
 
-def main(outRoot, outShp):
+def main(outRoot, outShp, str_fp):
     """
     outRoot     eg, outASP dir
     outShp      the name (not full path) of output DSM footprint shapefile
+    str_fp      a string indicating the file to be footprinted, otherwise, footprint the clr-shd
 
     Find all DSM in subdirs of an outRoot dir.
     Create a single footprint shapefile, KML
@@ -257,6 +267,7 @@ def main(outRoot, outShp):
     outRoot = args.out_root
     kml = args.kml
     outShp = args.out_shp
+    str_fp = args.str_fp
 
     DSMincomplete = []      # list of incomplete DSMs (subdirs exist, but interrupted processing)
     DSMcatIDfail = []       # list of subdirs with at least 1 catID not found --> send to Julien
@@ -274,15 +285,29 @@ def main(outRoot, outShp):
 
             outASPdir = os.path.join(outRoot,subdir)
             ##print '\n\tDSM dir: %s' %(outASPdir)
-
+            print "-------------"
             # Look for clr-shd: If exists, then DSM was likely output ok
-            for root, dirs, subdirfiles in os.walk(outASPdir):
+            for root2, dirs, subdirfiles in os.walk(outASPdir):
                 for each in subdirfiles:
+
+                    # Make sure clr-shd exists, indicating the DEM has been fully processed
                     if 'DEM-clr-shd.tif' in each:
-                        print '\tDEM and Color-shaded relief exist'
-                        clrShd = each
+                        print "\tClr-shd exists. DSM can be footprinted."
+                        clrShd = os.path.join(root2,each)
                         DSMok = True
                         break
+
+            # Find the actual file you want to footprint (in case of ASTER, its the *proj.tif one level up
+            if str_fp == '':
+                print "\n\tSource for footprint is CLR: %s" %clrShd
+            else:
+                for root3, dirs, subdirfiles in os.walk(outASPdir):
+                    for each in subdirfiles:
+                        if str_fp in each:
+                            src_fp = os.path.join(root3,each)
+                            print "\n\tSource for footprint: %s" %src_fp
+                            break
+
 
             if not DSMok:
                 print "\n\tNo DSM yet for %s" %(subdir)
@@ -290,6 +315,7 @@ def main(outRoot, outShp):
                 DSMok = False
 
             if DSMok:
+                print '\tDSM dir: %s' %(outASPdir)
                 # Get the outASP subdir of WV DSMs
                 isASTER = False
                 if subdir.startswith('AST'):
@@ -299,14 +325,9 @@ def main(outRoot, outShp):
                     have_info = True
                     isASTER = True
 
-                if subdir.startswith('GE'):
+                if subdir.startswith('GE') or subdir.startswith('WV'):
 
-                    print "Can't handle GE01 yet.."
-                    have_info = False
-
-                if subdir.startswith('WV'):
-
-                    print '\n\tHRSI DSM dir: %s' %(outASPdir)
+                    print "\n\t%s DSM." %(subdir[0:4])
 
                     # Copy the XMLs to inASP
                     catID_1 = subdir.split('_')[2]
@@ -314,7 +335,7 @@ def main(outRoot, outShp):
 
                     # Get image-level & stereopair acquisition info
                     try:
-                        print "\n\t[1] Trying to calc DSM attributes."
+                        print "\n\t[1] Trying to calc DSM attributes using XMLs in current dir."
                         c,b,a,hdr,line = g.stereopairs(outASPdir)
                         have_info = True
 
@@ -359,10 +380,10 @@ def main(outRoot, outShp):
                 hdr = 'pairname,year,month,day,' + hdr
                 if isASTER:
                     pairname    = os.path.basename(os.path.dirname(outASPdir))
-                    valpixroot = os.path.dirname(os.path.dirname(outASPdir))
+                    valpixroot  = os.path.dirname(os.path.dirname(outASPdir))
                 else:
                     pairname    = os.path.basename(outASPdir)
-                    valpixroot = os.path.dirname(outASPdir)
+                    valpixroot  = os.path.dirname(outASPdir)
                 try:
                     year        = pairname.split('_')[1].rstrip()[0:-4]
                     month       = pairname.split('_')[1].rstrip()[4:-2]
@@ -375,22 +396,26 @@ def main(outRoot, outShp):
                 try:
                     print "\n\tBegin shapefile processing of DSM footprints"
 
-                    runVALPIX(valpixroot, pairname, clrShd, hdr.split(','), line.split(','), outShp)
+                    runVALPIX(valpixroot, pairname, src_fp, hdr.split(','), line.split(','), outShp)
                     i = i + 1
                     print "\n\t\t >>>>> Success on # %s: Done with %s " %(i,pairname)
                 except Exception,e:
                     print "\n\t\t >>>>> Fail on # %s: Could not get footprint of %s" %(i,pairname)
                     DSMfootprintFail.append(subdir)
 
-                # Make VRTs
+            # Make VRTs, even if you dont have_info
+            if DSMok:
+
                 runVRT(pairname,outRoot)
                 print "\n\n\n"
 
-    # [1] Output a CSV of catIDs not found in nga db or personal
-    # [2] Output a CSV of catIDs not found in nga db but successfully found in personal db
-    # [2] Output a CSV of incomplete DSM dirs
-    # [3] Output a CSV of DSMs with at least 1 failed catID searches
-    # [4] Output a CSV of failed DSM footprints to the same dir as the output Shapefile (outASP)
+    # Output a CSV of:
+    # [1] catIDs not found in nga db or personal
+    # [2] catIDs not found in nga db but successfully found in personal db
+    # [2] incomplete DSM dirs
+    # [3] DSMs with at least 1 failed catID searches
+    # [4] failed DSM footprints to the same dir as the output Shapefile (outASP)
+
     outCSVFileStrings = ['_failed_find_catID.csv', '_success_find_catID_personal.csv', '_failed_inc_DSM.csv', '_failed_find_DSMcatID.csv', '_failed_DSM_foots.csv']
     failList = [catIDfails, catIDsuccess, DSMincomplete, DSMcatIDfail, DSMfootprintFail]
     for num, outStr in enumerate(outCSVFileStrings):
@@ -399,8 +424,8 @@ def main(outRoot, outShp):
             for failline in failList[num]:
                 outCSV.write(failline + '\n')
     if kml:
-        make_kml(outShp)
+        make_kml(os.path.join(outRoot,outShp))
 
 if __name__ == "__main__":
     import sys
-    main(sys.argv[1], sys.argv[2])
+    main(sys.argv[1], sys.argv[2], sys.argv[3])
