@@ -110,7 +110,7 @@ join_by() { local IFS="$1"; shift; echo "$*"; }
 # VARIABLES FOR RUN
 #
 # Launch like this example:
-# pupsh "hostname ~ 'ecotone16'" "/att/nobackup/pmontesa/ASTER/do_aster_unzip_2.sh 'scenes.list' 'L1A_orders/tmp4'"
+# pupsh "hostname ~ 'ecotone'" "/att/nobackup/pmontesa/ASTER/do_aster_unzip_2.sh scenes.list L1A_orders/tmp4"
 
 # Cmd Line Args
 sceneList=$1

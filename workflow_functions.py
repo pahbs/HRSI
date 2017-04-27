@@ -23,9 +23,6 @@ import numpy as np
 from collections import defaultdict
 import csv
 
-##wf.loop_zonal_stats('/att/nobackup/pmontesa/DSM_ssg/Siberia_FIELD_GLAS_plots_utm47_buf_10m.shp','/att/gpfsfs/userfs02/ppl/pmontesa/outASP/WV01_20130604_1020010023E3DB00_1020010024C5D300/out-strip-holes-fill-DEM.tif')
-
-
 def mos_map_ms(inDir,outDir,catIDleft, inDSM):
     """
     inDir:      dir where the raw, renamed data sits

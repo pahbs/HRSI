@@ -1,14 +1,28 @@
 #!/bin/bash
 #
-# TEST by SCENE starting with a sceneName (eg; AST_L1A_00306232003135434_20170125151451_24922)
-# Process ASTER L1A data from earthdata.nasa.gov polygon searches
-#
+# Process ASTER L1A scene-level .zip files data from earthdata.nasa.gov polygon searches
+#   (eg; AST_L1A_00306232003135434_20170125151451_24922.zip)
 
 ################################
 #_____Function Definitions_____
 ################################
 
-run_asp_fine () {
+run_mapprj() {
+
+    inDEM=$1
+    sceneName=$2
+    pixResFineSize=$3
+    logFile=$4
+
+    echo "Running mapproject ..." | tee -a $logFile
+    mapproject --threads=5 --tr $pixResFineSize $inDEM $sceneName/in-Band3N.tif $sceneName/in-Band3N.xml $sceneName/in-Band3N_proj.tif
+    mapproject --threads=5 --tr $pixResFineSize $inDEM $sceneName/in-Band3B.tif $sceneName/in-Band3B.xml $sceneName/in-Band3B_proj.tif
+    #echo "${sceneName}" >>               AST_L1A_mapprj.list
+
+    echo "Finished mapprojecting" | tee -a $logFile
+}
+
+run_asp() {
 
     SGM=$1
     inDEM=$2
@@ -16,6 +30,7 @@ run_asp_fine () {
     sceneName=$4
     now=$5
     L1Adir=$6
+    logFile=$7
 
     cd $L1Adir
 
@@ -24,91 +39,140 @@ run_asp_fine () {
 
     #runDir=corr${corrKern}_subpix${subpixKern}
 
-    echo "[4] Working on: $sceneName -- Checking for PC.tif ..."
-    echo "Input coarse DEM = ${inDEM}"
+    echo "[4] Working on: $sceneName " | tee -a $logFile
+    echo "Checking for PC.tif ..." | tee -a $logFile
+    echo "Input coarse DEM: ${inDEM}" | tee -a $logFile
 
     outPrefix=$sceneName/outASP/out
 
     # Stereo Run Options
-    # NOTE:  running MGM (--stereo-algorithm 2 instead of SGM)
+    #
     #
     par_opts="--corr-tile-size $tileSize --job-size-w $tileSize --job-size-h $tileSize --processes 18 --threads-multiprocess 10 --threads-singleprocess 32 --nodes-list=/att/gpfsfs/home/pmontesa/code/nodes_ecotone07"
-    sgm_opts="-t aster --threads=10 --xcorr-threshold -1 --corr-kernel $corrKern $corrKern --cost-mode 4 --subpixel-mode 0 --median-filter-size 3 --texture-smooth-size 13 --texture-smooth-scale 0.13"
+    sgm_opts="--corr-tile-size $tileSize -t aster --threads=5 --xcorr-threshold -1 --corr-kernel $corrKern $corrKern --cost-mode 4 --subpixel-mode 0 --median-filter-size 3 --texture-smooth-size 13 --texture-smooth-scale 0.13"
     reg_opts="-t aster --subpixel-mode 2 --corr-kernel $corrKern $corrKern --subpixel-kernel $subpixKern $subpixKern"
     stereo_opts="$sceneName/in-Band3N_proj.tif $sceneName/in-Band3B_proj.tif $sceneName/in-Band3N.xml $sceneName/in-Band3B.xml $outPrefix $inDEM"
 
-    # Run stereo with the map-projected images
-    #
-    if [ ! -f $outPrefix-PC.tif ]; then
+    echo "[1] Check for ASP input"
+    inPre=$sceneName/in-Band3
 
-        echo "No PC.tif file -- determine which stereo algorithm to run ..."
-        echo "Tile size = ${tileSize}"
+    if [ -f ${inPre}N.tif ] && [ -f ${inPre}B.tif ] && [ -f ${inPre}N.xml ] && [ -f ${inPre}B.xml ]; then
+        echo "ASP input is exists." | tee -a $logfile
+    else
+        echo "[1a] Find and unzip data" | tee -a $logfile
+		orderDir=`echo $(dirname $L1Adir)`/L1A_orders/sept_nov
+		sceneArr=(${sceneName//_/ })
+		sceneSearch=${sceneArr[2]}
+
+		echo "[1b] Unzip $sceneName ..." | tee -a $logFile
+		find $orderDir -name *${sceneSearch}*.zip -exec unzip -oj -d $sceneName {} \;
+
+		echo "[1c] Running aster2asp on $sceneName ..." | tee -a $logFile
+		find $sceneName -type f -name in-Band3* -exec rm -rf {} \;
+        aster2asp --threads=15 ${sceneName} -o ${sceneName}/in
+    fi
+
+    if [ ! -f ${inPre}N_proj.tif ] || [ ! -f ${inPre}B_proj.tif ] ; then
+
+        echo "[2] Mapproject..." | tee -a $logfile
+        find $sceneName -type f -name in-Band3*_proj.tif -exec rm -rf {} \;
+        run_mapprj $inDEM $sceneName $pixResFineSize $logFile
+
+    fi
+    if gdalinfo ${inPre}N_proj.tif && gdalinfo ${inPre}B_proj.tif; then
+        echo "Mapproject already complete." | tee -a $logfile
+    else
+        echo "[2] Mapproject re-do..." | tee -a $logFile
+        find $sceneName -type f -name in-Band3*_proj.tif -exec rm -rf {} \;
+        run_mapprj $inDEM $sceneName $pixResFineSize $logFile
+    fi
+
+    if [ ! -f $outPrefix-PC.tif ]; then
+        echo "[3] Run stereo with the map-projected images..." | tee -a $logFile
+        echo "Determine which stereo algorithm to run ..." | tee -a $logFile
+        echo "Tile size = ${tileSize}" | tee -a $logFile
 
         if $SGM; then
 
-            echo "Stereo mode SGM or MGM = ${SGM}"
+            echo "Running SGM stereo mode" | tee -a $logFile
 
             find $sceneName/outASP -type f -name out* -exec rm -rf {} \;
 
-            echo "   Running stereo with SGM mode ..."
-            echo "   Running stereo with SGM mode ..."$'\r' >> ${sceneName}_${now}.log
             #parallel_stereo  --stereo-algorithm 1 $par_opts $sgm_opts $stereo_opts
             stereo  --stereo-algorithm 1 $sgm_opts $stereo_opts
-            echo "   Finished stereo from SGM mode."
+            echo "Finished stereo from SGM mode." | tee -a $logFile
 
             if [ ! -f $outPrefix-PC.tif ]; then
 
+                echo "SGM failed to create a PC.tif; running stereo with MGM..." | tee -a $logFile
+
                 find $sceneName/outASP -type f -name out* -exec rm -rf {} \;
 
-                echo "   Running stereo with MGM mode b/c SGM failed to create a PC.tif ..."
-                echo "   Running stereo with MGM mode b/c SGM failed to create a PC.tif ..."$'\r' >> ${sceneName}_${now}.log
                 stereo  --stereo-algorithm 2 $sgm_opts $stereo_opts
-                echo "   Finished stereo from MGM mode."
-            else
-                echo "   Stereo successful from SGM mode."
+                echo "Finished stereo from MGM mode." | tee -a $logFile
             fi
 
-        else
-            echo "   Running stereo ..."
-            echo "   Running stereo ..."$'\r' >> ${sceneName}_${now}.log
+            if [ -f $outPrefix-PC.tif ]; then
+					echo "Stereo successful from SGM or MGM mode." | tee -a $logFile
+				else
+					echo "Stereo NOT successful from SGM or MGM mode." | tee -a $logFile
+					SGM=false
+            fi
+        fi
+
+        if ! $SGM; then
+
+            echo "SGM and MGM failed to produce a PC.tif file. Running stereo ..." | tee -a $logFile
             #parallel_stereo $par_opts $reg_opts $stereo_opts
             stereo $reg_opts $stereo_opts
+            echo "Finished stereo." | tee -a $logFile
         fi
     fi
 
-    echo "[5] Running fine point2dem on $sceneName/outASP/$runDir ..."$'\r' >> ${sceneName}_${now}.log
-    # Create the final DEM and ortho'd Pan
-    #
-    #outFine=$sceneName/outASP/$runDir/out
+    echo "Try to create the final DEM and ortho'd Pan" | tee -a $logFile
+
     if [ -f $outPrefix-PC.tif ]; then
 
-        if [ ! -f $outPrefix-DEM-clr-shd.tif ]; then
+        echo "PC.tif exists, now check for hillshade and colormap ..." | tee -a $logFile
+
+        if [ ! -f $outPrefix-DEM-hlshd-e25.tif ]; then
+
+            echo "No hillshade, running point2dem..." | tee -a $logFile
+
+            echo "[4] Running point2dem on $sceneName ..."  | tee -a $logFile
 
             point2dem --threads=6 -r earth $outPrefix-PC.tif -o $outPrefix --orthoimage $outPrefix-L.tif
+            echo "Finished point2dem." | tee -a $logFile
 
-            # Final Viewing GeoTiffs
-            #
-            echo "[6] Running final viewing GeoTiffs on $sceneName ..."$'\r' >> ${sceneName}_${now}.log
+            echo "[5] Running hillshade on $sceneName ..." | tee -a $logFile
+
             hillshade $outPrefix-DEM.tif -o $outPrefix-DEM-hlshd-e25.tif -e 25
-            colormap $outPrefix-DEM.tif -s $outPrefix-DEM-hlshd-e25.tif -o $outPrefix-DEM-clr-shd.tif --colormap-style /att/gpfsfs/home/pmontesa/code/color_lut_hma.txt
-
-            gdal_translate -of VRT ${L1Adir}/$outPrefix-DEM-clr-shd.tif ${L1Adir}_out/clr/${sceneName}-CLR.vrt
-            gdal_translate -of VRT ${L1Adir}/$outPrefix-DRG.tif ${L1Adir}_out/drg/${sceneName}-DRG.vrt
-            gdal_translate -of VRT ${L1Adir}/$outPrefix-DRG.tif ${L1Adir}_out/dsm/${sceneName}-DEM.vrt
-
-            gdaladdo -r average ${L1Adir}/$outPrefix-DEM-clr-shd.tif 2 4 8 16 &
-            gdaladdo -r average ${L1Adir}/$outPrefix-DRG.tif 2 4 8 16 &
-            gdaladdo -r average ${L1Adir}/$outPrefix-DEM.tif 2 4 8 16 &
-            echo "[7] Finished processing ${sceneName}."$'\r' >> ${sceneName}_${now}.log
-            echo "----------}."$'\r' >> ${sceneName}_${now}.log
         else
-            echo "   CLR-SHD file exists, skipping point2dem."
-            echo "   CLR-SHD file exists, skipping point2dem."$'\r' >> ${sceneName}_${now}.log
+            echo "[5] Hillshade exists." | tee -a $logFile
         fi
+
+        if [ ! -f $outPrefix-DEM-clr-shd.tif ]; then
+      		echo "[6] Now creating colormap ..." | tee -a $logFile
+            colormap $outPrefix-DEM.tif -s $outPrefix-DEM-hlshd-e25.tif -o $outPrefix-DEM-clr-shd.tif --colormap-style /att/gpfsfs/home/pmontesa/code/color_lut_hma.txt
+        else
+            echo "[6] Colormap exists." | tee -a $logFile
+        fi
+
+        echo "[7] Create output VRT files: CLR, DEM, DRG..." | tee -a $logFile
+        gdal_translate -of VRT ${L1Adir}/$outPrefix-DEM-clr-shd.tif ${L1Adir}_out/clr/${sceneName}_CLR.vrt &
+        gdal_translate -of VRT ${L1Adir}/$outPrefix-DRG.tif ${L1Adir}_out/drg/${sceneName}_DRG.vrt &
+        gdal_translate -of VRT ${L1Adir}/$outPrefix-DRG.tif ${L1Adir}_out/dsm/${sceneName}_DEM.vrt &
+
+        gdaladdo -r average ${L1Adir}/$outPrefix-DEM-clr-shd.tif 2 4 8 16 &
+        gdaladdo -r average ${L1Adir}/$outPrefix-DRG.tif 2 4 8 16 &
+        gdaladdo -r average ${L1Adir}/$outPrefix-DEM.tif 2 4 8 16 &
+        echo "----\\Finished processing ${sceneName}." | tee -a $logFile
+
     else
-        echo "   No PC.tif file !!! DEM not created."
-        echo "   No PC.tif file !!! DEM not created."$'\r' >> ${sceneName}_${now}.log
+        echo "----\\Finished processing ${sceneName}. No PC.tif file. DEM not created." | tee -a $logFile
     fi
+
+
 }
 ##############################################
 
@@ -132,12 +196,17 @@ cd $topDir
 hostN=`/bin/hostname -s`
 
 #find . -type d -name "AST_*" > scenes4stereo.list
+#find L1A_orders/sept_nov -type f -name *.zip > scenes.sept_nov.zip.list
 #python ~/code/gen_csv_chunks.py scenes4stereo.list ~/code/nodes_tmp
 
+batchLogStem=${topDir}/logs/${batch}_${hostN}.log
 
 # Read in sceneList of AST L1A scenes from an orderZip
 while read -r sceneName; do
+
     sceneName=`echo $(basename $sceneName)`
+
+	 sceneLog=${batchLogStem}_${sceneName}
 
     # ---- Pixel sizes
     # 10m
@@ -145,16 +214,14 @@ while read -r sceneName; do
 
     # Stereo corr & job tile size for SGM run
     # tilesize^2 * 300 / 1e9 = RAM needed per thread
-    tileSize=3200
+    tileSize=512
     SGM=true
 
-    #_____Function calls_____
-
-    #run_mapprj $inDEM $sceneName $now $pixResFineSize
-    run_asp_fine $SGM $inDEM $tileSize $sceneName $now $topDir/L1A
+    #_____Function call_____
+    run_asp $SGM $inDEM $tileSize $sceneName $now $topDir/L1A $sceneLog
 
 
-done < scenes.list_${batch}_${hostN}
+done < ${batch}_${hostN}
 
 
 

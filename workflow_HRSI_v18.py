@@ -60,7 +60,7 @@ def run_stereo(par, nodesList, imagePairs, imagePair_xmls, outStereoPre, DEM, ma
             if 'GE01' in imagePairs:
                 cmdStr = "stereo -t rpc --threads 18 --corr-timeout 360 " + imagePairs + outStereoPre
             else:
-                cmdStr = "stereo --threads 18 --corr-timeout 360 " + STEREO_IO
+                cmdStr = "stereo --threads 18 --corr-timeout 360 --subpixel-mode 2 --subpixel-kernel 9 9 " + STEREO_IO
 
     print "\n\t" + cmdStr
 
@@ -94,12 +94,12 @@ def runP2D(outStereoPre, prj, strip=True):
         """
         Not sure if I still want an Error Image...
         """
-        print("\n\t [3] Create Error Image")
-        cmdStrErrorImage = P2D_OPTS + P2D_IO + " --no-dem --errorimage "
-        wf.run_os(cmdStrErrorImage)
+        ##print("\n\t [3] Create Error Image")
+        ##cmdStrErrorImage = P2D_OPTS + P2D_IO + " --no-dem --errorimage "
+        ##wf.run_os(cmdStrErrorImage)
 
     # Communicate p2d holes-fill
-    if os.path.isfile(outStereoPre + "-PC.tif") and not os.path.isfile(outStereoPre + "-holes-fill-DEM.txt"):
+    if os.path.isfile(outStereoPre + "-PC.tif") and not os.path.isfile(outStereoPre + "-DEM.txt"):
         stdOut, err = p2dCmd2.communicate()
         print(str(stdOut) + str(err))
         end_p2d = timer()
@@ -108,47 +108,55 @@ def runP2D(outStereoPre, prj, strip=True):
         ##print("Total ASP run time for this scene (mins): " + str((end_p2d - start_ps)/60) )
 
         if str(stdOut) != "None":
-            with open(outStereoPre + "-holes-fill-DEM.txt",'w') as out_hf_txt:
-                out_hf_txt.write("holes-fill-DEM processed")
+            with open(outStereoPre + "-DEM.txt",'w') as out_hf_txt:
+                out_hf_txt.write("DEM processed")
 
     # Avoid 'TIFF file size exceeded' errors with reduced-size Hillshades & VRTs
     # Logic to build VRTs from strip-holes-fill-DEM and the hillshade at 50% resolution in order to run colormap successfully
     if strip:
-        print("\n\tLaunching gdal_translate to create out-strip-holes-fill-DEM.vrt ")
-        cmdStr = "gdal_translate -outsize 30% 30% -of VRT " + outStereoPre + "-holes-fill-DEM.tif " + outStereoPre + "-holes-fill-DEM.vrt"
+        print("\n\tLaunching gdal_translate to create out-strip-DEM.vrt ")
+        cmdStr = "gdal_translate -outsize 30% 30% -of VRT " + outStereoPre + "-DEM.tif " + outStereoPre + "-DEM.vrt"
         wf.run_wait_os(cmdStr)
 
     # [5.5]  gdaldem stuff to create viewable output: hillshade on the reduced DEM VRT
-    if os.path.isfile(outStereoPre + "-PC.tif") and not os.path.isfile(outStereoPre + "-holes-fill-DEM-hlshd-e25.txt"):
+    if os.path.isfile(outStereoPre + "-PC.tif") and not os.path.isfile(outStereoPre + "-DEM-hlshd-e25.txt"):
 
         print("hillshade")
-        cmdStr = "hillshade  " + outStereoPre + "-holes-fill-DEM.vrt -o  " + outStereoPre + "-holes-fill-DEM-hlshd-e25.tif -e 25"
+        cmdStr = "hillshade  " + outStereoPre + "-DEM.vrt -o  " + outStereoPre + "-DEM-hlshd-e25.tif -e 25"
         print(cmdStr)
         hshCmd = subp.Popen(cmdStr.rstrip('\n'), stdout=subp.PIPE, shell=True)
         stdOut_hill, err_hill = hshCmd.communicate()
         print(str(stdOut_hill) + str(err_hill))
 
         if str(stdOut_hill) != "None":
-            with open(outStereoPre + "-holes-fill-DEM-hlshd-e25.txt",'w') as out_hill_txt:
+            with open(outStereoPre + "-DEM-hlshd-e25.txt",'w') as out_hill_txt:
                 out_hill_txt.write("hillshade processed")
 
-    if os.path.isfile(outStereoPre + "-holes-fill-DEM.vrt") and os.path.isfile(outStereoPre + "-holes-fill-DEM-hlshd-e25.tif") and not os.path.isfile(outStereoPre + "-holes-fill-DEM-clr-shd.txt"):
+    if os.path.isfile(outStereoPre + "-DEM.vrt") and os.path.isfile(outStereoPre + "-DEM-hlshd-e25.tif") and not os.path.isfile(outStereoPre + "-DEM-clr-shd.txt"):
         print("colormap")
-        cmdStr = "colormap  " + outStereoPre + "-holes-fill-DEM.vrt -s " + outStereoPre + "-holes-fill-DEM-hlshd-e25.tif -o " + outStereoPre + "-holes-fill-DEM-clr-shd.tif" + " --colormap-style /att/gpfsfs/home/pmontesa/code/color_lut_v7.txt"
+
+        #cmdStr = '''gdalinfo -stats " + outStereoPre + "-holes-fill-DEM.tif" + " | grep _MIN | awk -F "=" {print $2}'''
+        cmdStr = 'gdalinfo -stats {}-DEM.vrt'.format(outStereoPre)
+        gdalinfoCmd = subp.Popen(cmdStr.rstrip('\n'), stdout=subp.PIPE, shell=True)
+        stdOut_gdalinfo, err_gdalinfo = gdalinfoCmd.communicate()
+        dem_min = stdOut_gdalinfo.split('_MINIMUM=')[1].split('\n')[0]
+        dem_max = stdOut_gdalinfo.split('_MAXIMUM=')[1].split('\n')[0]
+
+        cmdStr = "colormap {}-DEM.vrt -s {}-DEM-hlshd-e25.tif -o {}-DEM-clr-shd.tif --min {} --max {} --colormap-style jet".format(outStereoPre,outStereoPre,outStereoPre,dem_min,dem_max)#/att/gpfsfs/home/pmontesa/code/color_lut_v7.txt"
         print(cmdStr)
         clrCmd = subp.Popen(cmdStr.rstrip('\n'), stdout=subp.PIPE, shell=True)
         stdOut_clr, err_clr = clrCmd.communicate()
         print(str(stdOut_clr) + str(err_clr))
 
         if not "None" in str(stdOut_clr):
-            with open(outStereoPre + "-holes-fill-DEM-clr-shd.txt",'w') as out_clr_txt:
+            with open(outStereoPre + "-DEM-clr-shd.txt",'w') as out_clr_txt:
                 out_clr_txt.write("colormap processed")
 
     print("\n\tLaunch gdaladdo")
     print("\n\tKick off nearly simultaneously; i.e. dont wait for the first gdaladdo output to be communicated before launching the second")
-    pyrcmdStr1 = "gdaladdo -r average " + outStereoPre + "-holes-fill-DEM.tif 2 4 8 16"
-    pyrcmdStr2 = "gdaladdo -r average " + outStereoPre + "-holes-fill-DEM-clr-shd.tif 2 4 8 16"
-    pyrcmdStr3 = "gdaladdo -r average " + outStereoPre + "-holes-fill-DRG.tif 2 4 8 16"
+    pyrcmdStr1 = "gdaladdo -r average " + outStereoPre + "-DEM.tif 2 4 8 16"
+    pyrcmdStr2 = "gdaladdo -r average " + outStereoPre + "-DEM-clr-shd.tif 2 4 8 16"
+    pyrcmdStr3 = "gdaladdo -r average " + outStereoPre + "-DRG.tif 2 4 8 16"
 
     # Initialize gdaladdos by scene for 1) -DEM.tif, 2) -DEM-clr-shd.tif, 3) -DRG.tif
     pyrCmd1 = subp.Popen(pyrcmdStr1.rstrip('\n'), stdout=subp.PIPE, shell=True)
@@ -180,7 +188,7 @@ def db_query(catIDlist):
 
     import psycopg2
     # Establish the database connection
-    with psycopg2.connect(database="NGAdb01", user="anon", host="ngadb01", port="5432") as dbConnect:
+    with psycopg2.connect(database="ngadb01", user="anon", host="ngadb01", port="5432") as dbConnect:
 
         cur = dbConnect.cursor() # setup the cursor
         sel_list=[]
@@ -191,7 +199,7 @@ def db_query(catIDlist):
         # setup and execute the query on both catids of the stereopair indicated with the current line of the input CSV
         for num, catID in enumerate(catIDlist):
 
-            selquery =  "SELECT s_filepath, sensor, acq_time, cent_lat, cent_long FROM nga_inventory WHERE catalog_id = '%s'" %(catID)
+            selquery =  "SELECT s_filepath, sensor, acq_time, cent_lat, cent_long FROM nga_inventory WHERE catalog_id = '%s' AND prod_code = '%s'" %(catID,'P1BS')
             ##preLogText.append( "\n\t Now executing database query on catID '%s' ..."%catID)
             cur.execute(selquery)
             """
@@ -217,148 +225,13 @@ def copy_over_symlink(file_path, inRoot, subdir):
 
     print "\tCopied xml to %s" %(os.path.join(inRoot,subdir,os.path.split(file_path)[1]))
 
-def footprint_dsm(outRoot, inRoot, myDir, outShp):
-    """
-    outRoot     eg, outASP dir
-    inRoot      eg, inASP dir
-    myDir       a top level input dir in my NOBACKUP space in which to search for catIDs if the NGA dB doesnt find them
-    outShp      the name (not full path) of output DSM footprint shapefile
-
-    Find all DSM in subdirs of an outRoot dir.
-    Find matching input files in corresponding dirs of inRoot
-    Gather list of image level attributes
-    Output to shp with runVALPIX
-    """
-    import os
-    from os import listdir
-    import get_stereopairs_v3 as g
-    DSMincomplete = []      # list of incomplete DSMs (subdirs exist, but interrupted processing)
-    DSMcatIDfail = []       # list of subdirs with at least 1 catID not found --> send to Julien
-    catIDfails = []         # list of catIDs not found
-    catIDsuccess = []       # list of catIDs found in my dB that werent in NGA db
-    DSMfootprintFail = []   # list of DSMs that seem ok but failed to get footprinted
-    i = 0
-    for root, subdirs, files in os.walk(outRoot):
-
-        for subdir in subdirs:
-
-            # Get the outASP subdir of WV DSMs
-            if subdir.startswith('WV'):
-                DSMok = False
-
-                outASPdir = os.path.join(outRoot,subdir)
-                print '\n\tHRSI DSM dir: %s' %(outASPdir)
-
-                # Look for clr-shd: If exists, then DSM was likely output ok
-                for root, dirs, files in os.walk(outASPdir):
-                    for each in files:
-                        if 'holes-fill-DEM-clr-shd' in each and '.tif' in each:
-                            print '\tDEM and Color-shaded relief exist'
-                            DSMok = True
-                if not DSMok:
-                    print "\n\tSubdir %s has no DSM yet." %(subdir)
-                    DSMincomplete.append(subdir)
-                    DSMok = False
-                else:
-                    # Copy the XMLs to inASP
-                    catID_1 = subdir.split('_')[2]
-                    catID_2 = subdir.split('_')[3]
-
-                    have_info = False
-
-                    # Get the inASP dir
-                    inASPdir = os.path.join(inRoot,subdir)
-
-                    # Get image-level & stereopair acquisition info
-                    try:
-                        print "\n\t[1] Trying to calc DSM attributes."
-                        c,b,a,hdr,line = g.stereopairs(inASPdir)
-                        have_info = True
-
-                    except Exception, e:
-                        print "\n\t First try: stereo angles NOT calc'd."
-                        print "\t Querying the NGA db for each catID..."
-
-                        if not os.path.isdir(inASPdir):
-                            os.mkdir(inASPdir)
-
-                        for num, catID in enumerate([catID_1,catID_2]):
-                            # Query the db
-                            sList = db_query([catID])
-                            print "\tcatID is %s" %(catID)
-
-                            if len(sList[0]) == 0:
-                                catIDmyDir = False
-                                print "\tThis catID not found in NGA dB...searching personal dir %s" %(myDir)
-                                for root, dirs, files in os.walk(myDir):
-                                    for each in files:
-                                        if 'P1BS' in each and catID in each and '.xml' in each and not 'cor' in each and not 'orth' in each:
-                                            # Function to copy XML from myDir into inASP
-                                            copy_over_symlink(os.path.join(root+'/'+ each), inRoot, subdir)
-                                            catIDmyDir = True
-                                if not catIDmyDir:
-                                    print "\n\tFailed to find %s in personal dir" %(catID)
-                                    catIDfails.append(catID)
-                                else:
-                                    catIDsuccess.append(catID)
-                            else:
-                                # Get file_paths of all images assoc'd with catID
-                                for numimg, img in enumerate(range(0,len(sList[num-1])-1)):
-                                    print "\tScene number is %s" %(numimg)
-                                    file_path = sList[num-1][numimg-1][0]   # third position is the file_path
-                                    file_path = file_path.replace('.ntf','.xml').replace('.tif','.xml')
-                                    # Function to copy XML from NGA dB into inASP
-                                    copy_over_symlink(file_path, inRoot, subdir)
-
-                        # Get image-level & stereopair acquisition info
-                        try:
-                            print "\n\t[2] Trying again to calc DSM attributes, after NGA dB query."
-                            c,b,a,hdr,line = g.stereopairs(inASPdir)
-                            have_info = True
-
-                        except Exception, e:
-                            print "\n\tStereo angles not calc'd b/c there is no input for both catIDs. You're done with this one."
-                            DSMcatIDfail.append(subdir)
-                            have_info = False
-
-                    if have_info:
-                        # Reconfigure hdr and attribute line
-                        hdr = 'pairname,year,month,day,' + hdr
-                        pairname    = os.path.split(outASPdir)[1]
-                        year        = pairname.split('_')[1].rstrip()[0:-4]
-                        month       = pairname.split('_')[1].rstrip()[4:-2]
-                        day         = pairname.split('_')[1].rstrip()[6:]
-                        line = pairname + ',' + year + ',' + month + ',' + day + ',' + line
-
-                        try:
-                            print "\n\tMake/update a shapefile of DSM footprints\n"
-                            runVALPIX(outASPdir+'/out-strip', os.path.split(outASPdir)[0], hdr.split(','), line.split(','), outShp)
-                            i = i + 1
-                            print "\n\n\t\t -- Just footprinted DSM number %s -- \n" %(i)
-                        except Exception,e:
-                            print "\n\tCould not get footprint of %s" %(pairname)
-                            DSMfootprintFail.append(subdir)
-
-    # [1] Output a CSV of catIDs not found in nga db or personal
-    # [2] Output a CSV of catIDs not found in nga db but successfully found in personal db
-    # [2] Output a CSV of incomplete DSM dirs
-    # [3] Output a CSV of DSMs with at least 1 failed catID searches
-    # [4] Output a CSV of failed DSM footprints to the same dir as the output Shapefile (outASP)
-    outCSVFileStrings = ['_failed_find_catID.csv', '_success_find_catID_personal.csv', '_failed_inc_DSM.csv', '_failed_find_DSMcatID.csv', '_failed_DSM_foots.csv']
-    failList = [catIDfails, catIDsuccess, DSMincomplete, DSMcatIDfail, DSMfootprintFail]
-    for num, outStr in enumerate(outCSVFileStrings):
-        # Ouput a CSV, 1 line for each fail
-        with open(os.path.join(outRoot,outShp.split('.')[0] + outStr), 'wb') as outCSV:
-            for failline in failList[num]:
-                outCSV.write(failline + '\n')
-
 def runVALPIX(outStereoPre, root, newFieldsList, newAttribsList, outSHP):
         # -- Update Valid Pixels Shapefile
         # Updates a merged SHP of all valid pixels from individual DSM strips
         #   example:
         #       outStereoPre --> /att/nobackup/pmontesa/outASP/WV01_20130617_1020010022894400_1020010022BB6400/out-strip
         # [1] Create out-strip-holes-fill-DEM-clr-shd_VALID.shp files for each strip
-        srcSHD = outStereoPre + "-holes-fill-DEM-clr-shd.tif"
+        srcSHD = outStereoPre + "-DEM-clr-shd.tif"
         print "\n\t--Running valid Pixels Footprintings--"
         print("\t" + outStereoPre.split('/')[-2] + "\n")
         outValTif_TMP = os.path.join(root,outStereoPre.split('/')[-2], "VALIDtmp.tif")
@@ -434,9 +307,9 @@ def runVALPIX(outStereoPre, root, newFieldsList, newAttribsList, outSHP):
                print("\t Removed: "+ f)
 
 def runVRT(outStereoPre,
-            root,
-            newFieldsForVALPIX,
-            newAttributesForVALPIX
+            root#,
+##            newFieldsForVALPIX,
+##            newAttributesForVALPIX
             ):
 
     # Build a VRT of the strip clr-shd file
@@ -445,9 +318,11 @@ def runVRT(outStereoPre,
     # Note: VRTs need absolute paths!
 
     # --CLR
-    srcSHD = outStereoPre + "-holes-fill-DEM-clr-shd.tif"
-    path = os.path.join(root,"vrt_clr_v7")
-    dst = os.path.join(path, outStereoPre.split('/')[-2] + '_' + outStereoPre.split('/')[-1] + "-holes-fill-DEM-clr-shd.vrt")
+    srcSHD = outStereoPre + "-DEM-clr-shd.tif"
+    #path = os.path.join(root,"vrt_clr_v7")
+    clrpath = os.path.join(root, "clr")
+    os.system('mkdir -p %s' % clrpath)
+    dst = os.path.join(clrpath, outStereoPre.split('/')[-2] + '_' + outStereoPre.split('/')[-1] + "-DEM-clr-shd.vrt")
     if os.path.isfile(dst):
         os.remove(dst)
     cmdStr = "gdal_translate -of VRT " + srcSHD + " " + dst
@@ -459,9 +334,10 @@ def runVRT(outStereoPre,
     #run_os(cmdStr)
 
     # --DRG
-    srcDRG = outStereoPre + "-holes-fill-DRG.tif"
-    path = os.path.join(root,"vrt_drg")
-    dst = os.path.join(path, outStereoPre.split('/')[-2] + '_' + outStereoPre.split('/')[-1] + "-holes-fill-DRG.vrt")
+    srcDRG = outStereoPre + "-DRG.tif"
+    drgpath = os.path.join(root, "drg")
+    os.system('mkdir -p %s' % drgpath)
+    dst = os.path.join(drgpath, outStereoPre.split('/')[-2] + '_' + outStereoPre.split('/')[-1] + "-DRG.vrt")
     if os.path.isfile(dst):
         os.remove(dst)
     cmdStr = "gdal_translate -of VRT " + srcDRG + " " + dst
@@ -471,17 +347,19 @@ def runVRT(outStereoPre,
     # --Update DRG index shapefile
     #cmdStr = "gdaltindex -t_srs EPSG:4326 " + path + "drg_index.shp " + dst
     #run_os(cmdStr)
-    try:
-        runVALPIX(outStereoPre,root,newFieldsForVALPIX, newAttributesForVALPIX, "outASP_strips_valid_areas.shp")
-    except Exception, e:
-        print("\tFailed to update output shapefile. Check dir and delete tmp files manually.")
 
+    # --DSM
+    srcDEM = outStereoPre + "-DEM.tif"
+    dempath = os.path.join(root, "dem")
+    os.system('mkdir -p %s' % dempath)
+    dst = os.path.join(dempath, outStereoPre.split('/')[-2] + '_' + outStereoPre.split('/')[-1] + "-DEM.vrt")
+    if os.path.isfile(dst):
+        os.remove(dst)
+    cmdStr = "gdal_translate -of VRT " + srcDEM + " " + dst
+    wf.run_os(cmdStr)
 
-    print("\n\t ---------------")
-    print("\n\t ")
-    print("\n\t -- Finished processing " + outStereoPre.split('/')[-2])
-    print("\n\t ")
-    print("\n\t ---------------")
+    print("\tWriting VRT " + dst)
+    #print("\t ---------------")
 
 def run_asp(
     csv,
@@ -576,8 +454,8 @@ def run_asp(
     # [2] From the header, get the indices of the attributes you need
     #catID_1_idx     = header.index('catalogid')
     #catID_2_idx     = header.index('stereopair')
-    pairname_idx        = header.index('pairname')
-    #sensor_idx      = header.index('platform')
+    pairname_idx    = header.index('pairname')
+    #sensor_idx     = header.index('platform')
     avSunElev_idx   = header.index('avsunelev')
     avSunAzim_idx   = header.index('avsunazim')
     imageDate_idx   = header.index('acqdate')
@@ -609,14 +487,14 @@ def run_asp(
             preLogText.append(line)
             preLogText.append(linesplit)
 
-            catID_1    = linesplit[pairname_idx].split('_')[2]
-            catID_2    = linesplit[pairname_idx].split('_')[3]
-            sensor     = linesplit[pairname_idx].split('_')[0]
-            imageDate  = linesplit[pairname_idx].split('_')[1]
-            avSunElev  = round(float(linesplit[avSunElev_idx]),0)
-            avSunAz    = round(float(linesplit[avSunAzim_idx]),0)
-            avOffNadir = round(float(linesplit[avOffNadir_idx]),0)
-            avTargetAz = round(float(linesplit[avTargetAz_idx]),0)
+            catID_1     = linesplit[pairname_idx].split('_')[2]
+            catID_2     = linesplit[pairname_idx].split('_')[3]
+            sensor      = linesplit[pairname_idx].split('_')[0]
+            imageDate   = linesplit[pairname_idx].split('_')[1]
+            avSunElev   = round(float(linesplit[avSunElev_idx]),0)
+            avSunAz     = round(float(linesplit[avSunAzim_idx]),0)
+            avOffNadir  = round(float(linesplit[avOffNadir_idx]),0)
+            avTargetAz  = round(float(linesplit[avTargetAz_idx]),0)
             if avTargetAz <= 180:
                 avSatAz = avTargetAz + 180
             else:
@@ -624,9 +502,9 @@ def run_asp(
 
             # Initialize DEM string
             mapprjDEM = ''
-
+            print imageDate
             # Get Image Date
-            if imageDate != '':
+            if imageDate != "":
                 try:
                     imageDate = datetime.strptime(imageDate,"%m/%d/%Y")
                     preLogText.append( '\tTry 1: ' + str(imageDate))
@@ -644,9 +522,14 @@ def run_asp(
                             pass
 
             # [4] Search ADAPT's NGA database for catID_1 and catid_2
-
+            # PSEUDO-STEREO EDIT
+            pairnameSet = False
+            sensor1 = ''
+            sensor2 = ''
+            imageDate1 = ''
+            imageDate2 = ''
             # Establish the database connection
-            with psycopg2.connect(database="NGAdb01", user="anon", host="ngadb01", port="5432") as dbConnect:
+            with psycopg2.connect(database="ngadb01", user="anon", host="ngadb01", port="5432") as dbConnect:
 
                 cur = dbConnect.cursor() # setup the cursor
                 catIDlist = [] # build now to indicate which catIDs were found, used later
@@ -708,17 +591,30 @@ def run_asp(
                         Getting needed info from just the first rec in the returned table called 'selected'
                         s_filepath, sensor, acq_time, cent_lat, cent_long
                         """
-                        sensor = str(selected[0][1])                        # eg. WV02
+                        # PSEUDO-STEREO EDIT
+                        # done b/c wv_correct will need to know
+                        if sensor1 == '':
+                            sensor1 = str(selected[0][1])
+                            sensor  = sensor1
+                        else:
+                            sensor2 = str(selected[0][1])
                         date = str(selected[0][2]).replace("-","")          # eg. 20110604
                         year = date.strip()[:-4]
                         month = date.strip()[4:].strip()[:-2]
                         """
                         pairname is important: indicates that data on which the DSM was built..its unique..used for subdir names in outASP and inASP
                         """
-                        pairname = sensor + "_" + date + "_" + catID_1 + "_" + catID_2
-                        imageDir = os.path.join(inDir,pairname)
-                        if not os.path.exists(imageDir):
-                            os.mkdir(imageDir)
+                        # PSEUDO-STEREO EDIT
+                        # This was added to assist with creation of a pairname dir for pseudo-stereo pairs where
+                        # the pairname is sensorLeft_dateLeft_catIDLeft_catIDRight
+                        if pairnameSet:
+                            print "Image dir & pairname set form the first catID."
+                        else:
+                            pairname = sensor + "_" + date + "_" + catID_1 + "_" + catID_2
+                            imageDir = os.path.join(inDir,pairname)
+                            if not os.path.exists(imageDir):
+                                os.mkdir(imageDir)
+                            pairnameSet = True
 
                        # Create symbolic links in imageDir of each item in the selected rows AND their corresponding xml
                         preLogText.append("\n\t Creating symbolic links to input in NGA database:")
@@ -919,163 +815,158 @@ def run_asp(
                 ##------------------------------------------------------------------
                 ##              Process by strip
                 ##------------------------------------------------------------------
-                if strip:
-                    imageExt = '.tif'
-                    dgCmdList = []
+                ##if strip:
+                imageExt = '.tif'
+                # PSEUDO-STEREO EDIT
+                sensorList = [sensor1, sensor2]
+                dgCmdList = []
 
-                    # Establish stripList with each catalog ID of the pair
-                    for catNum, catID in enumerate(catIDlist):
+                # Establish stripList with each catalog ID of the pair
+                for catNum, catID in enumerate(catIDlist):
 
-                        # Set search string
-                        end = ""
-                        raw_imageList = []
-                        cor_imageList = []
+                    # Set search string
+                    end = ""
+                    raw_imageList = []
+                    cor_imageList = []
 
-                        # On a catID: Get all raw images for wv_correct
-                        for root, dirs, files in os.walk(imageDir):
+                    # On a catID: Get all raw images for wv_correct
+                    for root, dirs, files in os.walk(imageDir):
+                        for searchExt in searchExtList:
+                            for each in files:
+                                if each.endswith(searchExt) and 'P1BS' in each and catID in each and pIDlist[catNum] in each:
+                                    raw_imageList.append(each)
+                    print("\tProduct ID for raw images: " + str(pIDlist[catNum]))
+                    print("\tRaw image list: " + str(raw_imageList))
+
+                    # On a catID: Prep for dg_mosaic: This is the output strip prefix
+                    # PSEUDO-STEREO EDIT
+                    outPref = sensorList[0].upper() + "_" + imageDate.strftime("%y%b%d").upper() + "_" + catID ## e.g., WV01_JUN1612_102001001B6B7800
+                    outStrip = outPref + '.r' + str(rp) + imageExt                                      ## e.g., WV01_JUN1612_102001001B6B7800.r100.tif
+                    stripList.append(outStrip)
+                    print("\n\tCatID: " + catID)
+
+                    # On a catID: If the mosaic already exists, dont do it again, dummy
+                    if os.path.isfile("dg_mosaic_done_1.txt") and os.path.isfile("dg_mosaic_done_2.txt"):
+                        print("\n\t Mosaic strip already exists: " + outStrip)
+                        dg_mos = False
+
+                    else:
+                        # On a catID: Get seachExt for wv_correct and dg_mosaic
+                        wv_cor_cmd = False
+                        """
+                        We may have solved this problem of communicating in serial the wv_correct Cmds that were run in near-parallel
+                        """
+                        wvCmdList = []
+
+                        for imgNum, raw_image in enumerate(raw_imageList):
                             for searchExt in searchExtList:
-                                for each in files:
-                                    if each.endswith(searchExt) and 'P1BS' in each and catID in each and pIDlist[catNum] in each:
-                                        raw_imageList.append(each)
-                        print("\tProduct ID for raw images: " + str(pIDlist[catNum]))
-                        print("\tRaw image list: " + str(raw_imageList))
-
-                        # On a catID: Prep for dg_mosaic: This is the output strip prefix
-                        outPref = sensor.upper() + "_" + imageDate.strftime("%y%b%d").upper() + "_" + catID ## e.g., WV01_JUN1612_102001001B6B7800
-                        outStrip = outPref + '.r' + str(rp) + imageExt                                      ## e.g., WV01_JUN1612_102001001B6B7800.r100.tif
-                        stripList.append(outStrip)
-                        print("\n\tCatID: " + catID)
-
-                        # On a catID: If the mosaic already exists, dont do it again, dummy
-                        if os.path.isfile("dg_mosaic_done_1.txt") and os.path.isfile("dg_mosaic_done_2.txt"):
-                            print("\n\t Mosaic strip already exists: " + outStrip)
-                            dg_mos = False
-##                            print("\n\t Mosaic strip already exists, but delete and redo: " + outStrip)
-##                            os.remove(outStrip)
-##                            try:
-##                                os.remove(outStrip.replace('.tif','.xml'))
-##                            except Exception, e:
-##                                pass
-
-                        else:
-                            # On a catID: Get seachExt for wv_correct and dg_mosaic
-                            wv_cor_cmd = False
-                            """
-                            We may have solved this problem of communicating in serial the wv_correct Cmds that were run in near-parallel
-                            """
-                            wvCmdList = []
-
-                            for imgNum, raw_image in enumerate(raw_imageList):
-                                for searchExt in searchExtList:
-                                    if searchExt in raw_image and not 'cor' in raw_image:
-                                        cor_imageList.append(raw_image.replace(searchExt, corExt))
-                                        break
-
-                                if 'WV01' in sensor or 'WV02' in sensor:
-                                # --------
-                                # wv_correct loop
-                                    try:
-                                        print("\tRunnning wv_correct on raw image: " + raw_image)
-                                        cmdStr ="wv_correct --threads=4 " + raw_image + " " + raw_image.replace(searchExt, ".xml") + " " + raw_image.replace(searchExt, corExt)
-                                        Cmd = subp.Popen(cmdStr.rstrip('\n'), stdout=subp.PIPE, shell=True)
-                                        wv_cor_cmd = True
-                                        wvCmdList.append(Cmd)
-
-                                        # Make copies of xmls to match *cor.tif
-                                        shutil.copy(raw_image.replace(searchExt,".xml"), raw_image.replace(searchExt,corExt.replace('.tif',".xml")))
-
-                                    except Exception, e:
-                                        #print '\t' + str(e)
-                                        print "\n\t Tried using this extension: " + searchExt
-
-                            if not wv_cor_cmd:
-                                print "\tRaw image search extension for dg_mosaic: %s: " %searchExt
-
-                            # On a catID: Communicate the wv_correct cmd
-                            """
-                            Probably should find a way to DEDENT the wv_correct AND dg_mosaic blocks so that ALL wv_corrects can be running simultaneously
-                                and then BOTH mosaics can be running simultaneously.
-                            """
-                            if wv_cor_cmd:
-                                print wvCmdList
-                                for num, c in enumerate(wvCmdList):
-                                    s,e = c.communicate()
-
-                                    print "\twv_correct run # %s" %num
-                                    ##print "\twv_correct output:"
-                                    ##print "\tStandard out: %s" %str(s)
-                                    print "\t\tStandard error: %s" %str(e)
-
+                                if searchExt in raw_image and not 'cor' in raw_image:
+                                    cor_imageList.append(raw_image.replace(searchExt, corExt))
+                                    break
+                            # PSEUDO-STEREO EDIT
+                            if 'WV01' in sensorList[catNum] or 'WV02' in sensorList[catNum]:
                             # --------
-                            # On a catID: dg_mosaic    This has to one once for each of the image strips.
-                            dg_mos = False
-                            """
-                            is this 'if' even necessary now?
-                            """
-                            if (not os.path.isfile(outStrip) ):
-
-                                # Create a seach string with catID and extension
-                                if 'WV01' in sensor or 'WV02' in sensor:
-                                    inSearchCat = "*" + catID + "*" + corExt
-                                else:
-                                    inSearchCat = "*" + catID + "*" + "-P1BS" + "*" + pIDlist[catNum] + "*" + searchExt
-                                    print "\tSensor is %s so wv_correct was not run" %(sensor)
-
+                            # wv_correct loop
                                 try:
-                                    print("\tRunnning (and waiting) dg_mosaic on catID: " + catID)
-                                    cmdStr = "dg_mosaic " + inSearchCat + " --output-prefix "+ outPref + " --reduce-percent=" + str(rp)
+                                    print("\tRunnning wv_correct on raw image: " + raw_image)
+                                    cmdStr ="wv_correct --threads=4 " + raw_image + " " + raw_image.replace(searchExt, ".xml") + " " + raw_image.replace(searchExt, corExt)
                                     Cmd = subp.Popen(cmdStr.rstrip('\n'), stdout=subp.PIPE, shell=True)
-                                    dg_mos = True
-                                    dgCmdList.append(Cmd)
+                                    wv_cor_cmd = True
+                                    wvCmdList.append(Cmd)
+
+                                    # Make copies of xmls to match *cor.tif
+                                    shutil.copy(raw_image.replace(searchExt,".xml"), raw_image.replace(searchExt,corExt.replace('.tif',".xml")))
+
                                 except Exception, e:
-                                    print '\t' + str(e)
+                                    #print '\t' + str(e)
+                                    print "\n\t Tried using this extension: " + searchExt
 
-                    #  If true, communicate both dg_mosaic before proceeding
-                    if dg_mos:
+                        if not wv_cor_cmd:
+                            print "\tRaw image search extension for dg_mosaic: %s: " %searchExt
 
-                        for num, Cmd in enumerate(dgCmdList):
-                            s,e = Cmd.communicate()
-                            print "\n\tFinal dg_mosaic output:"
-                            print "\tStandard out: %s" %str(s)
-                            print "\tStandard error: %s" %str(e)
-
-                            # Write txt file to indicate that dg_mosaic completed successfully
-                            if not "None" in str(s):
-                                with open(os.path.join(imageDir, "dg_mosaic_done_"+str(num+1)+".txt"),'w') as out_mos_txt:
-                                    out_mos_txt.write("dg_mosaic processed")
-
-                    print "\n\t Now, delete *cor.tif files (space management)..."
-                    print "\t imageDir: " + imageDir
-                    corList = glob.glob("*cor.*")
-                    print "\tList of cor files to delete: %s" %corList
-                    for f in corList:
-                        os.remove(f)
-                        print "\tDeleted %s." %f
-
-                    # Set up boolean to execute ASP routines after finding pairs
-                    runPair=True
-
-                    # Use stripList: copy XMLs to new name
-                    #   Update stripList with the names of the cor versions of the strips
-                    print("\tStripList: %s" %(stripList))
-                    for n,i in enumerate(stripList):
-
-                        outStrip = stripList[n]
+                        # On a catID: Communicate the wv_correct cmd
                         """
-                        put in replace instead of strip
-                        continue
+                        Probably should find a way to DEDENT the wv_correct AND dg_mosaic blocks so that ALL wv_corrects can be running simultaneously
+                            and then BOTH mosaics can be running simultaneously.
                         """
-                        if os.path.isfile(outStrip.strip('.tif') + '.xml'):
-                            print("\tFile exists: " + outStrip.strip('.tif') + '.xml')
-                        else:
+                        if wv_cor_cmd:
+                            print wvCmdList
+                            for num, c in enumerate(wvCmdList):
+                                s,e = c.communicate()
 
-                            print("\n\t !!! -- Looks like mosaic does not exist: " + outStrip )
-                            print("\n\t The pair is incomplete, so no stereo dataset will come from this dir.")
-                            print("\n\t Skipping to next pair in CSV file.")
-                            mapprj=False
-                            DSMdone=False
+                                print "\twv_correct run # %s" %num
+                                print "\t\tStandard error: %s" %str(e)
 
-                            runPair=False
+                        # --------
+                        # On a catID: dg_mosaic    This has to one once for each of the image strips.
+                        dg_mos = False
+                        """
+                        is this 'if' even necessary now?
+                        """
+                        if (not os.path.isfile(outStrip) ):
+
+                            # Create a seach string with catID and extension
+                            # PSEUDO-STEREO EDIT
+                            if 'WV01' in sensorList[catNum] or 'WV02' in sensorList[catNum]:
+                                inSearchCat = "*" + catID + "*" + corExt
+                            else:
+                                inSearchCat = "*" + catID + "*" + "-P1BS" + "*" + pIDlist[catNum] + "*" + searchExt
+                                print "\tSensor is %s so wv_correct was not run" %(sensorList[catNum])
+
+                            try:
+                                print("\tRunnning (and waiting) dg_mosaic on catID: " + catID)
+                                cmdStr = "dg_mosaic " + inSearchCat + " --output-prefix "+ outPref + " --reduce-percent=" + str(rp)
+                                Cmd = subp.Popen(cmdStr.rstrip('\n'), stdout=subp.PIPE, shell=True)
+                                dg_mos = True
+                                dgCmdList.append(Cmd)
+                            except Exception, e:
+                                print '\t' + str(e)
+
+                #  If true, communicate both dg_mosaic before proceeding
+                if dg_mos:
+
+                    for num, Cmd in enumerate(dgCmdList):
+                        s,e = Cmd.communicate()
+                        print "\n\tFinal dg_mosaic output:"
+                        print "\tStandard out: %s" %str(s)
+                        print "\tStandard error: %s" %str(e)
+
+                        # Write txt file to indicate that dg_mosaic completed successfully
+                        if not "None" in str(s):
+                            with open(os.path.join(imageDir, "dg_mosaic_done_"+str(num+1)+".txt"),'w') as out_mos_txt:
+                                out_mos_txt.write("dg_mosaic processed")
+
+                print "\n\t Now, delete *cor.tif files (space management)..."
+                print "\t imageDir: " + imageDir
+                corList = glob.glob("*cor.*")
+                print "\tList of cor files to delete: %s" %corList
+                for f in corList:
+                    os.remove(f)
+                    print "\tDeleted %s." %f
+
+                # Set up boolean to execute ASP routines after finding pairs
+                runPair=True
+
+                # Use stripList: copy XMLs to new name
+                #   Update stripList with the names of the cor versions of the strips
+                print("\tStripList: %s" %(stripList))
+                for n,i in enumerate(stripList):
+
+                    outStrip = stripList[n]
+                    """
+                    put in replace instead of strip
+                    continue
+                    """
+                    if os.path.isfile(outStrip.strip('.tif') + '.xml'):
+                        print("\tFile exists: " + outStrip.strip('.tif') + '.xml')
+                    else:
+
+                        print("\n\t !!! -- Looks like mosaic does not exist: " + outStrip )
+                        print("\n\t The pair is incomplete, so no stereo dataset will come from this dir.")
+                        print("\n\t Skipping to next pair in CSV file.")
+                        mapprj=False
+                        DSMdone=False
+                        runPair=False
 
                 ##------------------------------------------------------------------
                 ##              Set up list of pairs
@@ -1085,91 +976,17 @@ def run_asp(
                     Now, you need to get:
                         imagePairs
                         imagePair_xmls
-                        But this block below can be deleted...
                     """
-                    # This list will hold the sorted NTFs or TIFs
-                    sceneList = []
 
-                    if strip:                             # Processing by strip
-                        sceneList = sorted(stripList)
-                    else:                                   # Just processing the orig NTF scenes
-                        sceneList = sorted(sceneNTFList)
+                    leftScene = stripList[0]
+                    rightScene = stripList[1]
+                    imagePairs = leftScene + " " + rightScene + " "
+                    imagePair_xmls = leftScene.replace(imageExt,'.xml') + " " + rightScene.replace(imageExt,'.xml') + " "
 
-                    print("\timageExt: " + imageExt)
+                    print("\n--------------")
+                    print("\tImage pairs for stereo run: " + imagePairs)
+                    print("\tNodelist = " + nodesList)
                     print("--------------")
-                    print("\tLength of sceneList: %d" % len(sceneList))
-                    print("--------------")
-
-                    # Check to make sure sceneList has even number of scenes, if not remove smallest scene from list
-                    if not len(sceneList) % 2 == 0:
-                        szList = []
-
-                        # Get list of sizes
-                        for scene in sceneList:
-                            szList.append(os.stat(scene).st_size)
-
-                        min_sz = min(szList) ## min of list  -- removed list comprehension - SSM
-                        del sceneList[szList.index(min_sz)] ## Delete the index of the list with the min file
-
-                    increment = len(sceneList)/2
-                    ##------------------------------------------------------------------
-                    ##              Begin processing each pair from list
-                    ##------------------------------------------------------------------
-                    # Go through the list of scenes in the FIRST HALF of list
-                    for sceneIdx in range(increment):
-
-                        # Setup scene number for output (formatted)
-
-                        if strip:
-                            outType = 'strip'
-                            sceneNum = ''
-                        else:
-                            outType = 'scene'
-                            sceneNum = "%02d" % (sceneIdx+1)
-                        print("\n\t" + outType)
-                        print("\t" + sceneNum)
-
-                        # Since stereo strips are collected in Forward and Reverse mode, they wont be listed in spatially corresponding order, but rather in collection order
-                        # Need to look at scan direction
-                        #   Assume both are same SCAN_DIR: setup right and left images
-                        #       Corresponding scene is in corresponding position of SECOND HALF of list
-                        leftScene   = sceneList[sceneIdx]
-                        rightScene  = sceneList[sceneIdx + increment]
-
-                        # Get each xml
-                        stemLeft = sceneList[sceneIdx].rstrip(imageExt)
-                        stemRight = sceneList[sceneIdx + increment].rstrip(imageExt)
-
-                        # Make list of with each xml
-                        xmlPairs = [stemLeft + ".xml",stemRight + ".xml"]
-                        scDirPairs = []     ## list to hold the scan dir from each of the pairs
-                        print('\tLeft XML: ' + stemLeft + ".xml" )
-                        print('\tRight XML: ' + stemRight + ".xml" )
-
-                        # Open each xml and get scan direction
-                        for xml in xmlPairs:
-                            with open(xml,'r') as curXML:  ## changing to with structure to allow automatic closure even if error - SSM
-                                for line in curXML.readlines():
-                                    if 'SCANDIRECTION' in line:
-                                        scDirPairs.append(line.replace('<','>').split('>')[2])
-
-                        # Now check for dif scan dirs
-                        if scDirPairs[0] != scDirPairs[1]:
-                            # If different, go to end of list and count back by sceneIdx to find image corresponding with left (current) scene
-                            #    Corresponding scene is in inverted corresponding position in SECOND HALF of list
-                            rightScene = sceneList[len(sceneList) - (sceneIdx+1)]
-
-                        # Get image pairs and xmls to feed into stereo or parallel_stereo
-                        """
-                        End of block that is prob irrelevant now
-                        """
-                        imagePairs = leftScene + " " + rightScene + " "
-                        imagePair_xmls = leftScene.replace(imageExt,'.xml') + " " + rightScene.replace(imageExt,'.xml') + " "
-                        print("--------------")
-                        print("--------------")
-                        print("\tImage pairs for stereo run: " + imagePairs)
-                        print("\tNodelist = " + nodesList)
-                        print("--------------")
 
                         # [5.3] Prep for Stereo
                         #
@@ -1185,14 +1002,14 @@ def run_asp(
                         """
                         outStereoPre looks like this: outDir/WV01_20150610_102001003EBA8900_102001003E8CA400/out
                         """
-                        outStereoPre = outASPcur + "/out-" + outType + sceneNum
+                        outStereoPre = outASPcur + "/out-strip" #+ outType + sceneNum
                         doStereo = False
 
                         # If outASPcur doesnt yet exist, run stereo
                         if not os.path.isdir(outASPcur):
                             doStereo = True
                         else:
-                            if len(glob.glob(outASPcur+"/out-" + outType + sceneNum + "*")) == 0:
+                            if len(glob.glob("{}*".format(outStereoPre))) == 0:
                                 doStereo = True
 
                         # If PC file doesnt exist, run stereo
@@ -1259,7 +1076,7 @@ def run_asp(
                             print("\n\t Running p2d function...")
                             runP2D(outStereoPre, prj, strip=True)
 
-                            if os.path.isfile(outStereoPre + "-holes-fill-DEM.tif"):
+                            if os.path.isfile(outStereoPre + "-DEM.tif"):
                                 DSMdone = True
 
                             outAttributes = pairname + "," + str(found_catID[0]) + "," + str(found_catID[1]) + "," + str(mapprj) + "," + str(year) + "," + str(month) + "," + str(avSunElev)+ "," + str(avSunAz) + "," + str(avOffNadir) + "," + str(avTargetAz) + "," + str(avSatAz) + "," +str(conv_ang) + "," + str(bie_ang) + "," + str(asym_ang) + "," + str(DSMdone) +"\n"
@@ -1267,7 +1084,7 @@ def run_asp(
 
                             if DSMdone:
                                 print("\n\t Running VRT function...")
-                                runVRT(outStereoPre,outDir, outHeaderList, outAttributesList)
+                                runVRT(outStereoPre,outDir)
                             else:
                                 print("\n\t VRTs not done b/c DSM not done. Moving on...")
                         else:
