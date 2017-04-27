@@ -829,7 +829,7 @@ def main(csv, inDir, batchID, mapprj, noP2D, rp): #the 3 latter args are optiona
 
         # CHANGE THESE ?:
         job_name = '%s__%s__job' % (batchID, pairname) # identify job with batchID and pairname??
-        time_limit = '5-00:00:00'
+        time_limit = '6-00:00:00'
         num_nodes = '1'
         #python_script_args = '%s %s %s arg3 etc' % (os.path.join(DISCdir, 'code', '<scriptName.py>'), arg1, arg2)
         python_script_args = 'python %s %s %s %s %s %s %s %s %s %s %s %s %s %s' % (os.path.join(DISCdir, 'code', workflowCodeName), arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13)

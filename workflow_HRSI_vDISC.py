@@ -840,13 +840,13 @@ def run_asp(
     print "Deleted files using command:", cmdDelete
     os.system(cmdDelete)
 
-    # now copy all of the input XMLs into the outASP/batch/pairname/inXMLs
-    outXMLdir = os.path.join(outASPcur, 'inXMLs')
-    if not os.path.isdir(outXMLdir): # if dir does not exist
-        os.makedirs(outXMLdir)
-    globXMLs = os.path.join(imageDir, '*_*_*_*.xml') # this will exclude the mosaic xml's, which will only have 2 underscores
-    print '\n Copying XML files ({}) to outASP ({})'.format(globXMLs, outXMLdir)
-    os.system('cp {} {}'.format(globXMLs, outXMLdir))
+    # now copy all of the input XMLs into the outASP/batch/pairname/inXMLs # 4/20 just putting them in outASPcur
+##    outXMLdir = os.path.join(outASPcur, 'inXMLs')
+##    if not os.path.isdir(outXMLdir): # if dir does not exist
+##        os.makedirs(outXMLdir)
+    globXMLs = os.path.join(imageDir, '*P1BS*.xml') # this will exclude the mosaic xml's, which don't have P1BS in the name
+    print '\n Copying XML files ({}) to outASP ({})'.format(globXMLs, outASPcur)
+    os.system('cp {} {}'.format(globXMLs, outASPcur))
 
 
     print("\n\n-----------------------------")
