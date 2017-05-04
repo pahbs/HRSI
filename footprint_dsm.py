@@ -116,10 +116,10 @@ def make_kml(fn):
     print("\tGenerating kml")
     kml_fn = os.path.splitext(fn)[0]+'.kml'
 
-    cmd = ['ogr2ogr', '-of', 'KML', fn, kml_fn]
-##    print(' '.join(cmd))
-##    subp.call(cmd, shell=False)
-    cmd = subp.Popen(cmd, stdout=subp.PIPE, shell=True)
+    cmdStr = "ogr2ogr -f KML {} {}".format(kml_fn, fn)
+    cmd = subp.Popen(cmdStr, stdout=subp.PIPE, shell=True)
+    s,e = cmd.communicate()
+
 def runVALPIX(root, pairname, src, newFieldsList, newAttribsList, outSHP):
 
         # -- Update Valid Pixels Shapefile
@@ -128,11 +128,6 @@ def runVALPIX(root, pairname, src, newFieldsList, newAttribsList, outSHP):
         print "\tRunning valid pixel footprints...\n"
 
         pairnameDir = os.path.join(root,pairname)
-
-##        if"AST_" in pairname:
-##            src = os.path.join(pairnameDir,'outASP',src)
-##        else:
-##            src = os.path.join(pairnameDir,src)
 
         #print("\t Source file: " + src + "\n")
         outValTif_TMP = os.path.join(pairnameDir, "VALIDtmp.tif")
@@ -149,9 +144,9 @@ def runVALPIX(root, pairname, src, newFieldsList, newAttribsList, outSHP):
             #print "     [.a] Coarsen %s" %src
             if 'clr-shd' in src:
                 #Band 4 is the alpha channel
-                cmdStr = "gdal_translate -outsize 1% 1% -co compress=lzw -b 4 -ot byte -scale 1 1 {} {}".format(src, outValTif_TMP)
+                cmdStr = "gdal_translate -outsize .25% .25% -co compress=lzw -b 4 -ot byte -scale 1 1 {} {}".format(src, outValTif_TMP)
             else:
-                cmdStr = "gdal_translate -outsize 1% 1% -co compress=lzw -b 1 -ot byte -scale 1 1 {} {}".format(src, outValTif_TMP)
+                cmdStr = "gdal_translate -outsize .25% .25% -co compress=lzw -b 1 -ot byte -scale 1 1 {} {}".format(src, outValTif_TMP)
             wf.run_wait_os(cmdStr,print_stdOut=False)
             #print "     [.b] POLYGONIZE %s" %outValTif_TMP
             cmdStr = "gdal_polygonize.py {} -f 'ESRI Shapefile' {}".format(outValTif_TMP, outValShp_TMP)
@@ -277,6 +272,7 @@ def main(outRoot, outShp, str_fp):
     DSMok = False
     have_info = False
 
+
     hdr, line = ('' for z in range(2))
     i = 0
     for root, subdirs, files in os.walk(outRoot):
@@ -291,7 +287,7 @@ def main(outRoot, outShp, str_fp):
                 for each in subdirfiles:
 
                     # Make sure clr-shd exists, indicating the DEM has been fully processed
-                    if 'DEM-clr-shd.tif' in each:
+                    if 'DEM-clr-shd.tif' in each and each.endswith('.tif'):
                         print "\tClr-shd exists. DSM can be footprinted."
                         clrShd = os.path.join(root2,each)
                         DSMok = True
@@ -303,7 +299,7 @@ def main(outRoot, outShp, str_fp):
             else:
                 for root3, dirs, subdirfiles in os.walk(outASPdir):
                     for each in subdirfiles:
-                        if str_fp in each:
+                        if str_fp in each and each.endswith('.tif'):
                             src_fp = os.path.join(root3,each)
                             print "\n\tSource for footprint: %s" %src_fp
                             break
@@ -399,6 +395,7 @@ def main(outRoot, outShp, str_fp):
                     runVALPIX(valpixroot, pairname, src_fp, hdr.split(','), line.split(','), outShp)
                     i = i + 1
                     print "\n\t\t >>>>> Success on # %s: Done with %s " %(i,pairname)
+
                 except Exception,e:
                     print "\n\t\t >>>>> Fail on # %s: Could not get footprint of %s" %(i,pairname)
                     DSMfootprintFail.append(subdir)

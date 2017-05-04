@@ -6,7 +6,7 @@ import subprocess as subp
 
 ##https://pcjericks.github.io/py-gdalogr-cookbook/vector_layers.html#create-fishnet-grid
 
-def main(outputGridfn,xmin,xmax,ymin,ymax,gridHeight,gridWidth, out_epsg):
+def main(outputGridfn,xmin,xmax,ymin,ymax,gridHeight,gridWidth):
 
     # convert sys.argv to float
     xmin = float(xmin)
@@ -82,10 +82,7 @@ def main(outputGridfn,xmin,xmax,ymin,ymax,gridHeight,gridWidth, out_epsg):
     prj_file.write(spatialRef.ExportToWkt())
     prj_file.close()
 
-    # reproject
-    cmdStr = "ogr2ogr -f 'ESRI Shapefile' -t_srs EPSG:{} {} {} -overwrite".format(str(out_epsg),outputGridfn.replace('.shp','_'+str(out_epsg)+'.shp'), outputGridfn)
-    Cmd = subp.Popen(cmdStr.rstrip('\n'), stdout=subp.PIPE, shell=True)
-    stdOut, err = Cmd.communicate()
+
 
 
 if __name__ == "__main__":
@@ -93,9 +90,9 @@ if __name__ == "__main__":
     #
     # example run : $ python grid.py <full-path><output-shapefile-name>.shp xmin xmax ymin ymax gridHeight gridWidth
     #
-    num = 9
-    if len( sys.argv ) != num:
-        print "[ ERROR ] you must supply %s arguments: output-shapefile-name.shp xmin xmax ymin ymax gridHeight gridWidth " %(num-1)
+    argsNum = 7
+    if len( sys.argv ) != argsNum+1:
+        print "[ ERROR ] you must supply %s arguments: output-shapefile-name.shp xmin xmax ymin ymax gridHeight gridWidth " %(argsNum)
         sys.exit( 1 )
 
-    main( sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6], sys.argv[7], sys.argv[8] )
+    main( sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6], sys.argv[7] )

@@ -75,12 +75,12 @@ def runP2D(outStereoPre, prj, strip=True):
 
     # [5.4] point2dem
     # Launch p2d holes-fill
-    if os.path.isfile(outStereoPre + "-PC.tif") and not os.path.isfile(outStereoPre + "-holes-fill-DEM.txt"):
+    if os.path.isfile(outStereoPre + "-PC.tif") and not os.path.isfile(outStereoPre + "-DEM.txt"):
         # Output DSM has holes <50 pix filled with hole-fill-mode=2 (weighted avg of all valid pix within window of dem-hole-fill-len)
         # Ortho (-DRG.tif) produced
 
         P2D_OPTS = "point2dem --threads=6 --t_srs " + prj + " --nodata-value -99 --dem-hole-fill-len 50 "
-        P2D_IO = outStereoPre + "-PC.tif -o " + outStereoPre + "-holes-fill"
+        P2D_IO = outStereoPre + "-PC.tif -o " + outStereoPre
 
         print("\n\t [1] Create DEM: runnning point2dem (holes-fill) on: " + outStereoPre + "-PC.tif")
         start_p2d = timer()
@@ -988,107 +988,105 @@ def run_asp(
                     print("\tNodelist = " + nodesList)
                     print("--------------")
 
-                        # [5.3] Prep for Stereo
-                        #
-                        ## Still in dir of data...
-                        # Copy stereo.default file in home dir to current dir
-                        shutil.copy(stereoDef,os.getcwd())
+                    # [5.3] Prep for Stereo
+                    #
+                    ## Still in dir of data...
+                    # Copy stereo.default file in home dir to current dir
+                    shutil.copy(stereoDef,os.getcwd())
 
-                        # Out ASP dir with out file prefix
-                        """
-                        outASPcur will look like this: outDir/WV01_20150610_102001003EBA8900_102001003E8CA400
-                        """
-                        outASPcur = outDir + "/" + imageDir.split('/')[-1].rstrip('\n')
-                        """
-                        outStereoPre looks like this: outDir/WV01_20150610_102001003EBA8900_102001003E8CA400/out
-                        """
-                        outStereoPre = outASPcur + "/out-strip" #+ outType + sceneNum
-                        doStereo = False
+                    # Out ASP dir with out file prefix
+                    """
+                    outASPcur will look like this: outDir/WV01_20150610_102001003EBA8900_102001003E8CA400
+                    """
+                    outASPcur = outDir + "/" + imageDir.split('/')[-1].rstrip('\n')
+                    """
+                    outStereoPre looks like this: outDir/WV01_20150610_102001003EBA8900_102001003E8CA400/out
+                    """
+                    outStereoPre = outASPcur + "/out-strip" #+ outType + sceneNum
+                    doStereo = False
 
-                        # If outASPcur doesnt yet exist, run stereo
-                        if not os.path.isdir(outASPcur):
-                            doStereo = True
-                        else:
-                            if len(glob.glob("{}*".format(outStereoPre))) == 0:
-                                doStereo = True
-
-                        # If PC file doesnt exist, run stereo
-                        # Sometimes PC file may exist, but is incomplete.
-                        if not os.path.isfile(outStereoPre + "-PC.tif"):
+                    # If outASPcur doesnt yet exist, run stereo
+                    if not os.path.isdir(outASPcur):
+                        doStereo = True
+                    else:
+                        if len(glob.glob("{}*".format(outStereoPre))) == 0:
                             doStereo = True
 
-                        print("--------------")
-                        print("\n\n\t Do stereo? " + str(doStereo))
-                        if doStereo:
-                            print("\t\tparallel? " + str(par) )
+                    # If PC file doesnt exist, run stereo
+                    # Sometimes PC file may exist, but is incomplete.
+                    if not os.path.isfile(outStereoPre + "-PC.tif"):
+                        doStereo = True
 
-                            ##mapprj = False
-                            print("\t\tmapproject? " + str(mapprj) )
-                        print("\n\n--------------")
+                    print("--------------")
+                    print("\n\n\t Do stereo? " + str(doStereo))
+                    if doStereo:
+                        print("\t\tparallel? " + str(par) )
+                        print("\t\tmapproject? " + str(mapprj) )
+                    print("\n\n--------------")
 
-                        if doStereo:
-                            if mapprj:
-                                """
-                                resetting imagePairs var when they are being replaced by the mapprojected images
-                                imagePair_xmls doesnt need to be changed
-                                """
-                                imagePairs = ""
-                                CmdList = []
-                                """
-                                replace leftscene and rightScene vars with the corresponding vars from StripList
-                                """
-                                for num, unPrj in enumerate([os.path.join(imageDir,leftScene), os.path.join(imageDir, rightScene)]):
-
-                                    print "\n\t Running mapproject on strip %s..." %(num + 1)
-                                    mapPrj_img = unPrj.replace('.tif', '_mapprj.tif')
-                                    if not os.path.exists(mapPrj_img):
-                                        #cmdStr = "mapproject --nodata-value=-99 -t rpc --t_srs " + prj + " " + mapprjDEM + " " + unPrj + " " + unPrj.replace('tif','xml') + " " + mapPrj_img
-                                        #cmdStr = "mapproject --nodata-value=-99 -t rpc --t_srs EPSG:4326 " + mapprjDEM + " " + unPrj + " " + unPrj.replace('tif','xml') + " " + mapPrj_img
-                                        cmdStr = "mapproject --nodata-value=-99 -t rpc " + mapprjDEM + " " + unPrj + " " + unPrj.replace('tif','xml') + " " + mapPrj_img
-                                        print "\n\t" + cmdStr
-                                        Cmd = subp.Popen(cmdStr.rstrip('\n'), stdout=subp.PIPE, shell=True)
-
-                                        # Hold Cmd in a list for later communication
-                                        CmdList.append(Cmd)
-
-                                    imagePairs += mapPrj_img + " "
-
-                                """
-                                no need to enumerate this: see wv_correct block
-                                """
-                                for num, c in enumerate(CmdList):
-                                    # Now communicate both so they have been launched in parallel but will be reported in serial
-                                    print "\n\tWaiting to communicate results of mapprojects..."
-                                    stdOut, err = CmdList[num].communicate()
-                                    print "\n\tCommunicating output from mapproject %s:"%str(num+1)
-                                    print "\t" + str(stdOut) + str(err)
-                                    print("\tEnd of mapproject %s"%str(num+1))
-
-                            print("\n\t Beginning stereo processing...")
+                    if doStereo:
+                        if mapprj:
                             """
-                            we'll probably gonna set par=False and no run parallel_stereo; stereo instead
+                            resetting imagePairs var when they are being replaced by the mapprojected images
+                            imagePair_xmls doesnt need to be changed
                             """
-                            run_stereo(par, nodesList, imagePairs, imagePair_xmls, outStereoPre, mapprjDEM, mapprj, test)
-                            #if os.path.isfile(mapprjDEM):
-                            #    os.remove(mapprjDEM)
+                            imagePairs = ""
+                            CmdList = []
+                            """
+                            replace leftscene and rightScene vars with the corresponding vars from StripList
+                            """
+                            for num, unPrj in enumerate([os.path.join(imageDir,leftScene), os.path.join(imageDir, rightScene)]):
 
-                        if doP2D and os.path.isfile(outStereoPre + "-PC.tif"):
-                            print("\n\t Running p2d function...")
-                            runP2D(outStereoPre, prj, strip=True)
+                                print "\n\t Running mapproject on strip %s..." %(num + 1)
+                                mapPrj_img = unPrj.replace('.tif', '_mapprj.tif')
+                                if not os.path.exists(mapPrj_img):
+                                    #cmdStr = "mapproject --nodata-value=-99 -t rpc --t_srs " + prj + " " + mapprjDEM + " " + unPrj + " " + unPrj.replace('tif','xml') + " " + mapPrj_img
+                                    #cmdStr = "mapproject --nodata-value=-99 -t rpc --t_srs EPSG:4326 " + mapprjDEM + " " + unPrj + " " + unPrj.replace('tif','xml') + " " + mapPrj_img
+                                    cmdStr = "mapproject --nodata-value=-99 -t rpc " + mapprjDEM + " " + unPrj + " " + unPrj.replace('tif','xml') + " " + mapPrj_img
+                                    print "\n\t" + cmdStr
+                                    Cmd = subp.Popen(cmdStr.rstrip('\n'), stdout=subp.PIPE, shell=True)
 
-                            if os.path.isfile(outStereoPre + "-DEM.tif"):
-                                DSMdone = True
+                                    # Hold Cmd in a list for later communication
+                                    CmdList.append(Cmd)
 
-                            outAttributes = pairname + "," + str(found_catID[0]) + "," + str(found_catID[1]) + "," + str(mapprj) + "," + str(year) + "," + str(month) + "," + str(avSunElev)+ "," + str(avSunAz) + "," + str(avOffNadir) + "," + str(avTargetAz) + "," + str(avSatAz) + "," +str(conv_ang) + "," + str(bie_ang) + "," + str(asym_ang) + "," + str(DSMdone) +"\n"
-                            outAttributesList = outAttributes.rstrip().split(',')
+                                imagePairs += mapPrj_img + " "
 
-                            if DSMdone:
-                                print("\n\t Running VRT function...")
-                                runVRT(outStereoPre,outDir)
-                            else:
-                                print("\n\t VRTs not done b/c DSM not done. Moving on...")
+                            """
+                            no need to enumerate this: see wv_correct block
+                            """
+                            for num, c in enumerate(CmdList):
+                                # Now communicate both so they have been launched in parallel but will be reported in serial
+                                print "\n\tWaiting to communicate results of mapprojects..."
+                                stdOut, err = CmdList[num].communicate()
+                                print "\n\tCommunicating output from mapproject %s:"%str(num+1)
+                                print "\t" + str(stdOut) + str(err)
+                                print("\tEnd of mapproject %s"%str(num+1))
+
+                        print("\n\t Beginning stereo processing...")
+                        """
+                        we'll probably gonna set par=False and no run parallel_stereo; stereo instead
+                        """
+                        run_stereo(par, nodesList, imagePairs, imagePair_xmls, outStereoPre, mapprjDEM, mapprj, test)
+                        #if os.path.isfile(mapprjDEM):
+                        #    os.remove(mapprjDEM)
+
+                    if doP2D and os.path.isfile(outStereoPre + "-PC.tif"):
+                        print("\n\t Running p2d function...")
+                        runP2D(outStereoPre, prj, strip=True)
+
+                        if os.path.isfile(outStereoPre + "-DEM.tif"):
+                            DSMdone = True
+
+                        outAttributes = pairname + "," + str(found_catID[0]) + "," + str(found_catID[1]) + "," + str(mapprj) + "," + str(year) + "," + str(month) + "," + str(avSunElev)+ "," + str(avSunAz) + "," + str(avOffNadir) + "," + str(avTargetAz) + "," + str(avSatAz) + "," +str(conv_ang) + "," + str(bie_ang) + "," + str(asym_ang) + "," + str(DSMdone) +"\n"
+                        outAttributesList = outAttributes.rstrip().split(',')
+
+                        if DSMdone:
+                            print("\n\t Running VRT function...")
+                            runVRT(outStereoPre,outDir)
                         else:
-                            print("\n\t No PC.tif file. Moving on...")
+                            print("\n\t VRTs not done b/c DSM not done. Moving on...")
+                    else:
+                        print("\n\t No PC.tif file. Moving on...")
 
             outAttributes = pairname + "," + str(found_catID[0]) + "," + str(found_catID[1]) + "," + str(mapprj) + "," + str(year) + "," + str(month) + "," + str(avSunElev)+ "," + str(avSunAz) + "," + str(avOffNadir) + "," + str(avTargetAz) + "," + str(avSatAz) + "," +str(conv_ang) + "," + str(bie_ang) + "," + str(asym_ang) + "," + str(DSMdone) +"\n"
 

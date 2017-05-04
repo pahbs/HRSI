@@ -26,7 +26,7 @@ from pygeotools.lib import geolib
 from pygeotools.lib import filtlib
 
 def gauss_fltr(dem, sigma=1):
-    print("Applying gaussian smoothing filter with sigma %s" % sigma)
+    print("\tApplying gaussian smoothing filter with sigma %s" % sigma)
     #Note, ndimage doesn't properly handle ma - convert to nan
     from scipy.ndimage.filters import gaussian_filter
     dem_filt_gauss = gaussian_filter(dem.filled(np.nan), sigma)
@@ -40,13 +40,13 @@ def moving_window(arr, func=np.mean, window_size=3):
     """moving_window(array, window_size, func=mean)
     """
     from scipy.ndimage.filters import generic_filter
-    print " Check numpy array type: %s" %(arr.dtype)
-    return generic_filter(arr, func, size=window_size )
+    print "\tCheck array type INPUT to filter: %s" %(arr.dtype)
+    return generic_filter(arr, func, size=window_size)
 
 def getparser():
     parser = argparse.ArgumentParser(description="Compute the sum per pixel from a moving window")
     parser.add_argument('r_fn', type=str, help='Input raster filename')
-    parser.add_argument('windowsize', type=float, default=3, \
+    parser.add_argument('windowsize', type=int, default=3, \
                         help='Moving window size, in pixels')
     return parser
 
@@ -70,20 +70,20 @@ def main():
     #myType=float
     #r_arr = r_arr.astype(myType)
 
-    #Do moving window
-    r = moving_window(r_arr, func=np.sum, window_size=windowsize)
+    print "\tDoing moving window on array..."
+    arr_out = moving_window(r_arr.astype(np.uint16), func=np.sum, window_size=windowsize)
     #r = filtlib.rolling_fltr(r_arr, f=np.sum, size=windowsize, circular=True)
     #r = gauss_fltr(r_arr, sigma=1)
-
+    print "\tCheck array type OUTPUT from filter: %s" %(arr_out.dtype)
     # Deal with negatives and nan
-    r = np.where(r < 0, -99, r)
-    r = np.where(np.isnan(r),-99, r)
+    arr_out = np.where(arr_out < 0, -99, arr_out)
+    arr_out = np.where(np.isnan(arr_out),-99, arr_out)
 
     #Write out
     win_str = "%02d" % (int(windowsize))
     out_fn = os.path.splitext(r_fn)[0]+'_win'+win_str+'sum.tif'
     #Note: passing r_fn here as the src_ds
-    iolib.writeGTiff(r, out_fn, r_fn)
+    iolib.writeGTiff(arr_out, out_fn, r_fn)
 
 if __name__ == "__main__":
     main()
