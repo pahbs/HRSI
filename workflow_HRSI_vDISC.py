@@ -848,6 +848,13 @@ def run_asp(
     print '\n Copying XML files ({}) to outASP ({})'.format(globXMLs, outASPcur)
     os.system('cp {} {}'.format(globXMLs, outASPcur))
 
+    # also move the slurm.out file to outASP/batchID/slurmOuts and rename it to the pairname_slurm.out
+    inSlurm = os.path.join(imageDir, 'slurm*out')[0] # should be the only slurm.out
+    outSlurmDir = os.path.join(outDir, 'batch{}'.format(batchID), 'outSlurm')
+    os.system('mkdir -p {}'.format(outSlurmDir))
+    outSlurm = os.path.join(outSlurmDir, os.path.basename(inSlurm).replace("slurm", "{}__slurm".format(pairname)))
+    os.system('cp {} {}'.format(inSlurm, outSlurm)) # review this after we are sure it works
+
 
     print("\n\n-----------------------------")
     print("\n\t ")
@@ -873,6 +880,7 @@ def run_asp(
     run_times_csv = os.path.join(outDir, 'run_times.csv')
     with open(run_times_csv, 'a') as rt:
         rt.write('{}, {}, {}, {}, {}, {}, {}\n'.format(batchID, pairname, total_time, (total_time/60), strip1size, strip2size, nodeName))
+
 
     # try to close the out/err files-- http://stackoverflow.com/questions/7955138/addressing-sys-excepthook-error-in-bash-script
     try:
