@@ -515,6 +515,18 @@ def main(csv, inDir, batchID, mapprj, noP2D, rp): #the 3 latter args are optiona
         # let's be sure the pairname we are trying to run has not been run before in this batch:
         if pairname in unique_pairnames: # if it's in our list already
             print "Pairname %s has already been processed for this batch. Moving to next pair\n" % pairname
+            outAttributes = '{},{},{},{},{},{},{},{},{},duplicate\n'.format(batchID, pairname, catID_1, found_catID[0], catID_2, found_catID[1], mapprj, year, month) # record that this is a same-batch duplicate
+            with open(summary_csv, 'a') as c:
+                c.write(outAttributes)
+            continue
+
+        # also check to be sure pairname was not already processed in an earlier batch by seeing if it exsits in outASP on ADAPT:
+        checkOut = "/att/pubrepo/DEM/hrsi_dsm/{}/out-strip-DEM.txt".format(pairname)
+        if os.path.isfile(checkOut): # already ran successfully
+            print "Pairname %s has already been processed in a previous batch. Moving to next pair\n" % pairname
+            outAttributes = '{},{},{},{},{},{},{},{},{},alreadyProcessed\n'.format(batchID, pairname, catID_1, found_catID[0], catID_2, found_catID[1], mapprj, year, month) # record that this was already processed earlier
+            with open(summary_csv, 'a') as c:
+                c.write(outAttributes)
             continue
 
         start_copy = timer()
