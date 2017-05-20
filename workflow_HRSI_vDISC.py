@@ -850,9 +850,9 @@ def run_asp(
 
     # also move the slurm.out file to outASP/batchID/slurmOuts and rename it to the pairname_slurm.out
     inSlurm = os.path.join(imageDir, 'slurm*out')[0] # should be the only slurm.out
-    outSlurmDir = os.path.join(outDir, 'batch{}'.format(batchID), 'outSlurm')
+    outSlurmDir = os.path.join(outDir, 'outSlurm', 'batch{}'.format(batchID)) # dping outSlurm/batch now
     os.system('mkdir -p {}'.format(outSlurmDir))
-    outSlurm = os.path.join(outSlurmDir, os.path.basename(inSlurm).replace("slurm", "{}__slurm".format(pairname)))
+    outSlurm = os.path.join(outSlurmDir, os.path.basename(inSlurm).replace("slurm", "batch{}__{}__slurm".format(batchID, pairname)))
     os.system('cp {} {}'.format(inSlurm, outSlurm)) # review this after we are sure it works
 
 
