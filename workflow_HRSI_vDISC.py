@@ -849,22 +849,12 @@ def run_asp(
     os.system('cp {} {}'.format(globXMLs, outASPcur))
 
     # also move the slurm.out file to outASP/batchID/slurmOuts and rename it to the pairname_slurm.out
-    inSlurm = os.path.join(imageDir, 'slurm*out')[0] # should be the only slurm.out
+    inSlurm = glob.glob(os.path.join(imageDir, 'slurm*out'))[0] # should be the only slurm.out
     outSlurmDir = os.path.join(outDir, 'outSlurm', 'batch{}'.format(batchID)) # dping outSlurm/batch now
+    print "\n Copying outSlurm file {} to a new name in {}".format(inSlurm, outSlurmDir)
     os.system('mkdir -p {}'.format(outSlurmDir))
     outSlurm = os.path.join(outSlurmDir, os.path.basename(inSlurm).replace("slurm", "batch{}__{}__slurm".format(batchID, pairname)))
     os.system('cp {} {}'.format(inSlurm, outSlurm)) # review this after we are sure it works
-
-
-    print("\n\n-----------------------------")
-    print("\n\t ")
-    print("Finished processing {}".format(pairname))
-    print 'End time: {}'.format(strftime("%Y%m%d-%H%M%S"))
-    end_main = timer()
-    total_time = find_elapsed_time(start_main, end_main)
-    print "Elapsed time = {} minutes".format(round(total_time, 3))
-    print("\n\t ")
-    print("-----------------------------\n\n")
 
     # we got to this point, append the pairname to the completed pairs text file
     comp_pair_dir = os.path.join(outDir, 'completedPairs')
@@ -880,6 +870,16 @@ def run_asp(
     run_times_csv = os.path.join(outDir, 'run_times.csv')
     with open(run_times_csv, 'a') as rt:
         rt.write('{}, {}, {}, {}, {}, {}, {}\n'.format(batchID, pairname, total_time, (total_time/60), strip1size, strip2size, nodeName))
+
+    print("\n\n-----------------------------")
+    print("\n\t ")
+    print("Finished processing {}".format(pairname))
+    print 'End time: {}'.format(strftime("%Y%m%d-%H%M%S"))
+    end_main = timer()
+    total_time = find_elapsed_time(start_main, end_main)
+    print "Elapsed time = {} minutes".format(round(total_time, 3))
+    print("\n\t ")
+    print("-----------------------------\n\n")
 
 
     # try to close the out/err files-- http://stackoverflow.com/questions/7955138/addressing-sys-excepthook-error-in-bash-script
