@@ -36,7 +36,7 @@ def find_elapsed_time(start, end):
 
 
 #def main(csv, inDir, batchID, mapprj=True, doP2D=True, rp=100): #* batchID to keep track of groups of pairs for processing # old way- without argparse
-def main(csv, inDir, batchID, mapprj, noP2D, rp): #the 3 latter args are optional
+def main(csv, inDir, batchID, mapprj, noP2D, rp, debug): #the 4 latter args are optional
 
 ##    def run_asp(
 ##    csv,
@@ -150,6 +150,7 @@ def main(csv, inDir, batchID, mapprj, noP2D, rp): #the 3 latter args are optiona
     os.dup2(so.fileno(), sys.stdout.fileno())           # redirect stdout and stderr to the log file opened above
     os.dup2(se.fileno(), sys.stderr.fileno())
 
+    if debug: print "!!!!! DEBUG mode !!!!!\n\n"
     print "BATCH: %s" % batchID
     print "Attempting to process %d pairs\n" % n_lines
     print "Begin:", datetime.now().strftime("%m%d%y-%I%M%p"), "\n"
@@ -212,7 +213,7 @@ def main(csv, inDir, batchID, mapprj, noP2D, rp): #the 3 latter args are optiona
         #preLogText.append(linesplit)
 
 
-        if pairname_idx != -999: # this statement will be True if
+        if pairname_idx != -999: # this statement will be True if there is a pairname index
             pairname   = linesplit[pairname_idx]
             catID_1    = linesplit[pairname_idx].split('_')[2]
             catID_2    = linesplit[pairname_idx].split('_')[3]
@@ -327,6 +328,7 @@ def main(csv, inDir, batchID, mapprj, noP2D, rp): #the 3 latter args are optiona
                 """
                 selected=cur.fetchall()
                 preLogText.append( "\n\t Found '%s' scenes for catID '%s' "%(len(selected),catID))
+
                 # Get info from first item returned
                 #
                 #
@@ -342,6 +344,9 @@ def main(csv, inDir, batchID, mapprj, noP2D, rp): #the 3 latter args are optiona
                     n_missing_catIDs += 1 # add one to number of missing catIDs for batch
                     continue ##** if we don't have data for catID X, set it to false and move to the next catID
 
+                # only want to print number of scenes found if there were scenes found
+                print "   -Found {} scenes".format(len(selected))
+                if debug: print "    Selected list: {}".format(selected)
                 ##** removed else here because continue should take care of the flow
 
                 ##** moved this following block from down below
@@ -585,6 +590,10 @@ def main(csv, inDir, batchID, mapprj, noP2D, rp): #the 3 latter args are optiona
             for row in selected: ##** now we are looping through the list of selected scenes for catID X
                 ntf = row[0]
                 xml = ntf.replace('.ntf', '.xml')
+                if debug:
+                    print ntf
+                    print xml
+                    continue
 
                 # ** FOR NOW: copy files if it exists. assumming if it doesnt exist the path changed to NGA, copy that instead
                 if not os.path.isfile(os.path.join(imageDir, os.path.basename(ntf))): # if the file is not in the imageDir
@@ -618,12 +627,15 @@ def main(csv, inDir, batchID, mapprj, noP2D, rp): #the 3 latter args are optiona
                     # TD 4/5: we need to be sure the count goes up only if the above statements works
                 scene_exist_cnt += 1 # add one to count
 
+            if debug: continue # don't actually copy data
+
             if scene_exist_cnt == 0: # if no data was found in the NGA database for catID
                 print "No data was found in ADAPT archive for pair %s. Skipping to next catID\n\n"
                 continue
             else:
                 pair_data_exists[num] = True # set catID side to True since scenes do exist
 
+        if debug: sys.exit()
 
         if pair_data_exists == [True, True]: # both pairs have data
             #print "Data exists for each catID in pair"
@@ -936,6 +948,7 @@ if __name__ == '__main__':
     ap.add_argument("-mapprj", action='store_true', help="Include -mapprj tag at the command line if you wish to mapproject") # if "-mapprj" is NOT included at the command line, it defaults to False. if it IS, mapprj gets set to True
     ap.add_argument("-noP2D", action='store_true', help="Include -noP2D tag at the command line if you do NOT wish to run P2D") # if "-noP2D" is NOT included at the CL, it defaults to False. doP2D = not noP2D
     ap.add_argument("-rp", default=100, type=int, help="Reduce Percent, default = 100")
+    ap.add_argument("-debug", action='store_true', help="Include -debug if you wish to run in debug mode") # if -debug is NOT included at the CL, it defaults to False
 
     kwargs = vars(ap.parse_args()) # parse args and convert to dict
 
