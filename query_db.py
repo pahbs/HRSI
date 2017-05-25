@@ -589,10 +589,14 @@ def main(csv, inDir, batchID, mapprj, noP2D, rp, debug): #the 4 latter args are 
             scene_exist_cnt = 0 # if this remains 0, uh oh. skip pair
             for row in selected: ##** now we are looping through the list of selected scenes for catID X
                 ntf = row[0]
-                xml = ntf.replace('.ntf', '.xml')
+                filename, fileExt = os.path.splitext(ntf)
+                xml = ntf.replace(fileExt, '.xml') # for ntf files
+
                 if debug:
                     print ntf
                     print xml
+                    print os.path.isfile(ntf)
+                    print os.path.isfile(xml)
                     continue
 
                 # ** FOR NOW: copy files if it exists. assumming if it doesnt exist the path changed to NGA, copy that instead
