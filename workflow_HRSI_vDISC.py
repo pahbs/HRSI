@@ -860,11 +860,12 @@ def run_asp(
         os.system('cp {} {}'.format(inSlurm, outSlurm)) # review this after we are sure it works
 
     # we got to this point, append the pairname to the completed pairs text file
-    comp_pair_dir = os.path.join(outDir, 'completedPairs')
-    os.system('mkdir -p %s' % comp_pair_dir)
-    completed_pairs_txt = os.path.join(comp_pair_dir, 'batch{}_completedPairs.txt'.format(batchID))
-    with open (completed_pairs_txt, 'a') as cp:
-        cp.write('{}\n'.format(pairname))
+    if doP2D and os.path.isfile(PC_tif): # but only add to list if PC exists
+        comp_pair_dir = os.path.join(outDir, 'completedPairs')
+        os.system('mkdir -p %s' % comp_pair_dir)
+        completed_pairs_txt = os.path.join(comp_pair_dir, 'batch{}_completedPairs.txt'.format(batchID))
+        with open (completed_pairs_txt, 'a') as cp:
+            cp.write('{}\n'.format(pairname))
 
     # add some info to the run_times csv for NCCS
     # then print batchID, pairname, total_time (minutes and hours) to csv
