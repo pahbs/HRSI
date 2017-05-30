@@ -848,13 +848,16 @@ def run_asp(
     print '\n Copying XML files ({}) to outASP ({})'.format(globXMLs, outASPcur)
     os.system('cp {} {}'.format(globXMLs, outASPcur))
 
-    # also move the slurm.out file to outASP/batchID/slurmOuts and rename it to the pairname_slurm.out
-    inSlurm = glob.glob(os.path.join(imageDir, 'slurm*out'))[0] # should be the only slurm.out
+    # also move the slurm.out file to outASP/slurmOuts/batchID and rename it to the pairname_slurm.out
+    # loop through all slurm files in pairname directory and rename/copy them to outSlurm dir -- if we are rerunning a pair process it will just name/recopy the slurm.out files to outSlurm
+    inSlurmGlob = glob.glob(os.path.join(imageDir, 'slurm*out')) # list of all slurm files in pairname dir
     outSlurmDir = os.path.join(outDir, 'outSlurm', 'batch{}'.format(batchID)) # dping outSlurm/batch now
-    print "\n Copying outSlurm file {} to a new name in {}".format(inSlurm, outSlurmDir)
     os.system('mkdir -p {}'.format(outSlurmDir))
-    outSlurm = os.path.join(outSlurmDir, os.path.basename(inSlurm).replace("slurm", "batch{}__{}__slurm".format(batchID, pairname)))
-    os.system('cp {} {}'.format(inSlurm, outSlurm)) # review this after we are sure it works
+    print ''
+    for inSlurm in inSlurmGlob: # loop through slurm files
+        outSlurm = os.path.join(outSlurmDir, os.path.basename(inSlurm).replace("slurm", "batch{}__{}__slurm".format(batchID, pairname)))
+        print " Copying outSlurm file {} to a new name {}".format(inSlurm, outSlurm)
+        os.system('cp {} {}'.format(inSlurm, outSlurm)) # review this after we are sure it works
 
     # we got to this point, append the pairname to the completed pairs text file
     comp_pair_dir = os.path.join(outDir, 'completedPairs')
