@@ -526,8 +526,9 @@ def main(csv, inDir, batchID, mapprj, noP2D, rp, debug): #the 4 latter args are 
             continue
 
         # also check to be sure pairname was not already processed in an earlier batch by seeing if it exsits in outASP on ADAPT:
-        checkOut = "/att/pubrepo/DEM/hrsi_dsm/{}/out-strip-DEM.txt".format(pairname)
-        if os.path.isfile(checkOut): # already ran successfully
+        checkOut1 = "/att/pubrepo/DEM/hrsi_dsm/{}/out-strip-DEM.txt".format(pairname)
+        checkOut2 = "/att/pubrepo/DEM/hrsi_dsm/{}/out-strip-DEM.tif".format(pairname)
+        if os.path.isfile(checkOut1) and os.path.isfile(checkOut2): # already ran successfully and was rsynced back to ADAPT
             print "Pairname %s has already been processed in a previous batch. Moving to next pair\n" % pairname
             outAttributes = '{},{},{},{},{},{},{},{},{},alreadyProcessed\n'.format(batchID, pairname, catID_1, found_catID[0], catID_2, found_catID[1], mapprj, year, month) # record that this was already processed earlier
             with open(summary_csv, 'a') as c:
@@ -896,6 +897,10 @@ def main(csv, inDir, batchID, mapprj, noP2D, rp, debug): #the 4 latter args are 
             #ff.write('\ncd %s\nchmod 755 %s\ndos2unix %s\nsbatch %s' % (discover_imageDir, os.path.basename(job_script), os.path.basename(job_script), os.path.basename(job_script)))
             ff.write("\ncd {0}\nchmod 755 {1}\nsed -i '$a\\' {1}\nsbatch {1}".format(discover_imageDir, os.path.basename(job_script))) # do the sed just in case. this arg says add newline to end of file only if one is not already there
 
+        # add pairname to a text list with pairs
+        pairTextFile = '/att/gpfsfs/briskfs01/ppl/mwooten3/Paul_TTE/submittedPairs_lists/batch{}_submittedPairs.txt'.format(batchID)
+        with open(pairTextFile, 'a') as ptf:
+            ptf.write('{}\n'.format(pairname))
        # print ''
 
     #print "\n%d of the %d input pairs were successfully copied" % (n_pair_copy, n_lines)
