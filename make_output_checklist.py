@@ -28,13 +28,13 @@ logdir = os.path.join(aspdir, 'logs') # might change later
 compPairsFile = "/att/gpfsfs/briskfs01/ppl/mwooten3/Paul_TTE/ADAPT_completedPairs/ADAPT_completedPairs_batch{}.txt".format(batch)
 
 with open(outcsv, 'w') as o:
-    o.write('batchID,pairname,catID_1,catID_1_found,catID_2,catID_2_found,result,reason\n')
+    o.write('batchID,pairname,catID_1,catID_1_found,catID_2,catID_2_found,result,reason (optional)\n')
 
 with open(incsv, 'r') as c:
     csvlist = [f.strip() for f in c.readlines()]
 
 
-requery_pairnames = []
+requery_pairnames = [] # *TD what are we doing with this?
 
 
 cnt=0
@@ -68,7 +68,7 @@ for cline in csvlist:
         with open(outcsv, 'a') as oc:
             oc.write('{}\n'.format(outline))
 
-        with open(compPairsFile, 'w') as cp:
+        with open(compPairsFile, 'a') as cp:
             cp.write('{}\n'.format(pairname))
 
         continue
@@ -90,7 +90,7 @@ for cline in csvlist:
     if 'TIME LIMIT' in slurm:
       #  print '{} timed out'.format(pairname)
         requery_pairnames.append(pairname)
-        outline = '{},{},{},{},{},{},{}'.format(batch, pairname, cat1, cat1_found, cat2, cat2_found, 'timedOut', 'rerun')
+        outline = '{},{},{},{},{},{},{},{}'.format(batch, pairname, cat1, cat1_found, cat2, cat2_found, 'timedOut', 'rerun')
         with open(outcsv, 'a') as oc:
             oc.write('{}\n'.format(outline))
 
