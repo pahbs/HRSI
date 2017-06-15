@@ -34,6 +34,36 @@ def find_elapsed_time(start, end):
     elapsed_min = (end-start)/60
     return float(elapsed_min)
 
+# 6/15 changing the first check to check for existance in inASP/batch/pairname which will cover duplicates within batch and queries that were cut short (deleting unique_pairnames stuff)
+# ...also putting it into a function so it can be addressed multiple times depending on when pairname is defined
+# ...also for alreadyQueried and alreadyProcessed outattributes, only batchID, pairname, catID_1 and catID_2 columns might possibly be filled
+
+# function to check if pairname has: already been queried (i.e. directory exists in the same batch in inASP) or already been processed and synced back to DISCOVER
+def check_pairname_continue(pairname, outAttributes): # outAttributes will have as many outAttributes as are known at the time but with 'filler' in the last columm, which will be replaced with approporate reason before getting written to csv
+    pairnameContinue = False # this starts at False and gets set to true if one of the two things above is True
+
+    imageDir = os.path.join(batchDir, pairname) # go ahead and set this here so we can check the first thing:
+
+    # let's be sure the pairname we are trying to run has not been run before in this batch OR has not be processed through DISCOVER (i.e. glob on imageDir, '.xml' is not empty):
+    globDir = glob.glob(os.path.join(imageDir, '*xml')) # this list will be empty if not already queried
+    if len(globDir) > 0: # if there are xml's in the imageDir, we don't need to keep going
+        print "Pairname %s has already been queried for this batch. Moving to next pair\n" % pairname
+        outAttributes = outAttributes.replace('filler', 'alreadyQueried')
+        with open(summary_csv, 'a') as c:
+            c.write(outAttributes)
+        pairnameContinue = True # then skip pairname
+
+    # also check to be sure pairname was not already processed in an earlier batch by seeing if it exsits in outASP on ADAPT:
+    checkOut1 = "/att/pubrepo/DEM/hrsi_dsm/{}/out-strip-DEM.txt".format(pairname)
+    checkOut2 = "/att/pubrepo/DEM/hrsi_dsm/{}/out-strip-DEM.tif".format(pairname)
+    if os.path.isfile(checkOut1) and os.path.isfile(checkOut2): # already ran successfully and was rsynced back to ADAPT
+        print "Pairname %s has already been processed in a previous batch. Moving to next pair\n" % pairname
+        outAttributes = outAttributes.replace('filler', 'alreadyProcessed') # record that this was already processed earlier
+        with open(summary_csv, 'a') as c:
+            c.write(outAttributes)
+        pairnameContinue = True # then skip pairname
+
+    return pairnameContinue
 
 #def main(csv, inDir, batchID, mapprj=True, doP2D=True, rp=100): #* batchID to keep track of groups of pairs for processing # old way- without argparse
 def main(csv, inDir, batchID, mapprj, noP2D, rp, debug): #the 4 latter args are optional
@@ -144,7 +174,7 @@ def main(csv, inDir, batchID, mapprj, noP2D, rp, debug): #the 4 latter args are 
     # [3] Loop through the lines (the records in the csv table), get the attributes and run the ASP commands
     pair_count = 0 # to print which pair we are at
     n_pair_copy = 0 # number of succeffully copied pairs
-    unique_pairnames = [] # to store the pairnames you copy for the batch
+
     for line in csvLines: # AKA for pair, or record in the input table # TEST just 2 lines for now
 
         start_pair = timer()
@@ -172,11 +202,20 @@ def main(csv, inDir, batchID, mapprj, noP2D, rp, debug): #the 4 latter args are 
             sensor     = linesplit[pairname_idx].split('_')[0]
             imageDate  = linesplit[pairname_idx].split('_')[1]
 
+            # before continuing, if there is pairname index, let's see if we should continue on to the next pair or keep going with this pair
+            outAttributes = '{},{},{},"",{},"","",{},{},filler\n'.format(batchID, pairname, catID_1, catID_2, imageDate[0:4], imageDate[4:6]) # this is outAttributes for now. filler will be replaced
+            pairnameContinue = check_pairname_continue(pairname, outAttributes)
+            if pairnameContinue: # if the pairname function tells us to skip the pair, skip the pair (after writing outAttributes to csv summary)
+                continue
+
         else:
             catID_1 = linesplit[catID_1_idx]
             catID_2 = linesplit[catID_2_idx]
             sensor = str(linesplit[sensor_idx])
             imageDate  = linesplit[imageDate_idx]
+
+            # if our input csv has this format, we will check for pairname later
+
 
 
         #* ! at this point, imageDate is not in a consistent format, it's whatever format it was in on the csv
@@ -365,23 +404,10 @@ def main(csv, inDir, batchID, mapprj, noP2D, rp, debug): #the 4 latter args are 
             print "One of the catIDs returned no data from our query. Moving to next pair\n"
             continue ##* move on to the next pair
 
-
-        # let's be sure the pairname we are trying to run has not been run before in this batch:
-        if pairname in unique_pairnames: # if it's in our list already
-            print "Pairname %s has already been processed for this batch. Moving to next pair\n" % pairname
-            outAttributes = '{},{},{},{},{},{},{},{},{},duplicate\n'.format(batchID, pairname, catID_1, found_catID[0], catID_2, found_catID[1], mapprj, year, month) # record that this is a same-batch duplicate
-            with open(summary_csv, 'a') as c:
-                c.write(outAttributes)
-            continue
-
-        # also check to be sure pairname was not already processed in an earlier batch by seeing if it exsits in outASP on ADAPT:
-        checkOut1 = "/att/pubrepo/DEM/hrsi_dsm/{}/out-strip-DEM.txt".format(pairname)
-        checkOut2 = "/att/pubrepo/DEM/hrsi_dsm/{}/out-strip-DEM.tif".format(pairname)
-        if os.path.isfile(checkOut1) and os.path.isfile(checkOut2): # already ran successfully and was rsynced back to ADAPT
-            print "Pairname %s has already been processed in a previous batch. Moving to next pair\n" % pairname
-            outAttributes = '{},{},{},{},{},{},{},{},{},alreadyProcessed\n'.format(batchID, pairname, catID_1, found_catID[0], catID_2, found_catID[1], mapprj, year, month) # record that this was already processed earlier
-            with open(summary_csv, 'a') as c:
-                c.write(outAttributes)
+        # if our input csv is the second format, check for pairname continue here, once we have pairname (will also have other fields) but before copy
+        outAttributes = '{},{},{},{},{},{},{},{},{},filler\n'.format(batchID, pairname, catID_1, found_catID[0], catID_2, found_catID[1], mapprj, year, month) # filler will be replaced
+        pairnameContinue = check_pairname_continue(pairname, outAttributes)
+        if pairnameContinue: # if the pairname function tells us to skip the pair, skip the pair (after writing outAttributes to csv summary)
             continue
 
         start_copy = timer()
@@ -627,8 +653,6 @@ def main(csv, inDir, batchID, mapprj, noP2D, rp, debug): #the 4 latter args are 
 
 
         n_pair_copy += 1 # if we get to this point we have successfully copied data for the pair
-        unique_pairnames.append(pairname) # add pairname to list
-       # print unique_pairnames, " (Delete)"
 
         discover_imageDir = os.path.join(DISCdir, 'inASP/batch%s/%s' % (batchID, pairname)) # where data will be copied to (and thus the imageDir we need to pass)
 
