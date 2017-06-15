@@ -859,7 +859,7 @@ def run_asp(
         print " Copying outSlurm file {} to a new name {}".format(inSlurm, outSlurm)
         os.system('cp {} {}'.format(inSlurm, outSlurm)) # review this after we are sure it works
 
-    print "\n Adding pair {} to completedPairs text file and recording run time information to spreadsheet"
+    print "\n Adding pair {} to completedPairs text file and recording run time information to spreadsheet".format(pairname)
 
     # we got to this point, append the pairname to the completed pairs text file
     if doP2D and os.path.isfile(PC_tif): # but only add to list if PC exists

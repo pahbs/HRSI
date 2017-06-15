@@ -180,7 +180,7 @@ def main(csv, inDir, batchID, mapprj, noP2D, rp, debug): #the 4 latter args are 
         start_pair = timer()
 
         pair_count += 1
-        print "\nAttemping to query and copy data for pair %d of %d" % (pair_count, n_lines) # print to ADAPT screen
+        print "\nAttemping to query and copy data for pair {} of {}:\n".format(pair_count, n_lines) # print to ADAPT screen
         #print line
 
         preLogText = [] # start over with new preLog everytime you go to another pair
@@ -257,6 +257,7 @@ def main(csv, inDir, batchID, mapprj, noP2D, rp, debug): #the 4 latter args are 
 
         # [4] Search ADAPT's NGA database for catID_1 and catid_2
         # Establish the database connection
+        start_query = timer()
         with psycopg2.connect(database="ngadb01", user="anon", host="ngadb01", port="5432") as dbConnect:
 
             cur = dbConnect.cursor() # setup the cursor
@@ -404,6 +405,10 @@ def main(csv, inDir, batchID, mapprj, noP2D, rp, debug): #the 4 latter args are 
             print "One of the catIDs returned no data from our query. Moving to next pair\n"
             continue ##* move on to the next pair
 
+        end_query = timer()
+        time_query = round((end_query - start_query)/60, 3)
+        print "  Elapsed time to query pair {}: {} minutes\n".format(pairname, time_query)
+
         # if our input csv is the second format, check for pairname continue here, once we have pairname (will also have other fields) but before copy
         outAttributes = '{},{},{},{},{},{},{},{},{},filler\n'.format(batchID, pairname, catID_1, found_catID[0], catID_2, found_catID[1], mapprj, year, month) # filler will be replaced
         pairnameContinue = check_pairname_continue(pairname, outAttributes)
@@ -419,7 +424,7 @@ def main(csv, inDir, batchID, mapprj, noP2D, rp, debug): #the 4 latter args are 
 
             ##Q does the info below (NGA path/pID/lat/lon) need to be printed to log if pairs arent going to be processed? If so, this block below needs to be moved up before if len(catIDlist) < 2
 
-            print "  Copying data for pair %d of %d, catalog ID %s" % (pair_count, n_lines, catID) # print to ADAPT screen
+            print "  Copying data for catalog ID {}".format(catID) # print to ADAPT log
             # retrieve list of scenes for catID
             selected = selected_list[num]
 
@@ -539,7 +544,7 @@ def main(csv, inDir, batchID, mapprj, noP2D, rp, debug): #the 4 latter args are 
             """
         end_copy = timer()
         time_copy = round((end_copy - start_copy)/60, 3)
-        print "Elapsed time to copy data for pair {} of {}, pairname {}: {} minutes\n".format(pair_count, n_lines, pairname, time_copy)
+        print "  Elapsed time to copy data for pair {} of {}, pairname {}: {} minutes\n".format(pair_count, n_lines, pairname, time_copy)
 
 
         # try new method:
