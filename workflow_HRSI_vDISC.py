@@ -87,9 +87,9 @@ def runP2D(outStereoPre, prj, strip=True):
     colormapFile = '/discover/nobackup/projects/boreal_nga/code/color_hrsi_dsm.txt' #hardcode
 
     PC_tif = '{}-PC.tif'.format(outStereoPre)
-    holesDEM_tif = '{}-DEM.tif'.format(outStereoPre)
-    holesDEM_txt = holesDEM_tif.replace('tif', 'txt')
-    holesDEM_vrt = holesDEM_tif.replace('tif', 'vrt')
+    DEM_tif = '{}-DEM.tif'.format(outStereoPre)
+    DEM_txt = DEM_tif.replace('tif', 'txt')
+    DEM_vrt = DEM_tif.replace('tif', 'vrt')
     hillshade_tif = '{}-DEM-hlshd-e25.tif'.format(outStereoPre)
     hillshade_txt = hillshade_tif.replace('tif', 'txt')
     colorshade_tif = '{}-DEM-clr-shd.tif'.format(outStereoPre)
@@ -100,7 +100,7 @@ def runP2D(outStereoPre, prj, strip=True):
     # [5.4] point2dem
     # Launch p2d
     #if os.path.isfile(outStereoPre + "-PC.tif") and not os.path.isfile(outStereoPre + "-holes-fill-DEM.txt"):
-    if os.path.isfile(PC_tif) and not os.path.isfile(holesDEM_txt):
+    if os.path.isfile(PC_tif) and not os.path.isfile(DEM_txt):
         # Output DSM has holes <50 pix filled with hole-fill-mode=2 (weighted avg of all valid pix within window of dem-hole-fill-len)
         # Ortho (-DRG.tif) produced
 
@@ -136,7 +136,7 @@ def runP2D(outStereoPre, prj, strip=True):
 
     # Communicate p2d holes-fill
     #if os.path.isfile(outStereoPre + "-PC.tif") and not os.path.isfile(outStereoPre + "-holes-fill-DEM.txt"):
-    if os.path.isfile(PC_tif) and not os.path.isfile(holesDEM_txt):
+    if os.path.isfile(PC_tif) and not os.path.isfile(DEM_txt):
         stdOut, err = p2dCmd2.communicate()
         print(str(stdOut) + str(err))
         end_p2d = timer()
@@ -146,21 +146,21 @@ def runP2D(outStereoPre, prj, strip=True):
 
         if str(stdOut) != "None":
             #with open(outStereoPre + "-holes-fill-DEM.txt",'w') as out_hf_txt:
-            with open(holesDEM_txt,'w') as out_hf_txt:
+            with open(DEM_txt,'w') as out_hf_txt:
                 out_hf_txt.write("DEM processed")
     else: # else holes-fill-DEM does exist
         print "\n\tDEM already exists"
 
     # Avoid 'TIFF file size exceeded' errors with reduced-size Hillshades & VRTs
     # Logic to build VRTs from strip-holes-fill-DEM and the hillshade at 50% resolution in order to run colormap successfully
-    if not os.path.isfile(holesDEM_vrt): #* 2/16 deleting if strip because strip will always be True now
+    if not os.path.isfile(DEM_vrt): #* 2/16 deleting if strip because strip will always be True now
         print("\n\tLaunching gdal_translate to create out-DEM.vrt ")
         #cmdStr = "gdal_translate -outsize 30% 30% -of VRT " + outStereoPre + "-holes-fill-DEM.tif " + outStereoPre + "-holes-fill-DEM.vrt"
-        cmdStr = "gdal_translate -outsize 30% 30% -of VRT {} {}".format(holesDEM_tif, holesDEM_vrt)
+        cmdStr = "gdal_translate -outsize 30% 30% -of VRT {} {}".format(DEM_tif, DEM_vrt)
         #print("\n\t{}".format(cmdStr)) #DEL gets printed below
         wf.run_wait_os(cmdStr)
     else: # else if the file exists
-        print '\n\t{} already exists'.format(holesDEM_vrt)
+        print '\n\t{} already exists'.format(DEM_vrt)
 
     # [5.5]  gdaldem stuff to create viewable output: hillshade on the reduced DEM VRT
    # if os.path.isfile(outStereoPre + "-PC.tif") and not os.path.isfile(outStereoPre + "-holes-fill-DEM-hlshd-e25.txt"):
@@ -169,7 +169,7 @@ def runP2D(outStereoPre, prj, strip=True):
         print("hillshade")
         #cmdStr = "hillshade  " + outStereoPre + "-holes-fill-DEM.vrt -o  " + outStereoPre + "-holes-fill-DEM-hlshd-e25.tif -e 25"
         #cmdStr = "hillshade  {0}-holes-fill-DEM.vrt -o  {0}-holes-fill-DEM-hlshd-e25.tif -e 25".format(outStereoPre)
-        cmdStr = "hillshade  {} -o  {} -e 25".format(holesDEM_vrt, hillshade_tif)
+        cmdStr = "hillshade  {} -o  {} -e 25".format(DEM_vrt, hillshade_tif)
         hshCmd = subp.Popen(cmdStr.rstrip('\n'), stdout=subp.PIPE, shell=True)
         stdOut_hill, err_hill = hshCmd.communicate()
         print(str(stdOut_hill) + str(err_hill))
@@ -182,11 +182,11 @@ def runP2D(outStereoPre, prj, strip=True):
         print "\n\thillshade already exists"
 
     #if os.path.isfile(outStereoPre + "-holes-fill-DEM.vrt") and os.path.isfile(outStereoPre + "-holes-fill-DEM-hlshd-e25.tif") and not os.path.isfile(outStereoPre + "-holes-fill-DEM-clr-shd.txt"):
-    if os.path.isfile(holesDEM_vrt) and os.path.isfile(hillshade_tif) and not os.path.isfile(colorshade_txt):
+    if os.path.isfile(DEM_vrt) and os.path.isfile(hillshade_tif) and not os.path.isfile(colorshade_txt):
         print("colormap")
         #cmdStr = "colormap  " + outStereoPre + "-holes-fill-DEM.vrt -s " + outStereoPre + "-holes-fill-DEM-hlshd-e25.tif -o " + outStereoPre + "-holes-fill-DEM-clr-shd.tif" + " --colormap-style " + colormapFile
         #cmdStr = "colormap  {0}-holes-fill-DEM.vrt -s {0}-holes-fill-DEM-hlshd-e25.tif -o {0}-holes-fill-DEM-clr-shd.tif --colormap-style {1}".format(outStereoPre,  colormapFile)
-        cmdStr = "colormap  {} -s {} -o {} --colormap-style {}".format(holesDEM_vrt, hillshade_tif, colorshade_tif, colormapFile)
+        cmdStr = "colormap  {} -s {} -o {} --colormap-style {}".format(DEM_vrt, hillshade_tif, colorshade_tif, colormapFile)
         clrCmd = subp.Popen(cmdStr.rstrip('\n'), stdout=subp.PIPE, shell=True)
         stdOut_clr, err_clr = clrCmd.communicate()
         print(str(stdOut_clr) + str(err_clr))
@@ -200,9 +200,10 @@ def runP2D(outStereoPre, prj, strip=True):
 
     print("\n\tLaunch gdaladdo")
     print("\n\tKick off nearly simultaneously; i.e. dont wait for the first gdaladdo output to be communicated before launching the second")
-    pyrcmdStr1 = "gdaladdo -r average {} 2 4 8 16".format(holesDEM_tif)
-    pyrcmdStr2 = "gdaladdo -r average {} 2 4 8 16".format(colorshade_tif)
-    pyrcmdStr3 = "gdaladdo -r average {} 2 4 8 16".format(DRG_tif)
+    #pyrcmdStr1 = "gdaladdo -r average {} 2 4 8 16".format(DEM_tif)
+    pyrcmdStr1 = "gdaladdo -ro -r average --config COMPRESS_OVERVIEW LZW --config BIGTIFF_OVERVIEW YES {} 2 4 8 16 32 64".format(DEM_tif) # new command format
+    pyrcmdStr2 = "gdaladdo -ro -r average --config COMPRESS_OVERVIEW LZW --config BIGTIFF_OVERVIEW YES {} 2 4 8 16 32 64".format(colorshade_tif)
+    pyrcmdStr3 = "gdaladdo -ro -r average --config COMPRESS_OVERVIEW LZW --config BIGTIFF_OVERVIEW YES {} 2 4 8 16 32 64".format(DRG_tif)
 
     # Initialize gdaladdos by scene for 1) -DEM.tif, 2) -DEM-clr-shd.tif, 3) -DRG.tif
     pyrCmd1 = subp.Popen(pyrcmdStr1.rstrip('\n'), stdout=subp.PIPE, shell=True)
