@@ -1,4 +1,9 @@
-# *TD = to-do
+# ???? HAVE NOT DONE THIS YET: Changing method so that there are only two options in the result column:
+# DEM_exists or DEM_DNE
+# if DEM_DNE, there may be a reason in the reason column
+# first check if the DEM exists. if it does, record and continue
+# if it doesn't, first check to see if data was missing (qresult == 'missingData' or 'missingData-ADAPT')
+
 
 # original: script that takes a batch as inputs, reads the query output summary and:
 # 1. writes an output checklist with a 1:1 input row to output row, where:
@@ -6,7 +11,10 @@
 #    if 'TIME LIMIT' is in slurm.out file, outResult is 'timedOut' and status is 'rerun'...*TD will eventually also write an input csv to rerun the timedOut pairs from query (with extended time)
 #    if neither of these two are the case, outResult is DEM_DNE. *TD may narrow this down to other causes but for now DEM_DNE
 # 2. if DEM_exists (no time outs, no missing Data errors, etc.): write to a ADAPT_completedPairs_batch$name.txt so list can be used to delete unneeded inputs and outputs from DISCOVER
-#
+
+# *TD = to-do
+
+
 
 import os
 import glob
@@ -26,6 +34,9 @@ slurmdir = os.path.join(aspdir, 'outSlurm', 'batch{}'.format(batch))
 logdir = os.path.join(aspdir, 'logs') # might change later
 
 compPairsFile = "/att/gpfsfs/briskfs01/ppl/mwooten3/Paul_TTE/ADAPT_completedPairs/ADAPT_completedPairs_batch{}.txt".format(batch)
+if os.path.isfile(compPairsFile):
+    os.remove(compPairsFile) # first delete the old completed pairs file if it exists
+
 
 with open(outcsv, 'w') as o:
     o.write('batchID,pairname,catID_1,catID_1_found,catID_2,catID_2_found,result,reason (optional)\n')
@@ -55,7 +66,15 @@ for cline in csvlist:
     cat2_found = clist[5]
 
     if qresult != 'processing': # if the pair was not sent to processing, put the reason (aka qresult) in the output csv
-        outline = '{},{},{},{},{},{},{}'.format(batch, pairname, cat1, cat1_found, cat2, cat2_found, qresult)
+
+        if qresult == 'alreadyProcessed': #*TD might change this in the batch query script so that it writes DEM_exists instead of alreadyProcessed, in which case erase this block and just write qresult to output
+            qresult_write = 'DEM_exists'
+        else:
+            qresult_write = qresult
+            # we still do not need to write this DEM_exists/alreadyProcessed pair to the completed pairs list. if it was alreadyProcessed, pair will not be sent to DISCOVER in the batch
+
+
+        outline = '{},{},{},{},{},{},{}, '.format(batch, pairname, cat1, cat1_found, cat2, cat2_found, qresult_write)
         with open(outcsv, 'a') as oc:
             oc.write('{}\n'.format(outline))
         continue
@@ -64,7 +83,8 @@ for cline in csvlist:
     checkOut1 = os.path.join(aspdir, "{}/out-strip-DEM.txt".format(pairname))
     checkOut2 = os.path.join(aspdir, "{}/out-strip-DEM.tif".format(pairname))
     if os.path.isfile(checkOut1) and os.path.isfile(checkOut2):
-        outline = '{},{},{},{},{},{},{}'.format(batch, pairname, cat1, cat1_found, cat2, cat2_found, 'DEM_exists')
+
+        outline = '{},{},{},{},{},{},{}, '.format(batch, pairname, cat1, cat1_found, cat2, cat2_found, 'DEM_exists')
         with open(outcsv, 'a') as oc:
             oc.write('{}\n'.format(outline))
 
@@ -79,33 +99,40 @@ for cline in csvlist:
     ## IOerror / disk quota error
     ## can not find (xml error) ?
 
-    # get the slurm and log files
-    slurmFile = glob.glob(os.path.join(slurmdir, 'batch{}__{}__slurm*out'.format(batch, pairname)))[0]
-    logFile = glob.glob(os.path.join(logdir, 'run_asp_LOG_{}__batch{}*txt'.format(pairname, batch)))[0]
+    # get the slurm if it is available
+    if len(glob.glob(os.path.join(slurmdir, 'batch{}__{}__slurm*out'.format(batch, pairname)))) > 0:
+        slurmFile = glob.glob(os.path.join(slurmdir, 'batch{}__{}__slurm*out'.format(batch, pairname)))[0]
 
-    # first check for time outs
-    with open(slurmFile, 'r') as sf:
-        slurm = sf.read() # dump contents of slurm file into var
+        # first check for time outs
+        with open(slurmFile, 'r') as sf:
+            slurm = sf.read() # dump contents of slurm file into var
 
-    if 'TIME LIMIT' in slurm:
-      #  print '{} timed out'.format(pairname)
-        requery_pairnames.append(pairname)
-        outline = '{},{},{},{},{},{},{},{}'.format(batch, pairname, cat1, cat1_found, cat2, cat2_found, 'timedOut', 'rerun')
-        with open(outcsv, 'a') as oc:
-            oc.write('{}\n'.format(outline))
+        if 'TIME LIMIT' in slurm:
+          #  print '{} timed out'.format(pairname)
+            requery_pairnames.append(pairname)
+            outline = '{},{},{},{},{},{},{},{}'.format(batch, pairname, cat1, cat1_found, cat2, cat2_found, 'DEM_DNE', 'timedOut')
+            with open(outcsv, 'a') as oc:
+                oc.write('{}\n'.format(outline))
 
-        # *TD run function to put pairname inputs into a new query where the csv file is called like reQuery_batch{}-try2.csv -- or rerunTime, something. might do timed out pairs separately
-        # # prob create separate function that will access the batches original input list and extract the pair's line. function could take the output hrsi list name as input (so function can be reused when dealing with pairs that failed but didnt time out)
+            # *TD run function to put pairname inputs into a new query where the csv file is called like reQuery_batch{}-try2.csv -- or rerunTime, something. might do timed out pairs separately
+            # # prob create separate function that will access the batches original input list and extract the pair's line. function could take the output hrsi list name as input (so function can be reused when dealing with pairs that failed but didnt time out)
 
-        continue
+            continue
+    else:
+        print " Slurm file(s) not yet available. Disregard output spreadsheet for this batch"
 
+    # try to get log file. what for? idk
+    if len (glob.glob(os.path.join(logdir, 'run_asp_LOG_{}__batch{}*txt'.format(pairname, batch)))) > 0:
+        logFile = glob.glob(os.path.join(logdir, 'run_asp_LOG_{}__batch{}*txt'.format(pairname, batch)))[0]
+    else:
+        print " Log file(s) not yet available. Disregard output spreadsheet for this batch"
     # at this point we know no query errors, no time outs, but DEM DoesNotExist
 
 
     # *TD for now just do DEM_DNE, we may narrow this down later to further errors
 
     # after going through known errors, we still dont know why it wont work ??do we wanna rerun figure out later
-    outline = '{},{},{},{},{},{},{}'.format(batch, pairname, cat1, cat1_found, cat2, cat2_found, 'DEM_DNE') # *TD what about status column?
+    outline = '{},{},{},{},{},{},{}, '.format(batch, pairname, cat1, cat1_found, cat2, cat2_found, 'DEM_DNE') # *TD what about status column?
 
     # write output line to csv:
     with open(outcsv, 'a') as oc:
