@@ -14,7 +14,7 @@ import subprocess as sp
 
 batch = sys.argv[1] # get batch id from command line
 
-start = datetime.datetime.now().strftime("%m%d%Y-%H:%M")
+start = datetime.datetime.now().strftime("%m%d%Y-%H%M")
 
 aspdir = "/discover/nobackup/projects/boreal_nga"
 inASPdir = os.path.join(aspdir, 'inASP', 'batch{0}'.format(batch))
