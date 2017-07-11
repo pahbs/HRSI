@@ -22,7 +22,8 @@ outASPdir = os.path.join(aspdir, 'outASP', 'batch{0}'.format(batch))
 
 compPairsFile = os.path.join(aspdir, "ADAPT_completedPairs", "ADAPT_completedPairs_batch{0}.txt".format(batch))
 
-logdir = os.path.join(aspdir, "ADAPT_completedPairs", "cleanupLogs")
+logdir = os.path.join(aspdir, "cleanupLogs", "cleanUp_inASP_outASP_Logs")
+os.system('mkdir -p {0}'.format(logdir))
 logfile = os.path.join(logdir, "cleanUp_batch{0}_Log_{1}.txt".format(batch, start))
 print "Cleaning up batch %s. See %s for output" % (batch, logfile)
 so = se = open(logfile, 'w', 0) # open our log file
