@@ -870,6 +870,9 @@ def run_asp(
         with open (completed_pairs_txt, 'a') as cp:
             cp.write('{}\n'.format(pairname))
 
+    end_main = timer()
+    total_time = find_elapsed_time(start_main, end_main)
+
     # add some info to the run_times csv for NCCS
     # then print batchID, pairname, total_time (minutes and hours) to csv
     strip1size = round(os.path.getsize(fullPathStrips[0])/1024.0/1024/1024, 3)
@@ -882,8 +885,6 @@ def run_asp(
     print("\n\t ")
     print("Finished processing {}".format(pairname))
     print 'End time: {}'.format(strftime("%Y%m%d-%H%M%S"))
-    end_main = timer()
-    total_time = find_elapsed_time(start_main, end_main)
     print "Elapsed time = {} minutes".format(round(total_time, 3))
     print("\n\t ")
     print("-----------------------------\n\n")
