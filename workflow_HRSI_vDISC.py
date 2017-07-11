@@ -55,14 +55,6 @@ def run_stereo(par, nodesList, imagePairs, imagePair_xmls, outStereoPre, DEM, ma
 ##    cmdStr = "parallel_stereo --nodes-list=" + nodesList + " --processes 18 --threads-multiprocess 16 --threads-singleprocess 32 --corr-timeout 360 --job-size-w 6144 --job-size-h 6144 " + imagePairs + imagePair_xmls + outStereoPre
     print("\n\tRunnning stereo on images: " + imagePairs)
 
-##    if par:         # PARALLEL_STEREO
-##
-##        if mapprj:
-##            cmdStr = cmdStr + " " + DEM
-##        else:
-##            cmdStr = cmdStr
-##    else:
-
     if test:    # TEST 'STEREO' on a small window
         cmdStr = "stereo --threads 18 --subpixel-kernel 9 9 --corr-timeout 300 --left-image-crop-win 5000 80000 10000 10000 " + imagePairs + imagePair_xmls + outStereoPre
         if 'GE01' in imagePairs: # if the images have sensor GE01, change command string to add -t rpc
@@ -76,10 +68,6 @@ def run_stereo(par, nodesList, imagePairs, imagePair_xmls, outStereoPre, DEM, ma
     print "\n\t" + cmdStr
 
     wf.run_wait_os(cmdStr, print_stdOut=False)
-
-##    end_ps = timer()
-##    print("\n\n\tEnd stereo run ")
-##    print("\tStereo run time (decimal minutes): " + str((end_ps - start_ps)/60) )
 
 def runP2D(outStereoPre, prj, strip=True):
 
@@ -98,12 +86,9 @@ def runP2D(outStereoPre, prj, strip=True):
 
 
     # [5.4] point2dem
-    # Launch p2d
-    #if os.path.isfile(outStereoPre + "-PC.tif") and not os.path.isfile(outStereoPre + "-holes-fill-DEM.txt"):
     if os.path.isfile(PC_tif) and not os.path.isfile(DEM_txt):
         # Output DSM has holes <50 pix filled with hole-fill-mode=2 (weighted avg of all valid pix within window of dem-hole-fill-len)
         # Ortho (-DRG.tif) produced
-
 
         print("\n\t [1] Create DEM: runnning point2dem on: {}".format(PC_tif))
         start_p2d = timer()
@@ -142,7 +127,6 @@ def runP2D(outStereoPre, prj, strip=True):
         end_p2d = timer()
         print("\n\t point2dem run time (mins): %f . Completed %s" \
         % (   (end_p2d - start_p2d)/60, str(datetime.now() ) ))
-        ##print("Total ASP run time for this scene (mins): " + str((end_p2d - start_ps)/60) )
 
         if str(stdOut) != "None":
             #with open(outStereoPre + "-holes-fill-DEM.txt",'w') as out_hf_txt:
@@ -342,7 +326,7 @@ def run_asp(
     # hardcode stuff for now
     nodeName = platform.node()
     par = False #DEL or edit these 3 lines of code depending on what we wanna do with stereo
-    nodesList = '/att/gpfsfs/home/pmontesa/code/nodes_' + nodeName
+    nodesList = '/att/gpfsfs/home/pmontesa/code/nodes_{}'.format(nodeName)
     test = False
     found_catID = [True, True] # hardcode for now, should always be the case if we are running workflow
 
@@ -361,7 +345,6 @@ def run_asp(
     doP2D = bool(strtobool(doP2D))
 
     # set up directories and other variables from inputs
-    #outDir = os.path.dirname(imageDir).replace('inASP', 'outASP')
     outDir = os.path.dirname(imageDir).replace('inASP/batch{}'.format(batchID), 'outASP') # don't want the batch subdir for outASP. This does not include the pairname # out imageDir will be outASPcur
     pairname = os.path.basename(imageDir)
 
@@ -372,12 +355,9 @@ def run_asp(
     month = imageDate.split('-')[1]
     day = imageDate.split('-')[2]
 
-
     # For logging on the fly
     logdir = os.path.join(outDir, 'logs')
     os.system('mkdir -p %s' % logdir) # make log dir if it doesn't exist
-   # lfile = os.path.join(outDir, 'logs', 'run_asp_LOG_' + imageDir.split('/')[-1].rstrip('\n') +'_' + platform.node() + '_' + strftime("%Y%m%d_%H%M%S") + '.txt') # old way
-    #lfile = os.path.join(outDir, 'logs', 'run_asp_LOG_%s__%s_%s.txt' % (pairname, platform.node(), strftime("%Y%m%d-%H%M%S")))
     start_time = strftime("%Y%m%d-%H%M%S")
     lfile = os.path.join(outDir, 'logs', 'run_asp_LOG_%s__batch%s_%s_%s.txt' % (pairname, batchID, start_time, nodeName)) #* 2/8: putting date/time before node so it's in chrono order
 
@@ -446,9 +426,6 @@ def run_asp(
     else:
         avSatAz = avTargetAz - 180
 
-
-    """Begin processing the input csv row (aka pair)"""
-
     print "________________________"
     print "><><><><><><><><><><><><"
     print("\n\tACQ_DATE in line is: %s" % (str(imageDate)))##(line.split(',')[2]))
@@ -512,7 +489,6 @@ def run_asp(
         outPref = sensor.upper() + "_" + datetime.strptime(imageDate, "%Y-%m-%d").strftime("%y%b%d").upper() + "_" + catID ## e.g., WV01_JUN12_102001001B6B7800 # 2/2 had to change because imageDate is str
         outStrip = outPref + '.r' + str(rp) + imageExt
 
-##        print "outPref:", outPref #DEL
 ##        print "outStrip:", outStrip                                      ## e.g., WV01_JUN1612_102001001B6B7800.r100.tif
         fullPathStrips.append(os.path.abspath(outStrip))
         stripList.append(outStrip)
@@ -525,8 +501,6 @@ def run_asp(
             dg_mos = False
             continue # skip to the next catID #q see above confusion
 
-        #* 1/17 putting continue above and removing dedenting else statement below
-##        else:
         # On a catID: Get seachExt for wv_correct and dg_mosaic
         wv_cor_cmd = False
         """
@@ -544,7 +518,6 @@ def run_asp(
             # --------
             # wv_correct loop
                 try:
-                    #print("\tRunnning wv_correct on raw image: " + raw_image) #* 2/8 mw moved below
                     cmdStr ="wv_correct --threads=4 " + raw_image + " " + raw_image.replace(searchExt, ".xml") + " " + raw_image.replace(searchExt, corExt)
                     Cmd = subp.Popen(cmdStr.rstrip('\n'), stdout=subp.PIPE, shell=True)
                     wv_cor_cmd = True
@@ -561,10 +534,6 @@ def run_asp(
             print "\tRaw image search extension for dg_mosaic: %s: " % searchExt
 
         # On a catID: Communicate the wv_correct cmd
-        """
-        Probably should find a way to DEDENT the wv_correct AND dg_mosaic blocks so that ALL wv_corrects can be running simultaneously
-            and then BOTH mosaics can be running simultaneously.
-        """
         if wv_cor_cmd:
             wvc_cnt = 0
             start_wvc = timer()
@@ -582,10 +551,8 @@ def run_asp(
         # --------
         # On a catID: dg_mosaic    This has to one once for each of the image strips.
         dg_mos = False
-        """
-        is this 'if' even necessary now?
-        """
-        if (not os.path.isfile(outStrip) ):
+
+        if (not os.path.isfile(outStrip) ): # is this 'if' even necessary now?
 
             # Create a seach string with catID and extension
             if 'WV01' in sensor or 'WV02' in sensor:
@@ -596,9 +563,7 @@ def run_asp(
                 print "\tSensor is %s so wv_correct was not run" %(sensor)
 
             try:
-                #print("\tRunnning (and waiting) dg_mosaic on catID: " + catID) #* mw 2/8 moved to below
                 #q i feel like we should have something else here like preparing the dg mosaic command sor something
-                #cmdStr = "dg_mosaic " + inSearchCat + " --output-prefix "+ outPref + " --reduce-percent=" + str(rp)
                 cmdStr = "dg_mosaic {} --output-prefix {} --reduce-percent={}".format(inSearchCat, outPref, rp)
                 Cmd = subp.Popen(cmdStr.rstrip('\n'), stdout=subp.PIPE, shell=True)
                 dg_mos = True
@@ -616,7 +581,6 @@ def run_asp(
             print "\n\tFinal dg_mosaic output:" #q ?? should have something here or no?
             print "\tStandard out: %s" %str(s)
             print "\tStandard error: %s" %str(e)
-            #q why does the command seem to start running right here?
 
             # Write txt file to indicate that dg_mosaic completed successfully
             if not "None" in str(s):
@@ -630,39 +594,24 @@ def run_asp(
     print "\n\tNow, delete *cor.tif files (space management)..."
 ##    print "\timageDir: %s" % imageDir
     corList = glob.glob("*cor.*")
-    #print "\tList of cor files to delete: %s" % corList #q do we need this since we have the below statement?
     print "\tNumber of cor files to delete: {}".format(len(corList)) #q is this ok instead
     for f in corList:
         os.remove(f)
         print "\tDeleted %s" %f
 
-    # Set up boolean to execute ASP routines after finding pairs
-    runPair=True
+    runPair=True # Set up boolean to execute ASP routines after finding pairs
 
-    # Use stripList: copy XMLs to new name
-    #   Update stripList with the names of the cor versions of the strips
     print("\n\tStripList: %s" %(stripList))
-    #print "looping through stripList" #DEL
-    #for n,i in enumerate(stripList): # looping thru the left and right mosaics - #* 2/8 mw just do for outStrip in stripList
+
     for outStrip in stripList: # looping thru the left and right mosaics
-##        print n, i
-##        outStrip = stripList[n]
-        #print "outStrip:", outStrip
 
-
-        """
-        put in replace instead of strip
-        continue
-        """
-
-        outStrip_xml = outStrip.replace('.tif', '.xml') #mw 2/8 added this var and replace outStrip.strip('.tif') + '.xml' with it
+        outStrip_xml = outStrip.replace('.tif', '.xml')
         if os.path.isfile(outStrip_xml):
             print("\tFile exists: {}".format(outStrip_xml))
         else:
 
             print("\n\t !!! -- Looks like mosaic does not exist: " + outStrip )
             print("\n\t The pair is incomplete, so no stereo dataset will come from this dir.")
-            #print("\n\t Skipping to next pair in CSV file.") #* mw replace with below
             print("\n\t Ending job for pair {}".format(pairname))
             mapprj=False
             DSMdone=False
@@ -676,15 +625,12 @@ def run_asp(
         Now, you need to get:
             imagePairs
             imagePair_xmls
-            But this block below can be deleted...
         """
 
         leftScene = stripList[0]
         rightScene = stripList[1]
         imagePairs = leftScene + " " + rightScene + " "
         imagePair_xmls = leftScene.replace(imageExt,'.xml') + " " + rightScene.replace(imageExt,'.xml') + " "
-##        print "imagePair_xmls:", imagePair_xmls #DEL line
-##        print("--------------")
         print("\n--------------")
         print("\tImage pairs for stereo run: " + imagePairs)
         print("\tNodelist = " + nodesList)
@@ -696,20 +642,11 @@ def run_asp(
         # Copy stereo.default file in home dir to current dir
         #shutil.copy(stereoDef,os.getcwd()) #* #q #Q BE SURE TO UNCOMMENT IF NECESSARY *HERE
 
-        # Out ASP dir with out file prefix
-        """
-                                       outDir var is outASP
-        outASPcur will look like this: outASP/batch$batchID/WV01_20150610_102001003EBA8900_102001003E8CA400
-        """
-        # outASP/pairname:
-        #outASPcur = outDir + "/" + imageDir.split('/')[-1].rstrip('\n')
-        outASPcur = os.path.join(outDir, 'batch{}'.format(batchID), pairname) #* 1/22 same thing?
+        #outASPcur will look like this: outASP/batch$batchID/WV01_20150610_102001003EBA8900_102001003E8CA400
+        outASPcur = os.path.join(outDir, 'batch{}'.format(batchID), pairname) # outASP/pairname:
 
-        """
-        outStereoPre looks like this: outASP/batch$batchID/WV01_20150610_102001003EBA8900_102001003E8CA400/out-strip
-        """
-        #outStereoPre = outASPcur + "/out-" + outType
-        outStereoPre = outASPcur + "/out-strip" #* 1/22
+        #outStereoPre looks like this: outASP/batch$batchID/WV01_20150610_102001003EBA8900_102001003E8CA400/out-strip
+        outStereoPre = outASPcur + "/out-strip"
         doStereo = False
 
         # If outASPcur doesnt yet exist, run stereo
@@ -717,16 +654,11 @@ def run_asp(
             os.makedirs(outASPcur) #* 1/22 added, don't we need to make the directory if it doesn't exist?
             doStereo = True
         else:
-            #if len(glob.glob(outASPcur+"/out-" + outType + "*")) == 0:
-            #if len(glob.glob(outASPcur+"/out-" + outType + "*")) == 0: #* 1/22
-            if len(glob.glob("{}*".format(outStereoPre))) == 0: # 2/8 is this the same thing now?
+            if len(glob.glob("{}*".format(outStereoPre))) == 0:
                 doStereo = True
 
-        # If PC file doesnt exist, run stereo
-        # Sometimes PC file may exist, but is incomplete.
+        # If PC file doesnt exist, run stereo. Sometimes PC file may exist, but is incomplete.
         PC_tif = "{}-PC.tif".format(outStereoPre) # this will be created with stereo process
-##        print "PC_tif=", PC_tif #DEL
-        #if not os.path.isfile(outStereoPre + "-PC.tif"):
         if not os.path.isfile(PC_tif):
             doStereo = True
 
@@ -734,8 +666,6 @@ def run_asp(
         print("\n\n\t Do stereo? " + str(doStereo))
         if doStereo:
             print("\t\tparallel? " + str(par) )
-
-            ##mapprj = False
             print("\t\tmapproject? " + str(mapprj) )
         print("\n\n--------------")
 
@@ -757,26 +687,19 @@ def run_asp(
                     print "\nRunning mapproject on strip %s..." %(num + 1) #q but this isn't actually running yet, it's just preparing the commands
                     mapPrj_img = unPrj.replace('.tif', '_mapprj.tif')
                     if not os.path.exists(mapPrj_img):
-                        #cmdStr = "mapproject --nodata-value=-99 -t rpc --t_srs " + prj + " " + mapprjDEM + " " + unPrj + " " + unPrj.replace('tif','xml') + " " + mapPrj_img
-                        #cmdStr = "mapproject --nodata-value=-99 -t rpc --t_srs EPSG:4326 " + mapprjDEM + " " + unPrj + " " + unPrj.replace('tif','xml') + " " + mapPrj_img
-                        #cmdStr = "mapproject --nodata-value=-99 -t rpc " + mapprjDEM + " " + unPrj + " " + unPrj.replace('tif','xml') + " " + mapPrj_img
                         cmdStr = "mapproject --nodata-value=-99 -t rpc {} {} {} {}".format(mapprjDEM, unPrj, unPrj.replace('tif','xml'), mapPrj_img)
 
                         print "\n\t" + cmdStr
                         Cmd = subp.Popen(cmdStr.rstrip('\n'), stdout=subp.PIPE, shell=True)
 
-                        # Hold Cmd in a list for later communication
-                        CmdList.append(Cmd)
+                        CmdList.append(Cmd) # Hold Cmd in a list for later communication
 
                     imagePairs += mapPrj_img + " "
 
-                """
-                no need to enumerate this: see wv_correct block
-                """
+
                 start_mp = timer()
                 mp_cnt = 0
-                #print "\nRUNNING MAPPRJ NOW" #DEL ?
-                for num, c in enumerate(CmdList):
+                for num, c in enumerate(CmdList): # may be no need to enumerate this: see wv_correct block
                     # Now communicate both so they have been launched in parallel but will be reported in serial
                     print "\n\tWaiting to communicate results of mapprojects..."
                     stdOut, err = CmdList[num].communicate()
@@ -788,15 +711,11 @@ def run_asp(
                 end_mp = timer()
                 print "\nElapsed time to run mapproject {} times: {} minutes\n".format(mp_cnt, find_elapsed_time(start_mp, end_mp))
 
-            #print("\n\t Beginning stereo processing...")
-            """
-            we'll probably gonna set par=False and no run parallel_stereo; stereo instead
-            """
-##            print "RUNNING STEREO" #DEL ?
+            # we're probably gonna set par=False and no run parallel_stereo; stereo instead
             start_stereo = timer()
             print '\nBegin Stereo processing: %s\n' % (datetime.now().strftime("%I:%M%p  %a, %m-%d-%Y"))
             run_stereo(par, nodesList, imagePairs, imagePair_xmls, outStereoPre, mapprjDEM, mapprj, test) #* fix this function call and function
-            #if os.path.isfile(mapprjDEM):
+            #if os.path.isfile(mapprjDEM): # need this ?
             #    os.remove(mapprjDEM)
             end_stereo = timer()
             print "End Stereo processing: %s" % (datetime.now().strftime("%I:%M%p  %a, %m-%d-%Y"))
@@ -804,7 +723,6 @@ def run_asp(
 
         if doP2D and os.path.isfile(PC_tif):
             print("\nRunning p2d function...\n")
-            #runP2D(outStereoPre, prj, strip=True)
             start_p2d = timer()
             runP2D(outStereoPre, prj) #* 1/22: removing strip=True assuming we don't need it anymore
             end_p2d = timer()
@@ -827,29 +745,21 @@ def run_asp(
         else:
             print("\n\tNo PC.tif file found")
 
-#    outAttributes = pairname + "," + str(found_catID[0]) + "," + str(found_catID[1]) + "," + str(mapprj) + "," + str(year) + "," + str(month) + "," + str(avSunElev)+ "," + str(avSunAz) + "," + str(avOffNadir) + "," + str(avTargetAz) + "," + str(avSatAz) + "," +str(conv_ang) + "," + str(bie_ang) + "," + str(asym_ang) + "," + str(DSMdone) +"\n"
-    # Write out CSV summary info
-#    csvOut.write(outAttributes)
-
     # remove all the unneeded files, but first cd to the outASP/batch/pairname
     os.chdir(outASPcur)
     print "\n\nDeleting the following files from %s:" % os.getcwd()
     os.system('find . -type f -name "*.tif" ! -newer out-strip-F.tif ! -iname "out-strip-L.tif"') # all tiffs F.tif, EXCLUDING anything newer than F.tif and L.tif
 
-
     cmdDelete = 'find . -type f -name "*.tif" ! -newer out-strip-F.tif ! -iname "out-strip-L.tif" -exec rm -rf {} \;'
     print "Deleted files using command:", cmdDelete
     os.system(cmdDelete)
 
-    # now copy all of the input XMLs into the outASP/batch/pairname/inXMLs # 4/20 just putting them in outASPcur
-##    outXMLdir = os.path.join(outASPcur, 'inXMLs')
-##    if not os.path.isdir(outXMLdir): # if dir does not exist
-##        os.makedirs(outXMLdir)
+    # now copy all of the input XMLs into the outASP/batch/pairname
     globXMLs = os.path.join(imageDir, '*P1BS*.xml') # this will exclude the mosaic xml's, which don't have P1BS in the name
     print '\n Copying XML files ({}) to outASP ({})'.format(globXMLs, outASPcur)
     os.system('cp {} {}'.format(globXMLs, outASPcur))
 
-    # also move the slurm.out file to outASP/slurmOuts/batchID and rename it to the pairname_slurm.out
+    # also move the slurm.out file(s) to outASP/slurmOuts/batchID and rename them to the pairname_slurm.out
     # loop through all slurm files in pairname directory and rename/copy them to outSlurm dir -- if we are rerunning a pair process it will just name/recopy the slurm.out files to outSlurm
     inSlurmGlob = glob.glob(os.path.join(imageDir, 'slurm*out')) # list of all slurm files in pairname dir
     outSlurmDir = os.path.join(outDir, 'outSlurm', 'batch{}'.format(batchID)) # dping outSlurm/batch now
