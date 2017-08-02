@@ -18,8 +18,8 @@ def getparser():
     parser.add_argument('r_fn', default=None, help='full path of input raster')
     parser.add_argument('winsize', type=int, default=5, help='Size of filter window (odd number)')
     parser.add_argument('k_val', type=float, default = 1.0, help='Float of dumping factor')
-    parser.add_argument('cu_val', type=float, default=0.25, help='Float of the noise coefficient of variation')
-    parser.add_argument('c_max', default=106, type=float, help='Float of the max image coefficient of variation')
+    parser.add_argument('cu_val', type=float, default=0.523, help='Float of the noise coefficient of variation')
+    parser.add_argument('cmax_val', default=1.73, type=float, help='Float of the max image coefficient of variation')
     return parser
 
 def main():
@@ -35,11 +35,13 @@ def main():
 
     ds=pyradar.core.sar.create_dataset_from_path(r_fn)
     bd=pyradar.core.sar.get_band_from_dataset(ds)
-    ras_arr=pyradar.core.sar.read_image_from_band(bd)
+    r_arr=pyradar.core.sar.read_image_from_band(bd)
 
-    ras_arr[ras_arr < 0]=np.nan
+    #r_arr[r_arr < 0]=0
     #r_arr = np.ma.masked_outside(ras_arr,0,1)
     #r_arr = np.ma.masked_invalid(r_arr)
+    # Forget about masked arrays...just use np.where to put 0 for all invalid vals
+    r_arr = np.where((r_arr > 0.0) & (r_arr <= 1.0), r_arr, 0.0)
 
     r_arr_filt=pyradar.filters.lee_enhanced.lee_enhanced_filter(r_arr,win_size=winsize, k=k_val, cu=cu_val, cmax=cmax_val)
 

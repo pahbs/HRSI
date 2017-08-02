@@ -23,7 +23,7 @@ from osgeo import ogr
 # https://github.com/dshean/pygeotools
 from pygeotools.lib import iolib
 from pygeotools.lib import geolib
-from pygeotools.lib import filtlib
+#from pygeotools.lib import filtlib
 
 def gauss_fltr(dem, sigma=1):
     print("\tApplying gaussian smoothing filter with sigma %s" % sigma)
@@ -46,8 +46,9 @@ def moving_window(arr, func=np.mean, window_size=3):
 def getparser():
     parser = argparse.ArgumentParser(description="Compute the sum per pixel from a moving window")
     parser.add_argument('r_fn', type=str, help='Input raster filename')
-    parser.add_argument('windowsize', type=int, default=3, \
-                        help='Moving window size, in pixels')
+    parser.add_argument('windowsize', type=int, default=3, help='Moving window size, in pixels')
+    parser.add_argument('min', type=int, default=0, help='Min of valid pixel value range')
+    parser.add_argument('max', type=int, default=100, help='Max of valid pixel value range')
     return parser
 
 def main():
@@ -65,8 +66,11 @@ def main():
     r_arr = r_ds.GetRasterBand(1).ReadAsArray()
 
     # Creating data range
-    r_arr = np.ma.masked_outside(r_arr,0,100)   # mask all values outside this interval
-    r_arr = np.ma.masked_invalid(r_arr)       # mask all nan and inf values
+    #r_arr = np.ma.masked_outside(r_arr,0,100)   # mask all values outside this interval
+    #r_arr = np.ma.masked_invalid(r_arr)       # mask all nan and inf values
+
+    # Forget about masked arrays...just use np.where to put 0 for all invalid vals
+    r_arr = np.where((r_arr > args.min) & (r_arr <= args.max), r_arr, 0)
     #myType=float
     #r_arr = r_arr.astype(myType)
 
