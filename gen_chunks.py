@@ -33,7 +33,7 @@ def getparser():
     parser = argparse.ArgumentParser(description="Generate chunks (subsets) of an input list of files to process based on a second list")
     parser.add_argument('in_list', default=None, help='Input list of data to process')
     parser.add_argument('in_list_subs', default=None, help='Second input list specifying the subsets')
-    parser.add_argument('header', default=False, type=bool, help='Does list have a header?')
+    parser.add_argument('-header', default=False, type=bool, help='Does list have a header?')
     return parser
 
 def main():
