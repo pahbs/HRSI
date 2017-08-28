@@ -120,6 +120,7 @@ for cline in csvlist:
             continue
     else:
         print " Slurm file(s) not yet available. Disregard output spreadsheet for this batch"
+        print os.path.join(slurmdir, 'batch{}__{}__slurm*out'.format(batch, pairname)) #*d
 
     # try to get log file. what for? idk
     if len (glob.glob(os.path.join(logdir, 'run_asp_LOG_{}__batch{}*txt'.format(pairname, batch)))) > 0:
