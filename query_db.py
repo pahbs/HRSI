@@ -12,7 +12,6 @@
 # 1/24: Instead of passing along preLogText list, write preLogText to text file (saved to inASP dir) and pass filename as arg; then read file into list on DISCOVER
 # 1/24: Previously made changes are commented throughout the code (search #*, ##*, #Q, ##Q)
 
-# 10/17/2017: Changing the module of GDAL that we load in the slurm.j file
 
 
 
@@ -40,7 +39,7 @@ def find_elapsed_time(start, end):
 # ...also for alreadyQueried and alreadyProcessed outattributes, only batchID, pairname, catID_1 and catID_2 columns might possibly be filled
 
 # function to check if pairname has: already been queried (i.e. directory exists in the same batch in inASP) or already been processed and synced back to DISCOVER
-def check_pairname_continue(pairname, imageDir, job_script, preLogText): # outAttributes will have as many outAttributes as are known at the time but with 'filler' in the last columm, which will be replaced with approporate reason before getting written to csv
+def check_pairname_continue(pairname, imageDir, job_script): # outAttributes will have as many outAttributes as are known at the time but with 'filler' in the last columm, which will be replaced with approporate reason before getting written to csv
     alreadyProcessed = False # this starts at False and gets set to true if the pair was already processed
     queryCopyPair = True # start with the assumption that we have not queried/copied this pair for this batch and so we DO want to query/copy
 
@@ -48,8 +47,7 @@ def check_pairname_continue(pairname, imageDir, job_script, preLogText): # outAt
     # (i.e. glob on imageDir, '.xml' is not empty) AND slurm.j file is written (last thing that will happen to a pair)
     globDir = glob.glob(os.path.join(imageDir, '*xml')) # this list will be empty if not already queried
     if len(globDir) > 0 and os.path.isfile(job_script): # if there are xml's in the imageDir AND slurm.j file, we can skip query/copy step
-        print "  Pair {} has already been queried and copied for this batch. Skipping query/copy steps\n".format(pairname)
-        preLogText.append("\n\t Pair {} was queried and copied earlier for this batch\n".format(pairname))
+        print "Pairname %s has already been queried for this batch. Skipping query/copy steps\n" % pairname
 ##        outAttributes = outAttributes.replace('filler', 'processing')
 ##        outAttributes = outAttributes.replace('""', 'True') # if pairname was alreadyQueried, catID1 and 2 have been found (True)
 ##        with open(summary_csv, 'a') as c:
@@ -60,11 +58,11 @@ def check_pairname_continue(pairname, imageDir, job_script, preLogText): # outAt
     checkOut1 = "/att/pubrepo/DEM/hrsi_dsm/{}/out-strip-DEM.txt".format(pairname)
     checkOut2 = "/att/pubrepo/DEM/hrsi_dsm/{}/out-strip-DEM.tif".format(pairname)
     if os.path.isfile(checkOut1) and os.path.isfile(checkOut2): # already ran successfully and was rsynced back to ADAPT
-        print "  Pair {} has already been processed in previous batch. Moving to next pair\n".format(pairname)
+        print "Pairname %s has already been processed previously. Moving to next pair\n" % pairname
 
         alreadyProcessed = True # then skip pairname. even if queryCopyPair is True it will be skipped entirely because continue is before if queryCopyPair
 
-    return (queryCopyPair, alreadyProcessed, preLogText)
+    return (queryCopyPair, alreadyProcessed)
 
 #def main(csv, inDir, batchID, mapprj=True, doP2D=True, rp=100): #* batchID to keep track of groups of pairs for processing # old way- without argparse
 def main(csv, inDir, batchID, mapprj, noP2D, rp, debug): #the 4 latter args are optional
@@ -212,10 +210,10 @@ def main(csv, inDir, batchID, mapprj, noP2D, rp, debug): #the 4 latter args are 
 
         # before continuing, check to see if we need to a) stop processing (alreadyProcessed) b) skip query/copy or c) continue on with process
         outAttributes = '{},{},{},"",{},"",{},{},{},filler\n'.format(batchID, pairname, catID_1, catID_2, mapprj, imageDate[0:4], imageDate[4:6]) # this is outAttributes for now. filler will be replaced
-        (queryCopyPair, alreadyProcessed, preLogText) = check_pairname_continue(pairname, imageDir, job_script, preLogText)
+        (queryCopyPair, alreadyProcessed) = check_pairname_continue(pairname, imageDir, job_script)
         # pairnameContinue
 
-        if alreadyProcessed: # if the pairname was already processed all the way through (in a previous batch) skip the pair (after writing outAttributes to csv summary)
+        if alreadyProcessed: # if the pairname was already processed, skip the pair (after writing outAttributes to csv summary)
             outAttributes = '{},{},{},True,{},True,{},{},{},alreadyProcessed\n'.format(batchID, pairname, catID_1, catID_2, mapprj, imageDate[0:4], imageDate[4:6])
             with open(summary_csv, 'a') as c:
                 c.write(outAttributes)
@@ -254,21 +252,9 @@ def main(csv, inDir, batchID, mapprj, noP2D, rp, debug): #the 4 latter args are 
                         preLogText.append( '\tDate format 3: ' + str(imageDate))
                     except Exception, e:
                         pass
-
-        # get info from imageDate that we need for all pairs
         #* at this point, imageDate is not a datetime object
-        try:
-            year = "%04d" % imageDate.year
-            month = "%02d" % imageDate.month
-            day = "%02d" % imageDate.day
-            date = year+month+day
-        except Exception,e: ##** if we can't get the info
-            year = 'XXXX'
-            month = 'XX'
-            day = 'XX'
-            date = year+month+day # so date will be 'XXXXXXXX'
 
-        # NOW QUERY AND COPY DATA FOR PAIR, but ONLY if queryCopyPair is True (ie we have not already done it for pair in this batch)
+        # NOW QUERY AND COPY DATA FOR PAIR, but ONLY if queryCopyPair is True (ie we have not already done it for pair)
         if queryCopyPair:
             # [4] Search ADAPT's NGA database for catID_1 and catid_2
             # Establish the database connection
@@ -278,7 +264,7 @@ def main(csv, inDir, batchID, mapprj, noP2D, rp, debug): #the 4 latter args are 
                 cur = dbConnect.cursor() # setup the cursor
                 catIDlist = ['XXXXXXX', 'XXXXXXX']
                 pIDlist = ['XXXXXXX', 'XXXXXXX']
-                found_catID = [False,False] # have not found it yet
+                found_catID = [False,False]
                 """
                 Search 1 catID at a time
                 """
@@ -338,7 +324,16 @@ def main(csv, inDir, batchID, mapprj, noP2D, rp, debug): #the 4 latter args are 
             #* 2/24 the above won't work because catIDlist will at least be [XXXXXX, XXXXXX]
             if found_catID.count(False) == 2: # if both values of found_catID are False, no data was found
 
-                # took out try statement to get month/year/date from imageDate and put it before if queryCopyPair:. It will be the same thing here even though it's moved up
+                try:
+                    year = "%04d" % imageDate.year
+                    month = "%02d" % imageDate.month
+                    day = "%02d" % imageDate.day
+                    date = year+month+day
+                except Exception,e: ##** if we can't get the info
+                    year = 'XXXX'
+                    month = 'XX'
+                    day = 'XX'
+                    date = year+month+day # so date will be 'XXXXXXXX'
 
                # pairname = sensor + "_" + date + "_" + catID_1 + "_" + catID_2
                 #pairname = "{}_{}_{}_{}".format(sensor, date, catID_1, catID_2) # don't need this here anymore. we will always get pairname from input csv
@@ -698,7 +693,7 @@ def main(csv, inDir, batchID, mapprj, noP2D, rp, debug): #the 4 latter args are 
             job_name = '%s__%s__job' % (batchID, pairname) # identify job with batchID and pairname??
             time_limit = '6-00:00:00'
             num_nodes = '1'
-            python_script_args = 'python {} {} {} {} {} {} {} {} {} {} {} {} {} {}'.format(os.path.join(DISCdir, 'code', workflowCodeName), arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13)
+            python_script_args = 'python %s %s %s %s %s %s %s %s %s %s %s %s %s %s' % (os.path.join(DISCdir, 'code', workflowCodeName), arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13)
             #print python_script_args
 
             # slurm.j file (calls the python code in discover for just one pair)
@@ -713,12 +708,11 @@ def main(csv, inDir, batchID, mapprj, noP2D, rp, debug): #the 4 latter args are 
                 f.write('source /usr/share/modules/init/csh\n\n')
                 f.write('unlimit\n')
                 f.write('module load other/comp/gcc-5.3-sp3\n')
-                f.write('module load other/SSSO_Ana-PyD/SApd_4.2.0_py2.7_gcc-5.3-sp3_GDAL\n\n') # 10/17
+                f.write('module load other/SSSO_Ana-PyD/SApd_4.2.0_py2.7_gcc-5.3-sp3\n\n') # test5
     ##            f.write(' \n')
-                f.write('{}\n'.format(python_script_args))
+                f.write(python_script_args + '\n')
 
-        # if we get here we know: pair was either alreadyQueried (and is sent to processing) or was just queried. either way, write to summary csv;; also know found catID is True
-        found_catID = [True, True] # hard code this. either pair was already queried/processed (in which case both catIDs have data, or if data is missing (either one of found_catID is False), pair will be skipped
+        # if we get here we know pair was either alreadyQueried (and is sent to processing) or was just queried. either way, write to summary csv
         # even if queryCopyPair was False. we still need to do the submission/csv stuff
         outAttributes = '{},{},{},{},{},{},{},{},{},processing\n'.format(batchID, pairname, catID_1, found_catID[0], catID_2, found_catID[1], mapprj, year, month)
         with open(summary_csv, 'a') as c:

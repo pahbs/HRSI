@@ -34,7 +34,7 @@ from timeit import default_timer as timer
 from time import gmtime, strftime
 gdal.AllRegister() #register all raster format drivers
 import workflow_functions as wf
-#import psycopg2 # only need this for query
+import psycopg2
 import LLtoUTM as convert
 import get_stereopairs_v3 as g
 import shapefile
@@ -375,7 +375,7 @@ def run_asp(
     print "\n"
 
     # print input parameters to log file:
-    print '-------runASP parameters:-------'
+    print '--runASP parameters:-------'
     print 'mapprj = {}'.format(mapprj)
     print 'doP2D = {}'.format(doP2D)
     print 'test = {}'.format(test)
@@ -762,7 +762,7 @@ def run_asp(
     # also move the slurm.out file(s) to outASP/slurmOuts/batchID and rename them to the pairname_slurm.out
     # loop through all slurm files in pairname directory and rename/copy them to outSlurm dir -- if we are rerunning a pair process it will just name/recopy the slurm.out files to outSlurm
     inSlurmGlob = glob.glob(os.path.join(imageDir, 'slurm*out')) # list of all slurm files in pairname dir
-    outSlurmDir = os.path.join(outDir, 'outSlurm') # doing just one big dir for outSlurm now. files will have batch names in them though
+    outSlurmDir = os.path.join(outDir, 'outSlurm', 'batch{}'.format(batchID)) # dping outSlurm/batch now
     os.system('mkdir -p {}'.format(outSlurmDir))
     print ''
     for inSlurm in inSlurmGlob: # loop through slurm files
