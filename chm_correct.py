@@ -1,5 +1,4 @@
 #!/usr/bin/python
-
 """
 Correct a CHM (dz raster) using gaussian peak estimation on a sampled version of the image histogram
 """
@@ -142,9 +141,25 @@ def run_os(cmdStr):
     print ("\n\tInitialized: %s" %(cmdStr))
     print ("\n\tMoving on to next step.")
 
+def run_wait_os(cmdStr, print_stdOut=True):
+    """
+    Initialize OS command
+    Wait for results (Communicate results i.e., make python wait until process is finished to proceed with next step)
+    """
+    import subprocess as subp
+
+    Cmd = subp.Popen(cmdStr.rstrip('\n'), stdout=subp.PIPE, shell=True)
+    stdOut, err = Cmd.communicate()
+
+    if print_stdOut:
+        print ("\tInitialized: %s" %(cmdStr))
+        #print ("\t..Waiting for command to run...")
+        print("\t" + str(stdOut) + str(err))
+        print("\tEnd of command.")
+
 def getparser():
     parser = argparse.ArgumentParser(description='Correct CHM pixel values according to correction based on guassian peak analysis of minimum (ground) peak in CHM image histogram')
-    parser.add_argument('ras_fn', type=str, help='Raster filename')
+    parser.add_argument('ras_fn', type=str, help='Raster filename (full path needed)')
     parser.add_argument('-out_name', type=str, default=None, help='Output raster filename')
     parser.add_argument('-pre_min', type=int, default=-15, help='min value (m) of pre-corrected range')
     parser.add_argument('-pre_max', type=int, default=30, help='max value (m) of pre-corrected range')
@@ -204,7 +219,7 @@ def main():
         line = peaksCSV.readline()
 
     # Get raster diff dsm name
-    ras_fn    = line.split(',')[0]
+    #ras_fn    = line.split(',')[0]
 
     # Get the min of the means: represents the the offset value that will be subtracted from each pixel of the corresonding diff_dsm
     gmeans  = map(float, line.split(',')[1::2])
@@ -228,18 +243,16 @@ def main():
     print "\t: Final CHM correction value (shift) (m) %s" % shift_val
     array = np.subtract(array, shift_val)
 
-    print '\n\tApply masking...'
-
-    print '\t\tConvert values below 0'
+    print '\n\tApply masking'
+    print '\t\tConvert values below 0 like this:'
+    print '\t\t  np.ma.where(array < (0 - 6 * gsd) , 0, abs(array))'
     # Better handling of negative values?
     #   1. take abs value of all negative values?
     #   2. take abs value of all negative values within 1 stddev of ground peak; all the rest convert to 0
     array = np.ma.where(array < (0 - 6 * gsd) , 0, abs(array))
 
-##            print "\t:TEST--"
-##            print "\t: min, max, med, mean, std"
-##            print "\t:",array.min(),array.max(),np.median(array),array.mean(),array.std()
-    fn_tail = '_chm_'+gsd_str+'.tif'
+    #fn_tail = '_chm_'+gsd_str+'.tif'
+    fn_tail = '_chm.tif'
     if out_name is not None:
         chm_fn = os.path.join(os.path.split(ras_fn)[0], out_name + fn_tail)
     else:
@@ -251,12 +264,13 @@ def main():
 
     iolib.writeGTiff(array, chm_fn, iolib.fn_getds(ras_fn), ndv=-99)
 
-    cmdStr ="gdaladdo -ro -r average " + chm_fn + " 2 4 8 16 32 64"
-    run_os(cmdStr)
+    cmdStr ="gdaladdo -ro -r nearest " + chm_fn + " 2 4 8 16 32 64"
+    run_wait_os(cmdStr)
 
     # Append to a dir level CSV file that holds the uncertainty info for each CHM (gmin, gsd, stddev_shift)
     out_dir = os.path.split(ras_fn)[0]
     out_stats_csv = out_dir + '_stats.csv'
+    print "\tAppending stats to %s" %(out_stats_csv)
 
     if not os.path.exists(out_stats_csv):
         writetype = 'wb'    # write file if not yet existing
@@ -269,5 +283,6 @@ def main():
             wr.writerow(["chm_name", "ground_peak_mean_m", "ground_peak_stdev_m", "num_stdevs_shift", "final_chm_peak_shift_m"])     # if new file, write header
         wr.writerow([os.path.split(chm_fn)[1] , str(round(gmin,2)) , str(round(gsd,2)) , str(round(stddev_shift,2)) , str(round(shift_val,2))])
 
+    print "\tFinished chm_correct.py"
 if __name__ == '__main__':
     main()

@@ -370,6 +370,7 @@ def run_asp(
     mapprjRes,
     par,
     test,
+    prod_code='P1BS',
     strip=True,
     searchExtList=['.ntf','.tif','.NTF','.TIF'],        ## All possible extentions for input imagery ['.NTF','.TIF','.ntf','.tif']
     csvSplit=False,
@@ -541,7 +542,7 @@ def run_asp(
                 # setup and execute the query on both catids of the stereopair indicated with the current line of the input CSV
                 for num, catID in enumerate([catID_1,catID_2]):
 
-                    selquery =  "SELECT s_filepath, sensor, acq_time, cent_lat, cent_long FROM nga_inventory WHERE catalog_id = '%s'" %(catID)
+                    selquery =  "SELECT s_filepath, sensor, acq_time, cent_lat, cent_long FROM nga_inventory WHERE catalog_id = '%s' AND prod_code = '%s'" %(catID,prod_code)
                     preLogText.append( "\n\t Now executing database query on catID '%s' ..."%catID)
                     cur.execute(selquery)
                     """
@@ -833,7 +834,7 @@ def run_asp(
                     for root, dirs, files in os.walk(imageDir):
                         for searchExt in searchExtList:
                             for each in files:
-                                if each.endswith(searchExt) and 'P1BS' in each and catID in each and pIDlist[catNum] in each:
+                                if each.endswith(searchExt) and prod_code in each and catID in each and pIDlist[catNum] in each:
                                     raw_imageList.append(each)
                     print("\tProduct ID for raw images: " + str(pIDlist[catNum]))
                     print("\tRaw image list: " + str(raw_imageList))
@@ -910,11 +911,12 @@ def run_asp(
                             if 'WV01' in sensorList[catNum] or 'WV02' in sensorList[catNum]:
                                 inSearchCat = "*" + catID + "*" + corExt
                             else:
-                                inSearchCat = "*" + catID + "*" + "-P1BS" + "*" + pIDlist[catNum] + "*" + searchExt
+                                inSearchCat = "*" + catID + "*" + "-" + prod_code + "*" + pIDlist[catNum] + "*" + searchExt
                                 print "\tSensor is %s so wv_correct was not run" %(sensorList[catNum])
 
                             try:
                                 print("\tRunnning (and waiting) dg_mosaic on catID: " + catID)
+                                print("\t\t Search string for dgmosaic: " + inSearchCat)
                                 cmdStr = "dg_mosaic " + inSearchCat + " --output-prefix "+ outPref + " --reduce-percent=" + str(rp)
                                 Cmd = subp.Popen(cmdStr.rstrip('\n'), stdout=subp.PIPE, shell=True)
                                 dg_mos = True

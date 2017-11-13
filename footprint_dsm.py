@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 # Import and function definitions
 import os, sys, osgeo, shutil, csv, subprocess as subp
 from osgeo import ogr, osr, gdal
@@ -15,49 +14,65 @@ def run_imagelink(pairname, rootDir):
 
     print "\n\t Build a VRT of the CLR, DRG and DEM tifs\n\n"
 
-    srcList = ["-DEM-clr-shd.tif", "-DRG.tif", "-DEM.tif"]
-    srcFull = ""
+    src_tuple = ( "clr-shd.tif",\
+                "_color_hs.tif",\
+                "-DRG.tif",\
+                "_ortho.tif",\
+                "_ortho_4m.tif",\
+                "out-DEM.tif",\
+                "out-DEM_1m.tif",\
+                "out-DEM_4m.tif",\
+                "out-DEM_24m.tif",\
+                "out-strip-DEM.tif")
 
-    for src in srcList:
+    # Find the file using the src string
+    for root, dirs, files in os.walk(os.path.join(rootDir,pairname)):
+        for fyle in files:
+            if fyle.endswith(src_tuple):
+                srcFull = os.path.join(rootDir,pairname,fyle)
 
-        # Find the file using the src string
-        for root, dirs, files in os.walk(os.path.join(rootDir,pairname)):
-            for fyle in files:
-                if fyle.endswith(src):
-                    srcFull = os.path.join(rootDir,pairname,fyle)
-                    break
+                outDir = ''
+                fyle = os.path.split(srcFull)[1]
 
-        #srcFull = outStereoPre + src
+                if not pairname in fyle and any (x in fyle for x in ["out-strip-DEM.tif", "out-DEM.tif", "out-DEM_1m.tif", "out-DEM_4m.tif", "out-DEM_24m.tif"]):
+                    outDir = os.path.join(rootDir, "_dem")
+                    dst = os.path.join(outDir, pairname+'_DEM'+fyle.split('-DEM')[1])
+                    do_kmz = False
 
-        outDir = os.path.join(rootDir, "_dem")
-        Tail = "-DEM.tif"
-        do_kmz = False
+                if "clr" in fyle:
+                    outDir = os.path.join(rootDir, "_clr")
+                    dst = os.path.join(outDir, pairname+"_clr.tif")
+                    do_kmz = False
 
-        if "clr" in src:
-            outDir = os.path.join(rootDir, "_clr")
-            Tail = "-CLR.tif"
-            do_kmz = False
+                if "DRG" in fyle:
+                    outDir = os.path.join(rootDir, "_drg")
+                    dst = os.path.join(outDir, pairname+"_drg.tif")
+                    do_kmz = False
 
-        if "DRG" in src:
-            outDir = os.path.join(rootDir, "_drg")
-            Tail = "-DRG.tif"
-            do_kmz = False
+                if "color_hs.tif" in fyle:
+                    outDir = os.path.join(rootDir, "_color_hs")
+                    dst = os.path.join(outDir, pairname+fyle.split('DEM')[1])
+                    do_kmz = False
 
-        os.system('mkdir -p %s' % outDir)
+                if pairname in fyle and "_ortho" in fyle:
+                    outDir = os.path.join(rootDir, "_ortho")
+                    dst = os.path.join(outDir, pairname+'_ortho'+fyle.split('_ortho')[1])
+                    do_kmz = False
 
-        dst = os.path.join(outDir, pairname + Tail)
+                if outDir:
+                    os.system('mkdir -p %s' % outDir)
 
-        if os.path.isfile(dst):
-            os.remove(dst)
+                    if os.path.isfile(dst):
+                        os.remove(dst)
+                    # Eventually, take the symlink creation out.
+                    if os.path.isfile(srcFull):
+                        ##cmdStr = "gdal_translate -of VRT {} {}".format(srcFull, dst)
+                        cmdStr = "ln -s {} {}".format(srcFull, dst)
+                        cmd = subp.Popen(cmdStr, stdout=subp.PIPE, shell=True)
+                        print("\tWriting symlink " + dst)
 
-        if os.path.isfile(srcFull):
-            ##cmdStr = "gdal_translate -of VRT {} {}".format(srcFull, dst)
-            cmdStr = "ln -s {} {}".format(srcFull, dst)
-            cmd = subp.Popen(cmdStr, stdout=subp.PIPE, shell=True)
-            print("\tWriting symlink " + dst)
-
-            if do_kmz:
-                make_kmz(dst)
+                        if do_kmz:
+                            make_kmz(dst)
 
 
 def db_query(catIDlist):
@@ -146,7 +161,11 @@ def footprint_valid_pixels(root, pairname, src, newFieldsList, newAttribsList, o
     outValShp_aggtmp= os.path.join(pairnameDir, "VALID_aggtmp.shp")
     outValShp_agg   = os.path.join(pairnameDir, "VALID_agg.shp")
 
-    if not os.path.isfile(src):
+    # Handle the cases for new data
+    if any (x in src for x in ["out-strip-DEM.tif", "out-strip-DEM-clr-shd.tif"]) and not os.path.isfile(os.path.join(pairnameDir,src)):
+        src = 'out-DEM_24m.tif'
+
+    if not os.path.isfile(os.path.join(pairnameDir,src)):
         print "\tWill not footprint: %s does not exist." %src
     else:
         #print " [1] Create *VALID.shp files for each pairname"
@@ -156,6 +175,7 @@ def footprint_valid_pixels(root, pairname, src, newFieldsList, newAttribsList, o
             cmdStr = "gdal_translate -outsize .25% .25% -co compress=lzw -b 4 -ot byte -scale 1 1 {} {}".format(src, outValTif_TMP)
         else:
             cmdStr = "gdal_translate -outsize .25% .25% -co compress=lzw -b 1 -ot byte -scale 1 1 {} {}".format(src, outValTif_TMP)
+
         wf.run_wait_os(cmdStr,print_stdOut=False)
         #print "     [.b] POLYGONIZE %s" %outValTif_TMP
         cmdStr = "gdal_polygonize.py {} -f 'ESRI Shapefile' {}".format(outValTif_TMP, outValShp_TMP)
@@ -299,16 +319,15 @@ def main():
                 for root2, dirs, subdirfiles in os.walk(outASPdir):
                     for each in subdirfiles:
                         # Make sure clr-shd exists, indicating the DEM has been fully processed
-                        if each.endswith('DEM-clr-shd.tif'):
-                            print "\tClr-shd exists. DSM can be footprinted."
-                            clrShd = os.path.join(root2,each)
+                        if each.endswith('DEM-clr-shd.tif') or each.endswith('DEM_24m.tif'):
+                            print "\tDSM can be footprinted."
+                            src_fp = os.path.join(root2,each)
                             DSMok = True
                             break
 
             # Find the actual file you want to footprint (in case of ASTER, its the *proj.tif one level up
             if str_fp == '':
-                print "\n\tSource for footprint is CLR: %s" %clrShd
-                src_fp = clrShd
+                print "\n\tSource for footprint is: %s" %src_fp
             else:
                 for root3, dirs, subdirfiles in os.walk(outASPdir):
                     for each in subdirfiles:

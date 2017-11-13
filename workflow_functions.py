@@ -176,6 +176,7 @@ def loop_zonal_stats(input_zone_polygon, input_value_raster, pointBuf,rasteridta
     # Existing attributes to return
     ##fieldnames = ["campaign","rec_ndx","shotn","lat","lon","elev","elvdiff","Centroid","wflen"]
     fieldnames = ["rec_ndx","shotn","lat","lon","elev","elev_ground","wflen"]
+    fieldnames = ["site","lat","lon"]
     print "Fieldnames: %s" %fieldnames
     """
     TODO    iterate through fieldnames and append multiple fieldname values to a common dict key (FID),
@@ -206,15 +207,16 @@ def loop_zonal_stats(input_zone_polygon, input_value_raster, pointBuf,rasteridta
 
         # Existing attributes to return
         ##fieldDict_camp[FID] = feat.GetField("campaign")
-        fieldDict_rec[FID]         = feat.GetField("rec_ndx")
-        fieldDict_shot[FID]        = feat.GetField("shotn")
+        ##fieldDict_rec[FID]         = feat.GetField("rec_ndx")
+        ##fieldDict_shot[FID]        = feat.GetField("shotn")
+        fieldDict_lat[FID]         = feat.GetField("site")
         fieldDict_lat[FID]         = feat.GetField("lat")
         fieldDict_lon[FID]         = feat.GetField("lon")
-        fieldDict_elev[FID]        = feat.GetField("elev")
-        fieldDict_elev_ground[FID] = feat.GetField("elev_groun") # <-- this fieldname is too long and gets truncated
+        ##fieldDict_elev[FID]        = feat.GetField("elev")
+        ##fieldDict_elev_ground[FID] = feat.GetField("elev_groun") # <-- this fieldname is too long and gets truncated
         ##fieldDict_elvd[FID] = feat.GetField("elvdiff")
         ##fieldDict_cent[FID] = feat.GetField("Centroid")
-        fieldDict_wflen[FID] = feat.GetField("wflen")
+        #fieldDict_wflen[FID] = feat.GetField("wflen")
 
         # Output a csv list of the DSM values in the box around the GLAS centroid
 ##        if rasteridtail == 'dsm':
