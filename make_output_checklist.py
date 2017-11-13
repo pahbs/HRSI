@@ -30,7 +30,7 @@ start = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 aspdir = "/att/pubrepo/DEM/hrsi_dsm/"
 incsv = "/att/gpfsfs/briskfs01/ppl/mwooten3/Paul_TTE/batch_summary_csvs/batch{}_output_summary.csv".format(batch)
 outcsv = "/att/gpfsfs/briskfs01/ppl/mwooten3/Paul_TTE/checklists/batch{}_checklist__{}.csv".format(batch, start)
-slurmdir = os.path.join(aspdir, 'outSlurm', 'batch{}'.format(batch))
+slurmdir = os.path.join(aspdir, 'outSlurm')
 logdir = os.path.join(aspdir, 'logs') # might change later
 
 compPairsFile = "/att/gpfsfs/briskfs01/ppl/mwooten3/Paul_TTE/ADAPT_completedPairs/ADAPT_completedPairs_batch{}.txt".format(batch)
