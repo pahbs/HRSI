@@ -61,9 +61,9 @@ def check_pairname_continue(pairname, imageDir, job_script, preLogText): # outAt
         queryCopyPair = False # then skip copy and query. if it has already been queried/copied, skip query copy step but do the rest
 
     # also check to be sure pairname was not already processed in an earlier batch by seeing if it exsits in outASP on ADAPT:
-    checkOut1 = "/att/pubrepo/DEM/hrsi_dsm/{}/out-strip-DEM.txt".format(pairname)
-    checkOut2 = "/att/pubrepo/DEM/hrsi_dsm/{}/out-strip-DEM.tif".format(pairname)
-    if os.path.isfile(checkOut1) and os.path.isfile(checkOut2): # already ran successfully and was rsynced back to ADAPT
+    checkOut1 = "/att/pubrepo/DEM/hrsi_dsm/{}/out-DEM_4m.tif".format(pairname) # if EITHER of these exist, we dont need to process in DISC
+    checkOut2 = "/att/pubrepo/DEM/hrsi_dsm/{}/out-DEM_1m.tif".format(pairname)
+    if os.path.isfile(checkOut1) or os.path.isfile(checkOut2): # already ran successfully and was rsynced back to ADAPT
         print "  Pair {} has already been processed in previous batch. Moving to next pair\n".format(pairname)
 
         alreadyProcessed = True # then skip pairname. even if queryCopyPair is True it will be skipped entirely because continue is before if queryCopyPair
@@ -228,7 +228,7 @@ def main(inTxt, inDir, batchID, noP2D, rp, debug): #the 4 latter args are option
 
         # Get attributes from the CSV
 ##        linesplit = line.rstrip().split(',')
-        preLogText.append("--DB Querying Text (ADAPT)------\nInput csv file:\n{}\n\nPairname from text file:\n{}\nBatch ID: {}\n\n".format(os.path.abspath(inTxt), pairname, batchID))
+        preLogText.append("--DB Querying Text (ADAPT)------\nInput text file: {}\n\nPairname from text file: {}\nBatch ID: {}\n\n".format(os.path.abspath(inTxt), pairname, batchID))
 
 ##        # get pairname and other field information from line:
 ###        if pairname_idx != -999: # this statement will be True if there is a pairname index # 6/21 pairname_idx will now always be valid. if not, the program will quit before this
@@ -336,21 +336,21 @@ def main(inTxt, inDir, batchID, noP2D, rp, debug): #the 4 latter args are option
 
                    # selquery =  "SELECT s_filepath, sensor, acq_time, cent_lat, cent_long FROM nga_files_footprint WHERE catalog_id = '%s'" %(catID)
                     selquery =  "SELECT s_filepath, sensor, acq_time, cent_lat, cent_long FROM nga_inventory WHERE catalog_id = '{}' AND prod_code = 'P1BS'".format(catID) # 2/13 change nga_inventory_footprint to nga_inventory # 4/13 add AND prod_code so we only get Pan data
-                    preLogText.append( "\n\tNow executing database query on catID '{}' ...".format(catID))
+                    preLogText.append( "\n  Now executing database query on catID '{}' ...".format(catID))
                     print "  Executing database query on catID '{}' ...".format(catID)
                     cur.execute(selquery)
                     """
                     'selected' will be a list of all raw scene matching the catid and their associated attributes that you asked for above
                     """
                     selected=cur.fetchall()
-                    preLogText.append( "\n\t Found '{}' scenes for catID '{}' ".format(len(selected),catID))
+                    preLogText.append( "\n   -Found '{}' scenes for catID '{}' ".format(len(selected),catID))
 
                     # Get info from first item returned
                     #
                     #
                     if len(selected) == 0:
                         found_catID[num] = False
-                        print "    No data found for catID {}. Writing to missing catID text file".format(catID)
+                        print "   -No data found for catID {}. Writing to missing catID text file".format(catID)
                         #missing_catIDs.append(catID)
                         # we can just assume we will never run batch more than once when we get shit figured out
     ##                    write_method = 'a' # assume we are appending the file
@@ -406,7 +406,7 @@ def main(inTxt, inDir, batchID, noP2D, rp, debug): #the 4 latter args are option
                     nq.write(pairname)
 
                 ##Q Print statement here??? or do we just need to print one statement if one or both catID data is not present
-                preLogText.append("\n\t There is no data for either catID in our archive for pair {}\n\n".format(pairname))
+                preLogText.append("\n   There is no data for either catID in our archive for pair {}\n\n".format(pairname))
                 print "Neither catID returned data from our query. Moving to next pair\n"
 
                 continue ##* and move on to the next pair in the list
@@ -439,7 +439,7 @@ def main(inTxt, inDir, batchID, noP2D, rp, debug): #the 4 latter args are option
             #if len(catIDlist) < 2: ##** if there was one but not two catIDs of data for the pair, we want to get the info for the outCsv and move on to the next pair
             if found_catID.count(False) == 1:
                 #print "\n\tMissing a catalog_id, can't do stereogrammetry. **review this print statement/placement with the one below in mind\n\n"
-                preLogText.append("\n\tMissing a catalog_id, can't do stereogrammetry. **review this print statement/placement with the one below in mind\n\n")
+                preLogText.append("\n   Missing a catalog_id, can't do stereogrammetry. **review this print statement/placement with the one below in mind\n\n")
 ##                mapprj = False
                 DSMdone = False
                 #outAttributes = batchID + "," + pairname + "," + str(found_catID[0]) + "," + str(found_catID[1]) + "," + str(mapprj) + "," + str(year) + "," + str(month) + "," + str(avSunElev)+ "," + str(avSunAz) + "," + str(avOffNadir) + "," + str(avTargetAz) + "," + str(avSatAz) + "," +str(conv_ang) + "," + str(bie_ang) + "," + str(asym_ang) + "\n"
@@ -456,7 +456,7 @@ def main(inTxt, inDir, batchID, noP2D, rp, debug): #the 4 latter args are option
                     nq.write(line)
 
                 #* 1/17 print "\n\tMissing a catalog_id, can't do stereogrammetry." was how it was done in the workflow script
-                preLogText.append("\n\t One of the catIDs does not have data in our archive for pair {}\n\n".format(pairname))
+                preLogText.append("\n   One of the catIDs does not have data in our archive for pair {}\n\n".format(pairname))
                 print "One of the catIDs returned no data from our query. Moving to next pair\n"
                 continue ##* move on to the next pair
 
@@ -491,13 +491,13 @@ def main(inTxt, inDir, batchID, noP2D, rp, debug): #the 4 latter args are option
                 path_0 = os.path.split(selected[0][0])[0]
 
 
-                preLogText.append("\n\tNGA dB path: {}".format(path_0))
+                preLogText.append("\n    NGA dB path: {}".format(path_0))
                 # Get productcatalogid from this first dir: sometimes 2 are associated with a catid, and represent duplicate data from different generation times
                 pID = pIDlist[num]
 
-                preLogText.append("\tProduct ID: {}".format(pID))
-                preLogText.append("\tCenter Lat: {}".format(lat))
-                preLogText.append("\tCenter Lon: {}".format(lon))
+                preLogText.append("    Product ID: {}".format(pID))
+                preLogText.append("    Center Lat: {}".format(lat))
+                preLogText.append("    Center Lon: {}".format(lon))
 
 
 
@@ -517,7 +517,7 @@ def main(inTxt, inDir, batchID, noP2D, rp, debug): #the 4 latter args are option
                 # COPY data from archive to ADAPT
 
                 os.system('mkdir -p {}'.format(imageDir))
-                preLogText.append("\n\tMoving data from NGA database to {}".format(imageDir))
+                preLogText.append("\n    Moving data from NGA database to {}".format(imageDir))
 
                 scene_exist_cnt = 0 # if this remains 0, uh oh. skip pair
                 for row in selected: ##** now we are looping through the list of selected scenes for catID X
