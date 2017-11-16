@@ -328,6 +328,7 @@ def run_asp(
     searchExtList=['.ntf','.tif','.NTF','.TIF']
     ):
 
+    #n #8 shouldnt really need any of this
 
     start_main = timer()
 
