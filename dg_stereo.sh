@@ -214,7 +214,7 @@ if [ ! -e "${out}-PC.tif" ] ; then
     echo; echo "Stereogrammetry unsuccessful. Exiting."
     exit 1
 else
-    echo; echo "Stereo point-cloud file exists. Creating DEMs..."
+    echo; echo "Stereo point-cloud file exists. Check for DEMs."
 
     stats_res=24
     mid_res=4
@@ -235,6 +235,7 @@ else
     for dem_res in $stats_res $mid_res $fine_res ; do
         dem_opts="$base_dem_opts"
         if [ ! -e ${out}-DEM_${dem_res}m.tif ]; then
+            echo "Creating DEM at ${dem_res}m ..."
             dem_opts+=" --nodata-value $dem_ndv"
     	    dem_opts+=" --tr $dem_res"
             if [ "$dem_res" = "$stats_res" ] ; then
@@ -276,7 +277,7 @@ else
 
     cmd_list=''
     for dem in $stats_dem $mid_dem ; do
-    	echo $dem
+    	
     	cmd=''
         if [ ! -e ${dem%.*}_color_hs.tif.ovr ]; then
             rm -f ${dem%.*}_color_hs.tif
