@@ -251,7 +251,7 @@ def main(inTxt, inDir, batchID, noP2D, rp, debug): #the 4 latter args are option
 
         # create variables that use pairname
         imageDir = os.path.join(batchDir, pairname) # where data will be copied to on ADAPT
-        discover_imageDir = os.path.join(DISCdir, 'ASP/{}'.format(pairname)) # where data will be copied to on DISCOVER (and thus the imageDir we need to write to code call) #n imageDir on DISC is no longer separated by batch
+        discover_imageDir = os.path.join(DISCdir, 'ASP', '{}'.format(pairname)) # where data will be copied to on DISCOVER (and thus the imageDir we need to write to code call) #n imageDir on DISC is no longer separated by batch
         job_script = os.path.join(imageDir, 'slurm_batch{}_{}.j'.format(batchID, pairname)) # individual job script
 
 
@@ -778,7 +778,7 @@ def main(inTxt, inDir, batchID, noP2D, rp, debug): #the 4 latter args are option
     print "\n\n--------------------------------------------\nAttempting to archive data now for entire batch ({} of {} pairs)...".format(n_submitted, nPairs)
     if not os.path.exists(archive): # if data has not yet been tarred up (careful with this)
         print "\n Begin archiving:", datetime.now().strftime("%I:%M%p  %a, %m-%d-%Y")
-        tarComm = 'tar -zcf {} -C {} batch{}'.format(archive, inDir, batchID) # archive=output archive; cd into inDir then tar up only batchdir (i.e. batch$batchID in the inDir )
+        tarComm = 'tar -zcf {} -C {} batch{}'.format(archive, inDir, batchID) #* might not need to change, still wanna get rid of all the way up to batchdir so
         print ' ' + tarComm
         os.system(tarComm)
         print " Finish archiving:", datetime.now().strftime("%I:%M%p  %a, %m-%d-%Y")
@@ -800,7 +800,7 @@ def main(inTxt, inDir, batchID, noP2D, rp, debug): #the 4 latter args are option
     # lastly we need to append to the main processing summary: batchID/date, input csv file, number of pairs attempted, number succeeded, time to zip, total time
     main_summary = os.path.join(os.path.dirname(inDir.rstrip('/')), 'main_processing_summary.csv') # this is not in Paul_TTE/inASP but in Paul_TTE/
     with open(main_summary, 'a') as ms:
-        ms.write('{}, {}, {}, {}, {}, {}, {}\n'.format(batchID, os.path.abspath(csv), n_submitted, nPairs, n_missing_catIDs, time_tarzip, time_main))
+        ms.write('{}, {}, {}, {}, {}, {}, {}\n'.format(batchID, os.path.abspath(inTxt), n_submitted, nPairs, n_missing_catIDs, time_tarzip, time_main))
 
 
     print "End:", datetime.now().strftime("%m%d%y-%I%M%p"), "\n\n"
