@@ -18,7 +18,7 @@
 # Changes:(#n flag)
 #   - No longer inDir and outDir, just ddir: /att/gpfsfs/briskfs01/ppl/mwooten3/Paul_TTE/DSMs/; which will still be separated by batch ON DISCOVER (not ADAPT)
 #   - getting rid of mapprj stuff
-
+#   - getting rid of imageDate stuff since it will always be in yyyymmdd in the pairname
 
 #-------------------------------------------------------------------------------
 import os, sys, math, osgeo, shutil, time, glob, platform, csv, subprocess as subp # edited for ADAPT (no gdalinfo- do we need it?)
@@ -242,7 +242,12 @@ def main(inTxt, inDir, batchID, noP2D, rp, debug): #the 4 latter args are option
         catID_2 = pairname.split('_')[3]
         sensor = pairname.split('_')[0]
         imageDate = pairname.split('_')[1] # will be text in format yyyymmdd
+        year = imageDate[0:4] # get info before converting to datetime object
+        month = imageDate[4:6]
+        day = imageDate[6:8]
+        date = year+month+day # don't know if I need this anymore but jic. string date
 
+        imageDate = datetime.strptime(imageDate,"%Y%m%d") # now imageDate is a datetime object #* do we even need this. when we pass to DISCOVER we convert to string anyways
 
         # create variables that use pairname
         imageDir = os.path.join(batchDir, pairname) # where data will be copied to on ADAPT
@@ -251,12 +256,12 @@ def main(inTxt, inDir, batchID, noP2D, rp, debug): #the 4 latter args are option
 
 
         # before continuing, check to see if we need to a) stop processing (alreadyProcessed) b) skip query/copy or c) continue on with process
-        outAttributes = '{},{},{},"",{},"",{},{},filler\n'.format(batchID, pairname, catID_1, catID_2, imageDate[0:4], imageDate[4:6]) # this is outAttributes for now. filler will be replaced
+        outAttributes = '{},{},{},"",{},"",{},{},filler\n'.format(batchID, pairname, catID_1, catID_2, year, month) # this is outAttributes for now. filler will be replaced
         (queryCopyPair, alreadyProcessed, preLogText) = check_pairname_continue(pairname, imageDir, job_script, preLogText)
         # pairnameContinue
 
         if alreadyProcessed: # if the pairname was already processed all the way through (in a previous batch) skip the pair (after writing outAttributes to csv summary)
-            outAttributes = '{},{},{},True,{},True,{},{},alreadyProcessed\n'.format(batchID, pairname, catID_1, catID_2, imageDate[0:4], imageDate[4:6])
+            outAttributes = '{},{},{},True,{},True,{},{},alreadyProcessed\n'.format(batchID, pairname, catID_1, catID_2, year, month)
             with open(summary_csv, 'a') as c:
                 c.write(outAttributes)
             continue
@@ -275,39 +280,39 @@ def main(inTxt, inDir, batchID, noP2D, rp, debug): #the 4 latter args are option
 ##        # Initialize DEM string
 ##        mapprjDEM = ''
 
-        #n #* Do I need this? -- if so, it looks like we are just getting imageDate in datetime format based on input format. From here on out, imageDate *should* always be yyymmdd format. Check with Paul
-        # Get Image Date ##** can probably simplify this--- need to check with Paul to see which is the correct date format
-        if imageDate != '':
-            try:
-                imageDate = datetime.strptime(imageDate,"%m/%d/%Y")
-                #preLogText.append( '\tTry 1: ' + str(imageDate))
-                preLogText.append( '\tDate format 1: ' + str(imageDate))
-            except Exception, e:
-                pass
-                try:
-                    imageDate = datetime.strptime(imageDate,"%Y-%m-%d")
-                    #preLogText.append( '\tTry 2: ' + str(imageDate))
-                    preLogText.append( '\tDate format 2: ' + str(imageDate))
-                except Exception, e:
-                    pass
-                    try:
-                        imageDate = datetime.strptime(imageDate,"%Y%m%d")
-                        preLogText.append( '\tDate format 3: ' + str(imageDate))
-                    except Exception, e:
-                        pass
-        #* might can get rid of this and just get year/month/etc from the date string in pairname at the beginning . Set date = imageDate up there as well and maybe eventually delete
-        # get info from imageDate that we need for all pairs
-        #* at this point, imageDate is not a datetime object
-        try:
-            year = "%04d" % imageDate.year
-            month = "%02d" % imageDate.month
-            day = "%02d" % imageDate.day
-            date = year+month+day
-        except Exception,e: ##** if we can't get the info
-            year = 'XXXX'
-            month = 'XX'
-            day = 'XX'
-            date = year+month+day # so date will be 'XXXXXXXX'
+##        #n #* Do I need this? -- if so, it looks like we are just getting imageDate in datetime format based on input format. From here on out, imageDate *should* always be yyymmdd format. Check with Paul
+##        # Get Image Date ##** can probably simplify this--- need to check with Paul to see which is the correct date format
+##        if imageDate != '':
+##            try:
+##                imageDate = datetime.strptime(imageDate,"%m/%d/%Y")
+##                #preLogText.append( '\tTry 1: ' + str(imageDate))
+##                preLogText.append( '\tDate format 1: ' + str(imageDate))
+##            except Exception, e:
+##                pass
+##                try:
+##                    imageDate = datetime.strptime(imageDate,"%Y-%m-%d")
+##                    #preLogText.append( '\tTry 2: ' + str(imageDate))
+##                    preLogText.append( '\tDate format 2: ' + str(imageDate))
+##                except Exception, e:
+##                    pass
+##                    try:
+##                        imageDate = datetime.strptime(imageDate,"%Y%m%d")
+##                        preLogText.append( '\tDate format 3: ' + str(imageDate))
+##                    except Exception, e:
+##                        pass
+##        #* might can get rid of this and just get year/month/etc from the date string in pairname at the beginning . Set date = imageDate up there as well and maybe eventually delete
+##        # get info from imageDate that we need for all pairs
+##        #* at this point, imageDate is not a datetime object
+##        try:
+##            year = "%04d" % imageDate.year
+##            month = "%02d" % imageDate.month
+##            day = "%02d" % imageDate.day
+##            date = year+month+day
+##        except Exception,e: ##** if we can't get the info
+##            year = 'XXXX'
+##            month = 'XX'
+##            day = 'XX'
+##            date = year+month+day # so date will be 'XXXXXXXX'
 
         # NOW QUERY AND COPY DATA FOR PAIR, but ONLY if queryCopyPair is True (ie we have not already done it for pair in this batch)
         if queryCopyPair:
@@ -417,9 +422,9 @@ def main(inTxt, inDir, batchID, noP2D, rp, debug): #the 4 latter args are option
             #* getting the date here again. Do we need to do this?
             # get a selected list (like from the query loop) that is definitely not empty
             selected = selected_list[found_catID.index(True)] # this will give the selected list that has data (works for scenarios where one catID has data or both)
-            date = str(selected[0][2]).replace("-","")          # eg. 20110604
-            year = date.strip()[:-4]                            # e.g. 2011
-            month = date.strip()[4:].strip()[:-2]               # e.g. 06
+##            date = str(selected[0][2]).replace("-","")          # eg. 20110604
+##            year = date.strip()[:-4]                            # e.g. 2011
+##            month = date.strip()[4:].strip()[:-2]               # e.g. 06
 
             """
             pairname is important: indicates that data on which the DSM was built..its unique..used for subdir names in outASP and inASP
