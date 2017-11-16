@@ -70,6 +70,27 @@ def check_pairname_continue(pairname, imageDir, job_script, preLogText): # outAt
 
     return (queryCopyPair, alreadyProcessed, preLogText)
 
+def get_projection_info(lat, lon):
+
+    utm_zone, easting, northing = convert.LLtoUTM(23, lat, lon)
+    utm_zone = utm_zone[:-1]
+
+    if abs(int(utm_zone)) < 10:
+        utm_zone = "0" + str(utm_zone)
+
+    if lat < 0:
+        ns = "S"
+        prj = "EPSG:327" + utm_zone
+    else:
+        ns = "N"
+        prj = "EPSG:326" + utm_zone
+    if lon < 0:
+        ew = "W"
+    else:
+        ew = "E"
+
+    return (utm_zone, prj, ns, ew)
+
 #def main(csv, inDir, batchID, mapprj=True, doP2D=True, rp=100): #* batchID to keep track of groups of pairs for processing # old way- without argparse
 def main(inTxt, inDir, batchID, noP2D, rp, debug): #the 4 latter args are optional #n vinTxt replaces csv
 
@@ -583,22 +604,8 @@ def main(inTxt, inDir, batchID, noP2D, rp, debug): #the 4 latter args are option
             # [4.2] UTM zone
             ##Q this will only get run if both catIDs have data in our archive---is that OK? or do we want this to be done if one catID exists? if so, move to before if len(catIDlist) < 2
             ##Q move into function??
-            utm_zone, easting, northing = convert.LLtoUTM(23, lat, lon)
-            utm_zone = utm_zone[:-1]
+            (utm_zone, prj, ns, ew) = get_projection_info(lat, lon)
 
-            if abs(int(utm_zone)) < 10:
-                utm_zone = "0" + str(utm_zone)
-
-            if lat < 0:
-                ns = "S"
-                prj = "EPSG:327" + utm_zone
-            else:
-                ns = "N"
-                prj = "EPSG:326" + utm_zone
-            if lon < 0:
-                ew = "W"
-            else:
-                ew = "E"
 
             #n comment out old DEM stuff. know i dont need "if mapprj" but might need stuff before
 ##            # [4.3] Get list for ASTER GDEM vrt
