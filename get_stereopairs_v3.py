@@ -33,42 +33,8 @@ def det3(a1, b1, c1, a2, b2, c2, a3, b3, c3):
     res = a1*b2*c3+a2*b3*c1+a3*b1*c2-a1*b3*c2-a2*b1*c3-a3*b2*c1
     return res
 
-def stereoAngles(alpha1,theta1,alpha2,theta2,x1,y1,z1,x2,y2,z2,lat,lon):
-    """
-    alpha1  =   meanSatEl of image 1
-    theta1  =   meanSatAz of image 1
-    alpha2  =   "" image 2
-    theta2  =   "" image 2
-    x,y,z   = satellite empheris
+def stereoAngles_old(alpha1,theta1,alpha2,theta2,x1,y1,z1,x2,y2,z2,lat,lon):
 
-    http://www.mdpi.com/2072-4292/7/4/4549/remotesensing-07-04549.pdf
-    http://www.geoimage.com.au/media/brochure_pdfs/DEMBrochure_FEB2015.pdf
-    www.isprs.org/proceedings/XXXVII/congress/1_pdf/195.pdf
-
-    In the case of the VHR satellites with their pointable telescopes, the B/H ratio is not appropriate as a measure
-    of the effectiveness of the stereo pair for DEM generation. In such cases, three angular measures of
-    convergent stereo imaging geometry: the convergence angle, the asymmetry angle, and the bisector elevation angle (BIE) are used.
-
-    These measure the geometrical relationship between two rays that intersect at a common ground point, one
-    from the fore image and one from the aft image as shown in the diagram.
-
-    Convergence Angle:
-    The angle between two rays of a stereo pair
-    The most important of the three stereo angles is the convergence and is the angle between the two rays in the
-    convergence or epipolar plane. An angle between 30 and 60 degrees is ideal (<--- ideal for measuring what?? which heights? short trees??)
-
-    Asymetry Angle:
-    Asymmetry describes the apparent offset from the centre view that a stereo pair has. For instance, a stereo pair
-    with an asymmetry of 0? will have parallax due to elevations that appear equivalent in the left and right images.
-    An asymmetrical collection is preferred as it gives a different look angle to discern ground features more
-    accurately but should be under 20 deg.
-
-    Bisector Elevation Angle:
-    The obliqueness of the epipolar plane. BIE = 90 is orthogonal to ground surface
-    The elevation angle of the bisector of the convergence angle
-    The BIE angle is the angle between the horizontal plane and the epipolar plane and defines the amount of parallax that will
-    appear in the vertical direction after alignment. The angle should be between 60 and 90 degrees.
-    """
     # Converts degrees to radians
     dtr = math.atan(1.0)/45.0
 
@@ -100,10 +66,120 @@ def stereoAngles(alpha1,theta1,alpha2,theta2,x1,y1,z1,x2,y2,z2,lat,lon):
         c = z1+z2-2*z0
         sc = abs(a*x0 + b*y0 + c*z0)/(math.sqrt(x0*x0+y0*y0+z0*z0) * math.sqrt(a*a + b*b + c*c))
         asym_ang = round(math.asin(sc) / dtr,2)
-        return (con_ang,asym_ang,bie_ang)
+        ##return (con_ang,asym_ang,bie_ang)
+        return (con_ang,bie_ang,asym_ang)
 
+def stereoAngles(alpha1,theta1,alpha2,theta2,x1,y1,z1,x2,y2,z2,lat,lon):
+    """
+    alpha1  =   meanSatEl of image 1
+    theta1  =   meanSatAz of image 1
+    alpha2  =   meanSatEl image 2
+    theta2  =   meanSatAz image 2
+    x,y,z   =   satellite empheris
 
-#############################
+    http://www.mdpi.com/2072-4292/7/4/4549/remotesensing-07-04549.pdf
+    http://www.geoimage.com.au/media/brochure_pdfs/DEMBrochure_FEB2015.pdf
+    www.isprs.org/proceedings/XXXVII/congress/1_pdf/195.pdf
+
+    In the case of the VHR satellites with their pointable telescopes, the B/H ratio is not appropriate as a measure
+    of the effectiveness of the stereo pair for DEM generation. In such cases, three angular measures of
+    convergent stereo imaging geometry: the convergence angle, the asymmetry angle, and the bisector elevation angle (BIE) are used.
+
+    These measure the geometrical relationship between two rays that intersect at a common ground point, one
+    from the fore image and one from the aft image as shown in the diagram.
+
+    Convergence Angle:
+    The angle between two rays of a stereo pair
+    The most important of the three stereo angles is the convergence and is the angle between the two rays in the
+    convergence or epipolar plane. An angle between 30 and 60 degrees is ideal (<--- ideal for measuring what?? which heights? short trees??)
+
+    Asymetry Angle:
+    Asymmetry describes the apparent offset from the centre view that a stereo pair has. For instance, a stereo pair
+    with an asymmetry of 0? will have parallax due to elevations that appear equivalent in the left and right images.
+    An asymmetrical collection is preferred as it gives a different look angle to discern ground features more
+    accurately but should be under 20 deg.
+
+    Bisector Elevation Angle:
+    The obliqueness of the epipolar plane. BIE = 90 is orthogonal to ground surface
+    The elevation angle of the bisector of the convergence angle
+    The BIE angle is the angle between the horizontal plane and the epipolar plane and defines the amount of parallax that will
+    appear in the vertical direction after alignment. The angle should be between 60 and 90 degrees.
+    """
+
+    # New Calculation
+    # Using equations in J. Jeong and T Kim, 2016, Photogrammetric Engin. and RS, Vol. 82, No. 8
+
+    # Degrees to radians
+    dtr = math.atan(1.0) / 45.0
+
+    # Set Earth Radius
+    r = 6378137.   # WGS84 equatorial earth radius in meters
+
+    # ECEF coordinate calculation
+    # Position on ground, calc'd according to lat, lon, and earth radius
+    # position is the center of the image
+    x0 = r * math.cos(lat*dtr) * math.cos(lon*dtr)
+    y0 = r * math.cos(lat*dtr) * math.sin(lon*dtr)
+    z0 = r * math.sin(lat*dtr)
+
+    # check the altitudes of the two satellite positions
+    d1 = math.sqrt(x1*x1+y1*y1+z1*z1)
+    d2 = math.sqrt(x2*x2+y2*y2+z2*z2)
+    a = d1/d2
+    x2 = x2 * a
+    y2 = y2 * a
+    z2 = z2 * a
+    ##print '(x2,y2,z2) was adjusted by multiplying %s' %a
+
+    # calculate theta1 and theta2
+    # theta 1 is formed by two vectors U and V
+    # U is from S1 to S2 and V is from S1 to the image center
+    # S1 and S2 are positions of two cameras
+
+    u1 = x1-x2
+    u2 = y1-y2
+    u3 = z1-z2
+    du = math.sqrt(u1*u1 + u2*u2 + u3*u3)
+    v1 = x1 - x0
+    v2 = y1 - y0
+    v3 = z1 - z0
+    dv = math.sqrt(v1*v1 + v2*v2 + v3*v3)
+    dd = (u1*v1 + u2*v2 + u3*v3) / (du * dv)
+    theta1 = math.acos(dd) / dtr
+
+    # theta2 is also formed by two vectors
+    # U is from S2 to S1 and V is from S2 to the image center
+    u1 = -u1
+    u2 = -u2
+    u3 = -u3
+
+    v1 = x2 - x0
+    v2 = y2 - y0
+    v3 = z2 - z0
+    dv = math.sqrt(v1*v1 + v2*v2 + v3*v3)
+    dd = (u1*v1 + u2*v2 + u3*v3) / (du * dv)
+    theta2 = math.acos(dd) / dtr
+    ##print 'Theta1 and theta 2: %s and %s' %(theta1, theta2)
+
+    # Convergence Angle (con_ang)
+    con_ang = 180.0 - theta1 - theta2                                          # Equation 1 in the paper
+
+    aa = math.sin(alpha1*dtr) * math.sin(alpha2*dtr)+ math.cos(alpha1*dtr) * math.cos(alpha2*dtr)* math.cos((theta1-theta2)*dtr)
+    sc = (math.sin(alpha1*dtr) + math.sin(alpha2*dtr)) /(math.sqrt(2.0) * math.sqrt(1.0 + aa))
+
+    # Bisector Elevation Angle (bie_ang)
+    bie_ang = math.asin(sc)/dtr                                                # Equation 2 in the paper
+
+    # Asymmetry Angle (asym_ang)
+    asym_ang = (theta1 - theta2) * 0.5                                         # Equation 3 in the paper
+
+    con_ang = round(con_ang, 3)
+    bie_ang = round(bie_ang, 3)
+    asym_ang = round(asym_ang, 3)
+
+    ##printf, ou, format = '(6F10.4)', con_ang, asym_ang, bie_ang, con_ang2, asym_ang2, bie_ang2
+    return (con_ang,bie_ang,asym_ang)
+
 
 def stereopairs(imageDir):
     """
@@ -125,7 +201,7 @@ def stereopairs(imageDir):
 
     # Get pairname from input image dir
     baseDir, pairname = os.path.split(imageDir) # baseDir i.e. /discover/nobackup/projects/boreal_nga/inASP/batchtest1
-    print("\tPairname: %s" %(pairname))
+    print("\tCalculating Epipolar Geometry for: %s" %(pairname))
 
     # Split pairname into catids
     cat1,cat2 = pairname.split("_")[2:] # get the last catIDs
@@ -293,9 +369,9 @@ def stereopairs(imageDir):
                     ##csvfile.write(outline + str(stereoAngs[0]) + "," + str(stereoAngs[1]) + "," + str(stereoAngs[2]))
 
                     print("\tOuput CSV file: %s" %(outCSV))
-                    print("\tConvergence Angle = " + str(stereoAngs[0]))
-                    print("\tBisector Elevation Angle = " + str(stereoAngs[1]))
-                    print("\tAsymetry Angle = " + str(stereoAngs[2]))
+                    print("\tConvergence Angle          = " + str(stereoAngs[0]))
+                    print("\tBisector Elevation Angle   = " + str(stereoAngs[1]))
+                    print("\tAsymmetry Angle            = " + str(stereoAngs[2]))
 
                     return(str(stereoAngs[0]),str(stereoAngs[1]), str(stereoAngs[2]), hdr, outCSVline)
 

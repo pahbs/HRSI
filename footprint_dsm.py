@@ -4,54 +4,75 @@ import os, sys, osgeo, shutil, csv, subprocess as subp
 from osgeo import ogr, osr, gdal
 import workflow_functions as wf
 import get_stereopairs_v3 as g
+from os import listdir
+
 import argparse
 
-def runVRT(pairname, rootDir):
+def run_imagelink(pairname, rootDir):
+    """Create a links in 3 top-level dirs to the 3 types of output (CLR, DRG, and DEM) tifs in native pairname dirs
+    """
 
-    print "\n\n\t Build a VRT of the CLR, DRG and DEM tifs\n\n"
+    print "\n\t Build a VRT of the CLR, DRG and DEM tifs\n\n"
 
-    srcList = ["-DEM-clr-shd.tif", "-DRG.tif", "-DEM.tif"]
-    srcFull = ""
+    src_tuple = ( "clr-shd.tif",\
+                "_color_hs.tif",\
+                "-DRG.tif",\
+                "_ortho.tif",\
+                "_ortho_4m.tif",\
+                "out-DEM.tif",\
+                "out-DEM_1m.tif",\
+                "out-DEM_4m.tif",\
+                "out-DEM_24m.tif",\
+                "out-strip-DEM.tif")
 
-    for src in srcList:
+    # Find the file using the src string
+    for root, dirs, files in os.walk(os.path.join(rootDir,pairname)):
+        for fyle in files:
+            if fyle.endswith(src_tuple):
+                srcFull = os.path.join(rootDir,pairname,fyle)
 
-        # Find the file using the src string
-        for root, dirs, files in os.walk(os.path.join(rootDir,pairname)):
-            for fyle in files:
-                if fyle.endswith(src):
-                    srcFull = os.path.join(rootDir,pairname,fyle)
-                    break
+                outDir = ''
+                fyle = os.path.split(srcFull)[1]
 
-        #srcFull = outStereoPre + src
+                if not pairname in fyle and any (x in fyle for x in ["out-strip-DEM.tif", "out-DEM.tif", "out-DEM_1m.tif", "out-DEM_4m.tif", "out-DEM_24m.tif"]):
+                    outDir = os.path.join(rootDir, "_dem")
+                    dst = os.path.join(outDir, pairname+'_DEM'+fyle.split('-DEM')[1])
+                    do_kmz = False
 
-        vrtDir = os.path.join(rootDir, "dem")
-        vrtTail = "-DEM.vrt"
-        do_kmz = False
+                if "clr" in fyle:
+                    outDir = os.path.join(rootDir, "_clr")
+                    dst = os.path.join(outDir, pairname+"_clr.tif")
+                    do_kmz = False
 
-        if "clr" in src:
-            vrtDir = os.path.join(rootDir, "clr")
-            vrtTail = "-CLR.vrt"
-            do_kmz = False
+                if "DRG" in fyle:
+                    outDir = os.path.join(rootDir, "_drg")
+                    dst = os.path.join(outDir, pairname+"_drg.tif")
+                    do_kmz = False
 
-        if "DRG" in src:
-            vrtDir = os.path.join(rootDir, "drg")
-            vrtTail = "-DRG.vrt"
-            do_kmz = False
+                if "color_hs.tif" in fyle:
+                    outDir = os.path.join(rootDir, "_color_hs")
+                    dst = os.path.join(outDir, pairname+fyle.split('DEM')[1])
+                    do_kmz = False
 
-        os.system('mkdir -p %s' % vrtDir)
+                if pairname in fyle and "_ortho" in fyle:
+                    outDir = os.path.join(rootDir, "_ortho")
+                    dst = os.path.join(outDir, pairname+'_ortho'+fyle.split('_ortho')[1])
+                    do_kmz = False
 
-        dst = os.path.join(vrtDir, pairname + vrtTail)
+                if outDir:
+                    os.system('mkdir -p %s' % outDir)
 
-        if os.path.isfile(dst):
-            os.remove(dst)
+                    if os.path.isfile(dst):
+                        os.remove(dst)
+                    # Eventually, take the symlink creation out.
+                    if os.path.isfile(srcFull):
+                        ##cmdStr = "gdal_translate -of VRT {} {}".format(srcFull, dst)
+                        cmdStr = "ln -s {} {}".format(srcFull, dst)
+                        cmd = subp.Popen(cmdStr, stdout=subp.PIPE, shell=True)
+                        print("\tWriting symlink " + dst)
 
-        if os.path.isfile(srcFull):
-            cmdStr = "gdal_translate -of VRT {} {}".format(srcFull, dst)
-            cmd = subp.Popen(cmdStr, stdout=subp.PIPE, shell=True)
-            print("\tWriting VRT " + dst)
-
-            if do_kmz:
-                make_kmz(dst)
+                        if do_kmz:
+                            make_kmz(dst)
 
 
 def db_query(catIDlist):
@@ -83,6 +104,7 @@ def db_query(catIDlist):
             sel_list.append(selected)
 
     return(sel_list)
+
 def copy_over_symlink(file_path, rootDir, subdir):
 
     from shutil import copyfile
@@ -98,11 +120,12 @@ def copy_over_symlink(file_path, rootDir, subdir):
         copyfile(file_path, new_file_path)
 
     print "\tCopied xml to %s" %(os.path.join(rootDir,subdir,os.path.split(file_path)[1]))
+
 def make_kmz(fn):
     print("\tGenerating kmz")
     kmz_fn = os.path.splitext(fn)[0]+'.kmz'
     #Run in background..
-    cmdStr = "gdal_translate -of KMLSUPEROVERLAY -co FORMAT=PNG {} {}".format(fn, kmz_fn)
+    cmdStr = "gdal_translate -of KMLSUPEROVERLAY -co FORMAT=PNG {} {}".format(kmz_fn, fn)
 ##    print(' '.join(cmd))
 ##    subp.call(cmd, shell=False)
     cmd = subp.Popen(cmdStr, stdout=subp.PIPE, shell=True)
@@ -120,130 +143,136 @@ def make_kml(fn):
     cmd = subp.Popen(cmdStr, stdout=subp.PIPE, shell=True)
     s,e = cmd.communicate()
 
-def runVALPIX(root, pairname, src, newFieldsList, newAttribsList, outSHP):
+def footprint_valid_pixels(root, pairname, src, newFieldsList, newAttribsList, outSHP):
 
-        # -- Update Valid Pixels Shapefile
-        # Updates a merged SHP of all valid pixels from individual DSM strips
+    """Create/Update a Footprint Shapefile of a coarsened version of the valid raster pixels
+       Outputs a merged shapefile of all valid pixels from individual CLR/DRG/DSM images
+    """
 
-        print "\tRunning valid pixel footprints...\n"
+    print "\tRunning valid pixel footprints...\n"
 
-        pairnameDir = os.path.join(root,pairname)
+    pairnameDir = os.path.join(root,pairname)
 
-        #print("\t Source file: " + src + "\n")
-        outValTif_TMP = os.path.join(pairnameDir, "VALIDtmp.tif")
-        outValShp_TMP = os.path.join(pairnameDir, "VALIDtmp.shp")
-        outValShp     = os.path.join(pairnameDir, "VALID.shp")
-        outValShp_prj = os.path.join(pairnameDir, "VALID_WGS84.shp")
-        outValShp_aggtmp = os.path.join(pairnameDir, "VALID_aggtmp.shp")
-        outValShp_agg = os.path.join(pairnameDir, "VALID_agg.shp")
+    #print("\t Source file: " + src + "\n")
+    outValTif_TMP   = os.path.join(pairnameDir, "VALIDtmp.tif")
+    outValShp_TMP   = os.path.join(pairnameDir, "VALIDtmp.shp")
+    outValShp       = os.path.join(pairnameDir, "VALID.shp")
+    outValShp_prj   = os.path.join(pairnameDir, "VALID_WGS84.shp")
+    outValShp_aggtmp= os.path.join(pairnameDir, "VALID_aggtmp.shp")
+    outValShp_agg   = os.path.join(pairnameDir, "VALID_agg.shp")
 
-        if not os.path.isfile(src):
-            print "\tWill not footprint: %s does not exist." %src
+    # Handle the cases for new data
+    if any (x in src for x in ["out-strip-DEM.tif", "out-strip-DEM-clr-shd.tif"]) and not os.path.isfile(os.path.join(pairnameDir,src)):
+        src = 'out-DEM_24m.tif'
+
+    if not os.path.isfile(os.path.join(pairnameDir,src)):
+        print "\tWill not footprint: %s does not exist." %src
+    else:
+        #print " [1] Create *VALID.shp files for each pairname"
+        #print "     [.a] Coarsen %s" %src
+        if 'clr-shd' in src:
+            #Band 4 is the alpha channel
+            cmdStr = "gdal_translate -outsize .25% .25% -co compress=lzw -b 4 -ot byte -scale 1 1 {} {}".format(src, outValTif_TMP)
         else:
-            #print " [1] Create *VALID.shp files for each pairname"
-            #print "     [.a] Coarsen %s" %src
-            if 'clr-shd' in src:
-                #Band 4 is the alpha channel
-                cmdStr = "gdal_translate -outsize .25% .25% -co compress=lzw -b 4 -ot byte -scale 1 1 {} {}".format(src, outValTif_TMP)
-            else:
-                cmdStr = "gdal_translate -outsize .25% .25% -co compress=lzw -b 1 -ot byte -scale 1 1 {} {}".format(src, outValTif_TMP)
-            wf.run_wait_os(cmdStr,print_stdOut=False)
-            #print "     [.b] POLYGONIZE %s" %outValTif_TMP
-            cmdStr = "gdal_polygonize.py {} -f 'ESRI Shapefile' {}".format(outValTif_TMP, outValShp_TMP)
-            wf.run_wait_os(cmdStr,print_stdOut=False)
+            cmdStr = "gdal_translate -outsize .25% .25% -co compress=lzw -b 1 -ot byte -scale 1 1 {} {}".format(src, outValTif_TMP)
 
-            #print "     [.c] REMOVE NODATA HOLES: %s" %outValShp
-            cmdStr = "ogr2ogr {} {} -where 'DN>0' -overwrite".format(outValShp, outValShp_TMP)
-            wf.run_wait_os(cmdStr,print_stdOut=False)
+        wf.run_wait_os(cmdStr,print_stdOut=False)
+        #print "     [.b] POLYGONIZE %s" %outValTif_TMP
+        cmdStr = "gdal_polygonize.py {} -f 'ESRI Shapefile' {}".format(outValTif_TMP, outValShp_TMP)
+        wf.run_wait_os(cmdStr,print_stdOut=False)
 
-            #print " [2] Reproject to WGS and merge"
-            cmdStr = "ogr2ogr -f 'ESRI Shapefile' -t_srs EPSG:3995 {} {} -overwrite".format(outValShp_prj, outValShp)
-            wf.run_wait_os(cmdStr,print_stdOut=False)
+        #print "     [.c] REMOVE NODATA HOLES: %s" %outValShp
+        cmdStr = "ogr2ogr {} {} -where 'DN>0' -overwrite".format(outValShp, outValShp_TMP)
+        wf.run_wait_os(cmdStr,print_stdOut=False)
 
-            #print " [3] Dissolve/Aggregate Polygons into 1 feature"
-            input_basename = os.path.split(outValShp_prj)[1].replace(".shp","")
-            cmdStr = "ogr2ogr {} {} -dialect sqlite -sql 'SELECT GUnion(geometry), DN FROM {} GROUP BY DN'".format(outValShp_aggtmp, outValShp_prj, input_basename)
-            wf.run_wait_os(cmdStr,print_stdOut=False)
-            #print " [4] Simplify"
-            cmdStr = "ogr2ogr {} {} -simplify .001".format(outValShp_agg, outValShp_aggtmp)
-            wf.run_wait_os(cmdStr,print_stdOut=False)
+        #print " [2] Reproject to WGS and merge"
+        cmdStr = "ogr2ogr -f 'ESRI Shapefile' -t_srs EPSG:3995 {} {} -overwrite".format(outValShp_prj, outValShp)
+        wf.run_wait_os(cmdStr,print_stdOut=False)
 
-            # Check to see if the pairname exists in the main shp
-            update = True
-            mainVALID = os.path.join(root,outSHP)
-            if os.path.isfile(mainVALID):
-                # Open a Shapefile, and get field names
-                shp = ogr.Open(mainVALID, 1)
-                layer = shp.GetLayer()
-                layer_defn = layer.GetLayerDefn()
-                field_names = [layer_defn.GetFieldDefn(i).GetName() for i in range(layer_defn.GetFieldCount())]
+        #print " [3] Dissolve/Aggregate Polygons into 1 feature"
+        input_basename = os.path.split(outValShp_prj)[1].replace(".shp","")
+        cmdStr = "ogr2ogr {} {} -dialect sqlite -sql 'SELECT GUnion(geometry), DN FROM {} GROUP BY DN'".format(outValShp_aggtmp, outValShp_prj, input_basename)
+        wf.run_wait_os(cmdStr,print_stdOut=False)
+        #print " [4] Simplify"
+        cmdStr = "ogr2ogr {} {} -simplify .001".format(outValShp_agg, outValShp_aggtmp)
+        wf.run_wait_os(cmdStr,print_stdOut=False)
 
-                for feature in layer:
-                    if feature.GetField('pairname') == pairname:
-                        update = False
-                        print "\n\n\t\t !! Don't update; pairname exists in shapefile: %s" %pairname
-                        break
-                    pass
-                shp, layer, layer_defn, field_names, feature = (None for i in range(5))
+        # Check to see if the pairname exists in the main shp
+        update = True
+        mainVALID = os.path.join(root,outSHP)
+        if os.path.isfile(mainVALID):
+            # Open a Shapefile, and get field names
+            shp = ogr.Open(mainVALID, 1)
+            layer = shp.GetLayer()
+            layer_defn = layer.GetLayerDefn()
+            field_names = [layer_defn.GetFieldDefn(i).GetName() for i in range(layer_defn.GetFieldCount())]
 
-            if update and os.path.isfile(outValShp_agg):
-                # Add fields to the pairname's shp (outValShp_agg)
-                ##https://gis.stackexchange.com/questions/3623/how-to-add-custom-feature-attributes-to-shapefile-using-python
-                # Open a Shapefile, and get field names
-                shp = ogr.Open(outValShp_agg, 1)
-                layer = shp.GetLayer()
+            for feature in layer:
+                if feature.GetField('pairname') == pairname:
+                    update = False
+                    print "\n\t\t !! Don't update; pairname exists in shapefile: %s" %pairname
+                    break
+                pass
+            shp, layer, layer_defn, field_names, feature = (None for i in range(5))
 
-                for newfieldStr in newFieldsList:
-                    if 'pair' in newfieldStr or 'left' in newfieldStr or 'right' in newfieldStr:
-                        fieldType = ogr.OFTString
-                    elif 'year' or 'month' or 'day' in newfieldStr:
-                        fieldType = ogr.OFTInteger
-                    else:
-                        fieldType = ogr.OFTReal
-                    # Add a new field
-                    new_field = ogr.FieldDefn(newfieldStr, fieldType)
-                    layer.CreateField(new_field)
+        if update and os.path.isfile(outValShp_agg):
+            # Add fields to the pairname's shp (outValShp_agg)
+            ##https://gis.stackexchange.com/questions/3623/how-to-add-custom-feature-attributes-to-shapefile-using-python
+            # Open a Shapefile, and get field names
+            shp = ogr.Open(outValShp_agg, 1)
+            layer = shp.GetLayer()
 
-                # Update fields based on attributes
-                ## http://www.digital-geography.com/create-and-edit-shapefiles-with-python-only/#.V8hlLfkrLRY
-                layer_defn = layer.GetLayerDefn()
-                field_names = [layer_defn.GetFieldDefn(i).GetName() for i in range(layer_defn.GetFieldCount())]
-                feature = layer.GetFeature(0)   # Gets first, and only, feature
-
-                for num, f in enumerate(field_names):
-                    i = feature.GetFieldIndex(f)
-                    if num > 0:
-                        feature.SetField(i, newAttribsList[num-1])
-                        layer.SetFeature(feature)
-                shp = None
-
-                # Append pairname shp to main shp
-                if os.path.isfile(mainVALID):
-                    print "\n\t Updating footprint shp %s with current %s" %(mainVALID,pairname)
-                    cmdStr = "ogr2ogr -f 'ESRI Shapefile' -update -append " + mainVALID + " " + outValShp_agg  #-nln merge
-                    wf.run_wait_os(cmdStr,print_stdOut=False)
+            for newfieldStr in newFieldsList:
+                if 'pair' in newfieldStr or 'left' in newfieldStr or 'right' in newfieldStr or 'chm' in newfieldStr:
+                    fieldType = ogr.OFTString
+                elif 'year' or 'month' or 'day' in newfieldStr:
+                    fieldType = ogr.OFTInteger
                 else:
-                    print "\n\t Creating footprint shp: %s" %mainVALID
-                    cmdStr = "ogr2ogr -f 'ESRI Shapefile' " + mainVALID + " " + outValShp_agg
-                    wf.run_wait_os(cmdStr,print_stdOut=False)
+                    fieldType = ogr.OFTReal
+                # Add a new field
+                new_field = ogr.FieldDefn(newfieldStr, fieldType)
+                layer.CreateField(new_field)
 
-                # Clean up tmp files
-                ##cmd = "find %s -type f -name VALID* -exec rm -rf {} \;" %pairnameDir
-                files = os.listdir(pairnameDir)
-                for f in files:
-                    if "VALID" in os.path.join(pairnameDir,f):
-            	       os.remove(os.path.join(pairnameDir,f))
-                       ##print("\t Removed: "+ f)
+            # Update fields based on attributes
+            ## http://www.digital-geography.com/create-and-edit-shapefiles-with-python-only/#.V8hlLfkrLRY
+            layer_defn = layer.GetLayerDefn()
+            field_names = [layer_defn.GetFieldDefn(i).GetName() for i in range(layer_defn.GetFieldCount())]
+            feature = layer.GetFeature(0)   # Gets first, and only, feature
+
+            for num, f in enumerate(field_names):
+                i = feature.GetFieldIndex(f)
+                if num > 0:
+                    feature.SetField(i, newAttribsList[num-1])
+                    layer.SetFeature(feature)
+            shp = None
+
+            # Append pairname shp to main shp
+            if os.path.isfile(mainVALID):
+                print "\n\t Updating footprint shp %s with current %s" %(mainVALID,pairname)
+                cmdStr = "ogr2ogr -f 'ESRI Shapefile' -update -append " + mainVALID + " " + outValShp_agg  #-nln merge
+                wf.run_wait_os(cmdStr,print_stdOut=False)
+            else:
+                print "\n\t Creating footprint shp: %s" %mainVALID
+                cmdStr = "ogr2ogr -f 'ESRI Shapefile' " + mainVALID + " " + outValShp_agg
+                wf.run_wait_os(cmdStr,print_stdOut=False)
+
+            # Clean up tmp files
+            ##cmd = "find %s -type f -name VALID* -exec rm -rf {} \;" %pairnameDir
+            files = os.listdir(pairnameDir)
+            for f in files:
+                if "VALID" in os.path.join(pairnameDir,f):
+        	       os.remove(os.path.join(pairnameDir,f))
+                   ##print("\t Removed: "+ f)
 
 def getparser():
     parser = argparse.ArgumentParser(description="Create footprints of DSMs with sun-surface-target geometry attributes from XMLs")
-    parser.add_argument('-out_root', default=None, help='Specify HRSI DSM root dir')
-    parser.add_argument('-out_shp', default='hrsi_dsm_footprints', help='Output shp of footprints')
-    parser.add_argument('--str_fp', type=str, default='', help='String indicating the file to be footprinted')
+    parser.add_argument('out_root', default=None, help='Specify HRSI DSM root dir')
+    parser.add_argument('out_shp', default='hrsi_dsm_footprints', help='Output shp of footprints')
+    parser.add_argument('-str_fp', type=str, default='', help='String indicating the file to be footprinted')
     parser.add_argument('-kml', action='store_true', help='Output kml of footprints for Google Earth')
     return parser
 
-def main(outRoot, outShp, str_fp):
+def main():
     """
     outRoot     eg, outASP dir
     outShp      the name (not full path) of output DSM footprint shapefile
@@ -253,15 +282,12 @@ def main(outRoot, outShp, str_fp):
     Create a single footprint shapefile, KML
     Create individual VRTs for each pairname (DEM, CLR, DRG)
     """
-    from os import listdir
-    import get_stereopairs_v3 as g
-
     parser = getparser()
     args = parser.parse_args()
 
-    outRoot = args.out_root
+    out_root = args.out_root
     kml = args.kml
-    outShp = args.out_shp
+    out_shp = args.out_shp
     str_fp = args.str_fp
 
     DSMincomplete = []      # list of incomplete DSMs (subdirs exist, but interrupted processing)
@@ -269,33 +295,39 @@ def main(outRoot, outShp, str_fp):
     catIDfails = []         # list of catIDs not found
     catIDsuccess = []       # list of catIDs found in my dB that werent in NGA db
     DSMfootprintFail = []   # list of DSMs that seem ok but failed to get footprinted
-    DSMok = False
-    have_info = False
 
+    platform_list = ("GE01", "WV01", "WV02", "WV03", "WV04", "IK", "QB", "AST")
+    """TODO keep track of sensor DSM counts
+    """
+    cnt_WV01 = cnt_WV02 = cnt_WV03 = cnt_WV04 = cnt_GE01 = cnt_QB = cnt_AST = cnt_IK = 0
 
     hdr, line = ('' for z in range(2))
     i = 0
-    for root, subdirs, files in os.walk(outRoot):
+    for root, subdirs, files in os.walk(out_root):
 
         for subdir in subdirs:
 
-            outASPdir = os.path.join(outRoot,subdir)
-            ##print '\n\tDSM dir: %s' %(outASPdir)
-            print "-------------"
-            # Look for clr-shd: If exists, then DSM was likely output ok
-            for root2, dirs, subdirfiles in os.walk(outASPdir):
-                for each in subdirfiles:
+            DSMok = False
+            have_info = False
 
-                    # Make sure clr-shd exists, indicating the DEM has been fully processed
-                    if 'DEM-clr-shd.tif' in each and each.endswith('.tif'):
-                        print "\tClr-shd exists. DSM can be footprinted."
-                        clrShd = os.path.join(root2,each)
-                        DSMok = True
-                        break
+            outASPdir = os.path.join(out_root,subdir)
+
+            if os.path.isdir(outASPdir) and os.path.split(outASPdir)[1].startswith(platform_list):
+                print "-------------"
+                print '\n\tDSM dir: %s' %(outASPdir)
+                # Look for clr-shd: If exists, then DSM was likely output ok
+                for root2, dirs, subdirfiles in os.walk(outASPdir):
+                    for each in subdirfiles:
+                        # Make sure clr-shd exists, indicating the DEM has been fully processed
+                        if each.endswith('DEM-clr-shd.tif') or each.endswith('DEM_24m.tif'):
+                            print "\tDSM can be footprinted."
+                            src_fp = os.path.join(root2,each)
+                            DSMok = True
+                            break
 
             # Find the actual file you want to footprint (in case of ASTER, its the *proj.tif one level up
             if str_fp == '':
-                print "\n\tSource for footprint is CLR: %s" %clrShd
+                print "\n\tSource for footprint is: %s" %src_fp
             else:
                 for root3, dirs, subdirfiles in os.walk(outASPdir):
                     for each in subdirfiles:
@@ -304,8 +336,7 @@ def main(outRoot, outShp, str_fp):
                             print "\n\tSource for footprint: %s" %src_fp
                             break
 
-
-            if not DSMok:
+            if not DSMok and subdir.startswith(platform_list):
                 print "\n\tNo DSM yet for %s" %(subdir)
                 DSMincomplete.append(subdir)
                 DSMok = False
@@ -315,13 +346,14 @@ def main(outRoot, outShp, str_fp):
                 # Get the outASP subdir of WV DSMs
                 isASTER = False
                 if subdir.startswith('AST'):
-                    outASPdir = os.path.join(outRoot,subdir,'outASP')
+                    outASPdir = os.path.join(out_root,subdir,'outASP')
 
                     print '\n\tASTER L1A DSM dir: %s' %(outASPdir)
                     have_info = True
                     isASTER = True
+                    cnt_AST = cnt_AST + 1
 
-                if subdir.startswith('GE') or subdir.startswith('WV'):
+                if subdir.startswith(("GE","WV")):
 
                     print "\n\t%s DSM." %(subdir[0:4])
 
@@ -358,7 +390,7 @@ def main(outRoot, outShp, str_fp):
                                     file_path = sList[num-1][numimg-1][0]   # third position is the file_path
                                     file_path = file_path.replace('.ntf','.xml').replace('.tif','.xml')
                                     # Function to copy XML from NGA dB into inASP
-                                    copy_over_symlink(file_path, outRoot, subdir)
+                                    copy_over_symlink(file_path, out_root, subdir)
 
                         # Get image-level & stereopair acquisition info
                         try:
@@ -371,15 +403,17 @@ def main(outRoot, outShp, str_fp):
                             DSMcatIDfail.append(subdir)
                             have_info = False
 
+
+            if isASTER:
+                pairname    = os.path.basename(os.path.dirname(outASPdir))
+                valpixroot  = os.path.dirname(os.path.dirname(outASPdir))
+            else:
+                pairname    = os.path.basename(outASPdir)
+                valpixroot  = os.path.dirname(outASPdir)
+
             if have_info:
                 # Reconfigure hdr and attribute line
                 hdr = 'pairname,year,month,day,' + hdr
-                if isASTER:
-                    pairname    = os.path.basename(os.path.dirname(outASPdir))
-                    valpixroot  = os.path.dirname(os.path.dirname(outASPdir))
-                else:
-                    pairname    = os.path.basename(outASPdir)
-                    valpixroot  = os.path.dirname(outASPdir)
                 try:
                     year        = pairname.split('_')[1].rstrip()[0:-4]
                     month       = pairname.split('_')[1].rstrip()[4:-2]
@@ -392,18 +426,19 @@ def main(outRoot, outShp, str_fp):
                 try:
                     print "\n\tBegin shapefile processing of DSM footprints"
 
-                    runVALPIX(valpixroot, pairname, src_fp, hdr.split(','), line.split(','), outShp)
+                    footprint_valid_pixels(valpixroot, pairname, src_fp, hdr.split(','), line.split(','), out_shp)
                     i = i + 1
                     print "\n\t\t >>>>> Success on # %s: Done with %s " %(i,pairname)
 
                 except Exception,e:
-                    print "\n\t\t >>>>> Fail on # %s: Could not get footprint of %s" %(i,pairname)
+                    print "\n\t\t xxxxx Fail on # %s: Could not get footprint of %s" %(i,pairname)
                     DSMfootprintFail.append(subdir)
 
             # Make VRTs, even if you dont have_info
             if DSMok:
 
-                runVRT(pairname,outRoot)
+                run_imagelink(pairname,out_root)
+
                 print "\n\n\n"
 
     # Output a CSV of:
@@ -417,12 +452,11 @@ def main(outRoot, outShp, str_fp):
     failList = [catIDfails, catIDsuccess, DSMincomplete, DSMcatIDfail, DSMfootprintFail]
     for num, outStr in enumerate(outCSVFileStrings):
         # Ouput a CSV, 1 line for each fail
-        with open(os.path.join(outRoot,outShp.split('.')[0] + outStr), 'wb') as outCSV:
+        with open(os.path.join(out_root,out_shp.split('.')[0] + outStr), 'wb') as outCSV:
             for failline in failList[num]:
                 outCSV.write(failline + '\n')
     if kml:
-        make_kml(os.path.join(outRoot,outShp))
+        make_kml(os.path.join(out_root,out_shp))
 
 if __name__ == "__main__":
-    import sys
-    main(sys.argv[1], sys.argv[2], sys.argv[3])
+    main()

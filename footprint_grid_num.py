@@ -42,7 +42,7 @@ def getparser():
     parser.add_argument('rlon', default=106, type=int, help='The right longitude value (degrees)')
     parser.add_argument('blat', default=25, type=int, help='The bottom latitude value (degrees)')
     parser.add_argument('ulat', default=50, type=int, help='The upper latitude value (degrees)')
-    parser.add_argument('UID_index', default='FID', type=str, help='A unique ID field from the input shapefile')
+    parser.add_argument('UID_index', default='FID', type=str, help='(Default: FID) A unique ID field from the reprojected version of the input shapefile')
     return parser
 
 def main():
@@ -63,7 +63,8 @@ def main():
     outIntersect = in_fn.replace('.shp','_INTERSECT_'+args.UID_index)
     #cell_size = .25 #degrees
 
-    print "\t[1] Create fishnet (i.e., vector grid), and reproject to a srs that matches that of the footprint shp"
+    print "\t[1] CREATE: fishnet (i.e., vector grid), and reproject to a srs that matches that of the footprint shp"
+    create_start_time = time.time()
     # Get EPSG of in_fn
     cmdStr = "gdalsrsinfo -o proj4 {}".format(os.path.join(root, in_fn))
     Cmd = subp.Popen(cmdStr, stdout=subp.PIPE, shell=True)
@@ -80,8 +81,13 @@ def main():
 
     Cmd = subp.Popen(cmdStr, stdout=subp.PIPE, shell=True)
     stdOut, err = Cmd.communicate()
+    create_end_time = time.time()
+    duration = (create_end_time-create_start_time)/60
+    print("\t\tElapsed CREATE time was %g minutes." % duration)
 
-    print "\t[2] Intersect 2 shps: fishnet and footprints"
+
+    print "\t[2] INTERSECT: 2 shps; fishnet and footprints"
+
     outIntersect_path = os.path.join(root,outIntersect+'.shp')
 
     try:
@@ -114,7 +120,8 @@ def main():
         print "\n\t!!!--- Problem with the intersection: "
         print "\n\t", e
 
-    print "\t[3] Project intersected shp to GEOG"
+    print "\t[3] PROJECT: intersected shp to GEOG"
+    proj_start_time = time.time()
     sufx = '_geog'
     cmdStr = "ogr2ogr -f 'ESRI Shapefile' -t_srs EPSG:{} {} {} -overwrite".format(str(4326),outIntersect_path.replace('.shp',sufx+'.shp'), outIntersect_path)
     Cmd = subp.Popen(cmdStr, stdout=subp.PIPE, shell=True)
@@ -127,13 +134,17 @@ def main():
     proj = 4326 #http://spatialreference.org/ref/epsg/wgs-84/
     outCountField = "count" #new field for output coverage shp
     #outAngleField = 'max_view_angle'
+    proj_end_time = time.time()
+    duration = (proj_end_time-proj_start_time)/60
+    print("\t\tElapsed PROJECT time was %g minutes." % duration)
 
 
     # #### POPULATE REFERENCE GRID CELL DICTIONARY WITH NTF FOOTPRINT INFO
 
     # In[5]:
 
-    print "\t[4] POPULATE REFERENCE GRID CELL DICTIONARY WITH FOOTPRINT INFO"
+    print "\t[4] POPULATE: reference grid cell dictionary with footprint info"
+    pop_start_time = time.time()
     in_intersect_path = os.path.join(root,in_intersect)
     ##print in_intersect_path
     drv = ogr.GetDriverByName('ESRI Shapefile')
@@ -143,6 +154,7 @@ def main():
     ntfDict = {}
 
     for ntf in ntfLyr: #each ntf is of type "feature"
+        print "\tUID_index: %s" %(args.UID_index)
         ID_index = ntf.GetFieldIndex(args.UID_index)
         ntfID = ntf.GetField(ID_index)
 
@@ -166,13 +178,16 @@ def main():
         cell_sizeStr.replace('.','-')
 
     print('\t\tRead '+ str(len(ntfDict))+' '+in_intersect+' poly features into '+str(ntfCellCount)+'/'+str(len(ntfGrid)) +' '+ cell_sizeStr+'-deg cells.\n')
-
+    pop_end_time = time.time()
+    duration = (pop_end_time-pop_start_time)/60
+    print("\t\tElapsed POPULATE time was %g minutes." % duration)
 
     # #### CREATE GRID SHP BASED ON REFERENCE GRID CELLS
 
     # In[6]:
 
-    print "\n\tCREATE GRID SHP BASED ON REFERENCE GRID CELLS"
+    print "\t[5] GRID: shp based on vector grid cells"
+    grid_start_time = time.time()
     gridShp = os.path.join(root,in_fn.replace(".shp","-GRIDnum-"+args.UID_index+".shp")) #+cell_sizeStr+"deg_grid.shp"
 
     if os.path.exists(gridShp): os.remove(gridShp)
@@ -235,6 +250,9 @@ def main():
     prj.write(epsg)
     prj.close()
 
+    grid_end_time = time.time()
+    duration = (grid_end_time-grid_start_time)/60
+    print("\t\tElapsed GRID time was %g minutes." % duration)
 
     # In[7]:
 
@@ -246,7 +264,8 @@ def main():
 
     # In[ ]:
 
-    print "\tCONVERT SHP TO TIF"
+    print "\t[6] CONVERT: shp to GeoTiff"
+    convert_start_time = time.time()
 
     #taken from shp-convert_shp_to_raster.py
     source_ds = ogr.Open(gridShp)
@@ -280,9 +299,13 @@ def main():
 
     coverage_ds = None
 
+    convert_end_time = time.time()
+    duration = (convert_end_time-convert_start_time)/60
+    print("\t\tElapsed CONVERT time was %g minutes." % duration)
+
     end_time = time.time()
     duration = (end_time-start_time)/60
-    print("\tTotal elapsed time was %g minutes." % duration)
+    print("\t\tTotal elapsed time was %g minutes." % duration)
 
 if __name__ == "__main__":
     ##import sys
