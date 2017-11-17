@@ -49,15 +49,21 @@ def run_asp(
     ):
 
     #n #8 shouldnt really need any of this. Variables needed:
-    # pairname; batchID; imageDate (optional, can get form pairname)
+    # pairname; batchID; prelog text file (eh)
 
-    outDir = os.path.split(imageDir)[0] # strip off the pairname subdir to get outDir '/discover/nobackup/projects/boreal_nga/ASP' # hardcode; should remain the same
-    shCode = os.path.join(os.path.split(outDir)[0], 'code', ) # now strip off ASP (outdir name) and get code dir
+    # imageDir is /discover/.../ASP/batch/pairname -- imageDir is now the outDir AND inDir
+    # batchDir is /discover/.../ASP/batch
+    # ddir is     /discover/.../ASP/
+    batchDir = os.path.split(imageDir)[0]
+    ddir = os.path.split(batchdir)[0] # strip off the pairname subdir to get outDir '/discover/nobackup/projects/boreal_nga/ASP/batch{}'
+    stereoCode = os.path.join(ddir, 'code', 'dg_stereo.sh') # now strip off ASP (outdir name) and get code dir
     start_main = timer()
     #T:
-    print outDir
-    print codeDir
-    print dgCode
+    print ddir
+    print batchDir
+    print imageDir
+    print stereoCode
+
 
     # hardcode stuff for now
     nodeName = platform.node()
@@ -92,10 +98,10 @@ def run_asp(
 ##    day = imageDate.split('-')[2]
 
     # For logging on the fly
-    logdir = os.path.join(outDir, 'Logs')
+    logdir = os.path.join(ddir, 'Logs')
     os.system('mkdir -p {}'.format(logdir)) # make log dir if it doesn't exist
     start_time = strftime("%Y%m%d-%H%M%S")
-    lfile = os.path.join(logdir, 'run_asp_LOG_{}__batch{}_{}_{}.txt'.format(pairname, batchID, start_time, nodeName)) #* 2/8: putting date/time before node so it's in chrono order
+    lfile = os.path.join(logdir, '"batch{}__{}__{}_{}_Log.txt'.format(batchID, pairname, start_time, nodeName)) #* 2/8: putting date/time before node so it's in chrono order
 
     so = se = open(lfile, 'w', 0)                       # open our log file
     sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0) # re-open stdout without buffering
@@ -111,7 +117,7 @@ def run_asp(
     print "\n"
 
     # print input parameters to log file:
-    print '-------runASP parameters:-------'
+    print '-------parameters:-------'
 ##    print 'mapprj = {}'.format(mapprj)
 ##    print 'doP2D = {}'.format(doP2D)
     print 'test = {}'.format(test)
@@ -120,12 +126,12 @@ def run_asp(
     print 'imageDir = {}'.format(imageDir)
     print '\nBEGIN: {}\n\n'.format(start_time)
 
-    print preLogText #mw 1/25: preLogText is now one big string
-    print "\n"
+    print "########################################\nQuery Log:\n{}\n########################################\n".format(preLogText)
 
 
     # now call the script
-    command = 'bash .{} {} true'.format(shCode, pairname)
+    print "Calling {} to perform stereo...\n\n".format(stereoCode)
+    command = 'bash .{} {} false'.format(stereoCode, pairname)
     print command #T
     subp.check_output([command]) # try this
 
@@ -509,7 +515,7 @@ def run_asp(
     # loop through all slurm files in pairname directory and rename/copy them to outSlurm dir -- if we are rerunning a pair process it will just name/recopy the slurm.out files to outSlurm
     inSlurmGlob = glob.glob(os.path.join(imageDir, 'slurm*out')) # list of all slurm files in pairname dir
     print inSlurmGlob #T
-    outSlurmDir = os.path.join(outDir, 'outSlurm') # doing just one big dir for outSlurm now. files will have batch names in them though
+    outSlurmDir = os.path.join(ddir, 'outSlurm') # doing just one big dir for outSlurm now. files will have batch names in them though
     os.system('mkdir -p {}'.format(outSlurmDir))
     print ''
     for inSlurm in inSlurmGlob: # loop through slurm files
@@ -519,10 +525,12 @@ def run_asp(
 
     print "\n Adding pair {} to completedPairs text file and recording run time information to spreadsheet".format(pairname)
 
-    # we got to this point, append the pairname to the completed pairs text file
-    if True: #os.path.isfile(PC_tif): # but only add to list if PC exists
-        comp_pair_dir = os.path.join(outDir, 'completedPairs')
-        os.system('mkdir -p %s' % comp_pair_dir)
+    #* check for the final ovr file and if it exists, add pair to list
+    finalFile = os.path.join(imageDir, '{}_ortho.tif.ovr'.format(pairname))
+    print finalFile #T
+    if os.path.isfile(finalFile):
+        comp_pair_dir = os.path.join(ddir, 'batchSummary')
+        os.system('mkdir -p {}'.format(comp_pair_dir))
         completed_pairs_txt = os.path.join(comp_pair_dir, 'batch{}_completedPairs.txt'.format(batchID))
         with open (completed_pairs_txt, 'a') as cp:
             cp.write('{}\n'.format(pairname))
@@ -534,7 +542,7 @@ def run_asp(
     # then print batchID, pairname, total_time (minutes and hours) to csv
 ##    strip1size = round(os.path.getsize(fullPathStrips[0])/1024.0/1024/1024, 3) #* PC_tif here instead
 ##    strip2size = round(os.path.getsize(fullPathStrips[1])/1024.0/1024/1024, 3)
-    run_times_csv = os.path.join(outDir, 'run_times.csv')
+    run_times_csv = os.path.join(ddir, 'run_times.csv')
     with open(run_times_csv, 'a') as rt:
         rt.write('{}, {}, {}, {}, {}, {}, {}\n'.format(batchID, pairname, total_time, (total_time/60), 'PC size goes here', nodeName))
 

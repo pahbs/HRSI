@@ -70,26 +70,26 @@ def check_pairname_continue(pairname, imageDir, job_script, preLogText): # outAt
 
     return (queryCopyPair, alreadyProcessed, preLogText)
 
-def get_projection_info(lat, lon):
-
-    utm_zone, easting, northing = convert.LLtoUTM(23, lat, lon)
-    utm_zone = utm_zone[:-1]
-
-    if abs(int(utm_zone)) < 10:
-        utm_zone = "0" + str(utm_zone)
-
-    if lat < 0:
-        ns = "S"
-        prj = "EPSG:327" + utm_zone
-    else:
-        ns = "N"
-        prj = "EPSG:326" + utm_zone
-    if lon < 0:
-        ew = "W"
-    else:
-        ew = "E"
-
-    return (utm_zone, prj, ns, ew)
+##def get_projection_info(lat, lon):
+##
+##    utm_zone, easting, northing = convert.LLtoUTM(23, lat, lon)
+##    utm_zone = utm_zone[:-1]
+##
+##    if abs(int(utm_zone)) < 10:
+##        utm_zone = "0" + str(utm_zone)
+##
+##    if lat < 0:
+##        ns = "S"
+##        prj = "EPSG:327" + utm_zone
+##    else:
+##        ns = "N"
+##        prj = "EPSG:326" + utm_zone
+##    if lon < 0:
+##        ew = "W"
+##    else:
+##        ew = "E"
+##
+##    return (utm_zone, prj, ns, ew)
 
 #def main(csv, inDir, batchID, mapprj=True, doP2D=True, rp=100): #* batchID to keep track of groups of pairs for processing # old way- without argparse
 def main(inTxt, inDir, batchID, noP2D, rp, debug): #the 4 latter args are optional #n vinTxt replaces csv
@@ -122,7 +122,7 @@ def main(inTxt, inDir, batchID, noP2D, rp, debug): #the 4 latter args are option
     if os.path.exists(inTxt):
         with open(inTxt, 'r') as it:
             pairnames = [f.strip() for f in it.readlines()]
-    print pairnames #T
+##    print pairnames #T
     nPairs = len(pairnames)
     # 2/13 if SHAPE* is in the header, replace with shape to header can be passed
 
@@ -192,7 +192,7 @@ def main(inTxt, inDir, batchID, noP2D, rp, debug): #the 4 latter args are option
 
     # also set up text file that will contain list of catIDs that are missing data
     missing_catID_file = os.path.join(os.path.dirname(inDir.rstrip('/')), 'missing_catID_lists', 'batch{}_missing_catIDs.txt'.format(batchID))
-    print missing_catID_file #T
+##    print missing_catID_file #T
     n_missing_catIDs = 0 # count starts at 0
     if os.path.isfile(missing_catID_file): os.remove(missing_catID_file) # if this missing cat ID file exists, erase it
 
@@ -251,7 +251,7 @@ def main(inTxt, inDir, batchID, noP2D, rp, debug): #the 4 latter args are option
 
         # create variables that use pairname
         imageDir = os.path.join(batchDir, pairname) # where data will be copied to on ADAPT
-        discover_imageDir = os.path.join(DISCdir, 'ASP', '{}'.format(pairname)) # where data will be copied to on DISCOVER (and thus the imageDir we need to write to code call) #n imageDir on DISC is no longer separated by batch
+        discover_imageDir = os.path.join(DISCdir, 'ASP', 'batch{}'.format(batchID), '{}'.format(pairname)) # where data will be copied to on DISCOVER (and thus the imageDir we need to write to code call) #n imageDir on DISC is no longer separated by batch
         job_script = os.path.join(imageDir, 'slurm_batch{}_{}.j'.format(batchID, pairname)) # individual job script
 
 
@@ -603,13 +603,13 @@ def main(inTxt, inDir, batchID, noP2D, rp, debug): #the 4 latter args are option
             time_copy = round((end_copy - start_copy)/60, 3)
             print "  Elapsed time to copy data for pair {} of {}, pairname {}: {} minutes\n".format(pair_count, nPairs, pairname, time_copy)
 
-
-            # try new method:
-             # now we are out of the catID loop and back at the pair loop- only wanna do DEM stuff once per pair
-            # [4.2] UTM zone
-            ##Q this will only get run if both catIDs have data in our archive---is that OK? or do we want this to be done if one catID exists? if so, move to before if len(catIDlist) < 2
-            ##Q move into function??
-            (utm_zone, prj, ns, ew) = get_projection_info(lat, lon)
+            # this occurs in post-processing step now
+##            # try new method:
+##             # now we are out of the catID loop and back at the pair loop- only wanna do DEM stuff once per pair
+##            # [4.2] UTM zone
+##            ##Q this will only get run if both catIDs have data in our archive---is that OK? or do we want this to be done if one catID exists? if so, move to before if len(catIDlist) < 2
+##            ##Q move into function??
+##            (utm_zone, prj, ns, ew) = get_projection_info(lat, lon)
 
 
             #n comment out old DEM stuff. know i dont need "if mapprj" but might need stuff before
@@ -718,8 +718,8 @@ def main(inTxt, inDir, batchID, noP2D, rp, debug): #the 4 latter args are option
             arg2 = 'header' #* need to reflext change in the workflow script
             arg3 = discover_imageDir # imageDir on workflow side #* update workflow
 ##            arg4 = mapprj #* update workflow
-            arg5 = prj
-            arg6 = utm_zone
+            arg5 = 'projection' #prj # temporar placeholder
+            arg6 = 'utm zone' # utm_zone # temp, no longer need
             arg7 = doP2D
             arg8 = str(rp)
             arg9 = preLogTextFile_DISC
@@ -799,6 +799,7 @@ def main(inTxt, inDir, batchID, noP2D, rp, debug): #the 4 latter args are option
 
     # lastly we need to append to the main processing summary: batchID/date, input csv file, number of pairs attempted, number succeeded, time to zip, total time
     main_summary = os.path.join(os.path.dirname(inDir.rstrip('/')), 'main_processing_summary.csv') # this is not in Paul_TTE/inASP but in Paul_TTE/
+    print main_summaryc #T
     with open(main_summary, 'a') as ms:
         ms.write('{}, {}, {}, {}, {}, {}, {}\n'.format(batchID, os.path.abspath(inTxt), n_submitted, nPairs, n_missing_catIDs, time_tarzip, time_main))
 
