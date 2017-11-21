@@ -1,11 +1,11 @@
 #!/bin/bash
 #
 # Stereo, point2dem, hillshades, & orthoimages for individual stereopairs on ADAPT
-# example of call:
+# example of call on ADAPT:
 # pairname=WV01_20140603_102001002F42A400_1020010031EBEF00
-# dg_stereo.sh $pairname
+# dg_stereo.sh $pairname true
 # or
-# dg_stereo.sh $pairname $nodeslist /stt/pubrepo/DEM/hrsi_dsm "$$crop" true 2 3
+# dg_stereo.sh $pairname true $nodeslist /att/pubrepo/DEM/hrsi_dsm "$$crop" true 2 3
 # or
 # pupsh "hostname ~ 'ecotone16'" "dg_stereo_par.sh /att/pubrepo/DEM/hrsi_dsm/list_pairname"
 #
@@ -34,16 +34,12 @@ function gettag() {
 
 # Required Args
 pairname=$1
-ADAPT=$2
-
-if [ "$ADAPT" = true ]; then
-    out_root=/att/pubrepo/DEM/hrsi_dsm
-else
-    out_root=/discover/nobackup/projects/boreal_nga/ASP
-fi
+ADAPT=$2   #true or false
 
 # Hardcoded vars
+out_root=/att/pubrepo/DEM/hrsi_dsm
 nodes=~/code/nodes_ecotone_all
+
 run_stereo=false
 rmfiles=true
 compress=false
@@ -116,7 +112,7 @@ if [ ! -e $in_left ] || [ ! -e $in_right  ] ; then
         done
 
         # Do the ADAPT db querying in parallel
-        if [ "$ADAPT" = true ] ; then
+        if $ADAPT ; then
             eval parallel --delay 2 -verbose -j 2 ::: $cmd_list
         fi
     fi
@@ -165,7 +161,7 @@ if [ "$e" -lt "5" ] && [ -e $in_left ] && [ -e $in_right ] ; then
     stereo_args+=" $in_left $in_right ${in_left%.*}.xml ${in_right%.*}.xml"
     stereo_args+=" ${out}"
 
-    if [ ! -z "$sgm" ] && [ "$sgm" = true ] ; then
+    if [ ! -z $sgm ] && [ $sgm = true ] ; then
         # SGM stereo runs. Not applicable for our DISCOVER processing
         if [ ! -z "$sa" ]; then
             sgm_opts+=" --stereo-algorithm $sa"
@@ -194,7 +190,7 @@ if [ "$e" -lt "5" ] && [ -e $in_left ] && [ -e $in_right ] ; then
         par_opts="--threads-singleprocess $ncpu"
         par_opts+=" --processes $ncpu"
         pc_merge_opts="--threads $ncpu --tile-size=$tile_size,$tile_size -o ${out}-PC.tif"
-        if [ ! -z "$nodes" ]; then
+        if [ ! -z $nodes ]; then
             par_opts+=" --nodes-list $nodes"
         fi
 
@@ -204,8 +200,8 @@ if [ "$e" -lt "5" ] && [ -e $in_left ] && [ -e $in_right ] ; then
         stereo_opts+=" --filter-mode 1"
         stereo_opts+=" --cost-mode 2"
 
-        if [ "$run_stereo" = true ] ; then
-            if [ "$ADAPT" = true ] ; then
+        if $run_stereo ; then
+            if $ADAPT ; then
                 echo; echo "nice -n5 parallel_stereo $par_opts $stereo_opts $stereo_args"; echo
                 eval time nice -n5 parallel_stereo -e $e $par_opts $stereo_opts $stereo_args
                 eval time pc_merge $pc_merge_opts ${out}*/out*PC.tif
@@ -253,7 +249,7 @@ else
           echo point2dem $dem_opts ${out}-PC.tif
           echo
 
-          if [ "$parallel_point2dem" = true ] ; then
+          if $parallel_point2dem ; then
               cmd=''
               cmd+="time point2dem $dem_opts ${out}-PC.tif; "
               cmd+="mv ${out}_${dem_res}m-DEM.tif ${out}-DEM_${dem_res}m.tif; "
@@ -349,7 +345,7 @@ else
         gdal_translate -tr ${mid_res} ${mid_res} ${out_ortho} ${out_ortho%.*}_${mid_res}m.tif
         gdaladdo -ro -r average ${out_ortho%.*}_${mid_res}m.tif 2 4 8 16 32 64 &
     fi
-    if [ "$ADAPT" = true ]; then
+    if $ADAPT ; then
         echo; echo "Writing symlinks"; echo
         for i in $out_ortho ${out_ortho%.*}_${mid_res}m.tif ; do
             ln -sfv ${i} ${out_root}/_ortho/$(basename ${i})
@@ -379,8 +375,8 @@ else
 	 	mv ${out}-L.tif ${out}-strip-L.tif
     fi
 
-    if [ "$rmfiles" = true ]; then
-        if [ "$ADAPT" = true ]; then
+    if $rmfiles ; then
+        if $ADAPT ; then
             echo; echo "Removing intermediate dirs"
             rm -rf ${out}*/
         fi
@@ -407,4 +403,4 @@ t_diff=$(expr "$t_end" - "$t_start")
 t_diff_hr=$(printf "%0.4f" $(echo "$t_diff/3600" | bc -l ))
 
 echo; date
-echo "Total processing time for pair ${pairname} in hrs: ${t_diff_hr}"
+echo "Total processing time in hrs: ${t_diff_hr}"
