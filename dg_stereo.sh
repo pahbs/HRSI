@@ -10,9 +10,10 @@
 # pupsh "hostname ~ 'ecotone16'" "dg_stereo_par.sh /att/pubrepo/DEM/hrsi_dsm/list_pairname"
 #
 # Dependencies for this script that wants python scripts to be sitting in your path dir:
-#	utm_proj_select.py		my edit from pygeotools; run this: pip install --user pygeotools
+#   utm_proj_select.py		my edit from pygeotools; run this: pip install --user pygeotools
 #   color_hs.py   		    run this: pip install --user imview
 #   query_db_catid.py		my script that returns the ADAPT dir of images of given catid
+#   ntfmos.sh
 #
 # Hardcoded:
 # The 'nodelist' txt file specifies your available VMs (nodes). It is only needed if you want to run parallel_stereo
