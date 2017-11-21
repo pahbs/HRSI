@@ -55,7 +55,8 @@ def run_asp(
     # batchDir is /discover/.../ASP/batch
     # ddir is     /discover/.../ASP/
     batchDir = os.path.split(imageDir)[0]
-    ddir = os.path.split(batchdir)[0] # strip off the pairname subdir to get outDir '/discover/nobackup/projects/boreal_nga/ASP/batch{}'
+    ASPdir = os.path.split(batchDir)[0] # strip off the pairname subdir to get ASPdir '/discover/nobackup/projects/boreal_nga/ASP/'
+    ddir = os.path.split(ASPdir)[0] # strip off ASP to get boreal_nga
     stereoCode = os.path.join(ddir, 'code', 'dg_stereo.sh') # now strip off ASP (outdir name) and get code dir
     start_main = timer()
     #T:
@@ -101,7 +102,7 @@ def run_asp(
     logdir = os.path.join(ddir, 'Logs')
     os.system('mkdir -p {}'.format(logdir)) # make log dir if it doesn't exist
     start_time = strftime("%Y%m%d-%H%M%S")
-    lfile = os.path.join(logdir, '"batch{}__{}__{}_{}_Log.txt'.format(batchID, pairname, start_time, nodeName)) #* 2/8: putting date/time before node so it's in chrono order
+    lfile = os.path.join(logdir, 'batch{}__{}__{}_{}_Log.txt'.format(batchID, pairname, start_time, nodeName)) #* 2/8: putting date/time before node so it's in chrono order
 
     so = se = open(lfile, 'w', 0)                       # open our log file
     sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0) # re-open stdout without buffering
@@ -131,9 +132,10 @@ def run_asp(
 
     # now call the script
     print "Calling {} to perform stereo...\n\n".format(stereoCode)
-    command = 'bash .{} {} false'.format(stereoCode, pairname)
+    command = 'bash {} {} false'.format(stereoCode, pairname)
     print command #T
-    subp.check_output([command]) # try this
+    subp.check_output([command])
+    #os.system(command) # try this for now
 
     # old workflow:
 ##    # get the header indices, try using pairname field first
