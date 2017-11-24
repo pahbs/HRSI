@@ -118,6 +118,8 @@ if [ ! -z "$ntf_list" ] ; then
     echo "Running dg_mosaic for ${#ids[@]} ids"
     echo
     ncpu=2
+    echo parallel -v --delay 1 -j ${ncpu} ::: ${arg_list} 
+    eval time parallel -v --delay 1 -j ${ncpu} ::: ${arg_list} 
 fi
 
 t_end=$(date +%s)
