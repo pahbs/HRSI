@@ -46,7 +46,7 @@ else
 fi
 
 # Hardcoded vars
-nodes=~/code/nodes_ecotone_all
+nodes=~/code/nodes_all
 
 run_stereo=true
 rmfiles=true
@@ -77,7 +77,7 @@ out=${out_root}/${pairname}/out
 stereo_opts=''
 stereo_args=''
 sgm_opts=''
-tile_size=256
+tile_size=2048
 
 if [ -e ${out}-strip-PC.tif ]; then
 	mv ${out}-strip-PC.tif ${out}-PC.tif
@@ -212,7 +212,7 @@ if [ "$e" -lt "5" ] && [ -e $in_left ] && [ -e $in_right ] ; then
             if [ "$ADAPT" = true ] ; then
                 echo; echo "nice -n5 parallel_stereo $par_opts $stereo_opts $stereo_args"; echo
                 eval time nice -n5 parallel_stereo -e $e $par_opts $stereo_opts $stereo_args
-                eval time pc_merge $pc_merge_opts ${out}*/out*PC.tif
+                eval time pc_merge $pc_merge_opts ${out}*/*PC.tif
             else
                 echo; echo "stereo $stereo_opts $stereo_args"; echo
                 eval time stereo -e $e $stereo_opts $stereo_args
@@ -389,6 +389,7 @@ else
             rm -rf ${out}*/
         fi
         echo; echo "Removing intermediate files"
+        rm ${out_root}/${pairname}/*_corr.*
         rm ${out}-log-stereo_parse*.txt
         rm ${out_root}/${pairname}/*.r100.tif
         rm ${out_root}/${pairname}/out.*
