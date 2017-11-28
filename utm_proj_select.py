@@ -12,7 +12,7 @@ import os
 import sys
 import math
 
-from osgeo import gdal, ogr, osr 
+from osgeo import gdal, ogr, osr
 
 from pygeotools.lib import geolib
 
@@ -23,7 +23,10 @@ def main(argv=None):
         ext = os.path.splitext(fn)[1]
         #Accept DigitalGlobe image metadata in xml
         if ext == '.xml':
-            from dgtools.lib import dglib
+            try:
+                from dgtools.lib import dglib
+            except Exception, e:
+                import dglib
             geom = dglib.xml2geom(fn)
         #Want to be better about handling arbitrary gdal formats here
         elif ext == '.tif' or ext == '.ras':
@@ -34,9 +37,9 @@ def main(argv=None):
     elif len(sys.argv[1:]) == 2:
         y = float(sys.argv[1])
         x = float(sys.argv[2])
-        #Force longitude -180 to 180 
+        #Force longitude -180 to 180
         x = (x+180) - math.floor((x+180)/360)*360 - 180
-        #Check that latitude is valid 
+        #Check that latitude is valid
         if y > 90 or y < -90:
             sys.exit('Invalid latitude: %f' % y)
         geom = geolib.xy2geom(x, y)
