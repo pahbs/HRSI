@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------
-# Name:        Get_stereo_pairs.py
+# Name:        get_stereopairs_v3.py
 # Purpose:
 #
 # Author:      pmontesa
@@ -33,43 +33,7 @@ def det3(a1, b1, c1, a2, b2, c2, a3, b3, c3):
     res = a1*b2*c3+a2*b3*c1+a3*b1*c2-a1*b3*c2-a2*b1*c3-a3*b2*c1
     return res
 
-def stereoAngles_old(alpha1,theta1,alpha2,theta2,x1,y1,z1,x2,y2,z2,lat,lon):
-
-    # Converts degrees to radians
-    dtr = math.atan(1.0)/45.0
-
-    # Set Earth Radius
-    r = 6378137   # WGS84 equatorial earth radius in meters
-
-    a = math.sin(alpha1*dtr) * math.sin(alpha2*dtr)+ math.cos(alpha1*dtr) * math.cos(alpha2*dtr)* math.cos((theta1-theta2)*dtr)
-    con_ang = round(math.acos(a)/dtr, 2)
-
-    x0 = r * math.cos(lat*dtr) * math.cos(lon*dtr)
-    y0 = r * math.cos(lat*dtr) * math.sin(lon*dtr)
-    z0 = r * math.sin(lat*dtr)
-
-    a = det3(y0,z0,1.0,y1,z1,1.0,y2,z2,1.0)
-    b = -det3(x0,z0,1.0,x1,z1,1.0,x2,z2,1.0)
-    c = det3(x0,y0,1.0,x1,y1,1.0,x2,y2,1.0)
-
-##    print alpha1,alpha2,theta1,theta2
-##    print a,b,c
-##    print x0,y0,z0
-
-    if int(a) == 0 or int(b) == 0 or int(c) == 0:
-        return (-99999,-99999,-99999)
-    else:
-        sc = abs(a*x0 + b*y0 + c*z0)/(math.sqrt(x0*x0+y0*y0+z0*z0) * math.sqrt(a*a + b*b + c*c))
-        bie_ang = round(math.asin(sc)/dtr, 2)
-        a = x1+x2-2*x0
-        b = y1+y2-2*y0
-        c = z1+z2-2*z0
-        sc = abs(a*x0 + b*y0 + c*z0)/(math.sqrt(x0*x0+y0*y0+z0*z0) * math.sqrt(a*a + b*b + c*c))
-        asym_ang = round(math.asin(sc) / dtr,2)
-        ##return (con_ang,asym_ang,bie_ang)
-        return (con_ang,bie_ang,asym_ang)
-
-def stereoAngles(alpha1,theta1,alpha2,theta2,x1,y1,z1,x2,y2,z2,lat,lon):
+def calc_stereoAngles(alpha1,theta1,alpha2,theta2,x1,y1,z1,x2,y2,z2,lat,lon):
     """
     alpha1  =   meanSatEl of image 1
     theta1  =   meanSatAz of image 1
@@ -191,10 +155,9 @@ def stereopairs(imageDir):
     Output a CSV file with stereo angles and input XML info
     """
     # Create header
-##    hdr = "catID,SatEl,SatAz,SunEl,SunAz,CTVA,ONVA,ephemX,ephemY,ephemZ,ullon,ullat,lllon,lllat,urlon,urlat,lrlon,lrlat,centLon,centLat"##+\
-##            ##"catID,meanSatEl,meanSatAz,meanSunEl,meanSunAz,ephemX,ephemY,ephemZ,ullon,ullat,lllon,lllat,urlon,urlat,lrlon,lrlat,centLon,centLat"
+
     hdr =   "left_scene,right_scene,"+\
-            "SatEl,SatAz,SunEl,SunAz,CTVA,ONVA,SatEl,SatAz,SunEl,SunAz,CTVA,ONVA,"+\
+            "SatEl,SatAz,SunEl,SunAz,CTVA,ONVA,SatEl,SatAz,SunEl,SunAz,ITVA,CTVA,ONVA,"+\
             "centLon,centLat,centLon,centLat,"+\
             "ephemX,ephemY,ephemZ,ephemX,ephemY,ephemZ,"+\
             "ullon,ullat,lllon,lllat,urlon,urlat,lrlon,lrlat,ullon,ullat,lllon,lllat,urlon,urlat,lrlon,lrlat" + ",ang_conv,ang_bie,ang_asym\n"
@@ -221,17 +184,10 @@ def stereopairs(imageDir):
                 if cat2 in each:
                     cat2list.append(each)
 
-##    # cat1list/cat2list are lists of all the xml files in the imageDir
-##    print cat1list #DEL
-##    print cat2list
-
-
-
 
     # Name output csv with the pairname and put in output ASP dir
     outCSV = os.path.join(imageDir, "{}.csv".format(pairname))
-    ##print("\tOuput CSV file: %s" %(outCSV))
-##    print "outCSV:", outCSV
+
     # Open a CSV for writing
     with open(outCSV,'wb') as csvfile:
 
@@ -246,7 +202,7 @@ def stereopairs(imageDir):
 
                     # Initialize vars
                     outline, catID = ('' for i in range(2))
-                    meanSatEl,meanSatAz,meanSunEl,meanSunAz,meanCTVA,meanONVA,\
+                    meanSatEl,meanSatAz,meanSunEl,meanSunAz,meanITVA,meanCTVA,meanONVA,\
                     ephemX,ephemY,ephemZ,\
                     ullat,ullon,lllat,lllon,urlat,urlon,lrlat,lrlon,\
                     maxLat,minLat,maxLon,minLon,centLat,centLon = (0 for i in range(23))
@@ -270,6 +226,8 @@ def stereopairs(imageDir):
                                 meanSunEl = float(line.replace('<','>').split('>')[2])
                             if 'MEANSUNAZ' in line:
                                 meanSunAz = float(line.replace('<','>').split('>')[2])
+                            if 'MEANINTRACKVIEWANGLE' in line:
+                                meanITVA = float(line.replace('<','>').split('>')[2])
                             if 'MEANCROSSTRACKVIEWANGLE' in line:
                                 meanCTVA = float(line.replace('<','>').split('>')[2])
                             if 'MEANOFFNADIRVIEWANGLE' in line:
@@ -324,15 +282,15 @@ def stereopairs(imageDir):
                             ephemZ_1 = ephemZ
 
                         # From both images:
-##                        # get catIDs
-##                        catIDs      +=  str(catID)      + ','
+                        ### get catIDs
+                        ##catIDs      +=  str(catID)      + ','
                         # Get scene names instead of catids
                         Names  =  leftXML + ',' + rightXML + ','
 
                         # gather Sun-Sensor Geometry Angles
                         SSGangles   +=  str(meanSatEl)  + ',' + str(meanSatAz) + ',' + \
                                         str(meanSunEl)  + ',' + str(meanSunAz) + ',' + \
-                                        str(meanCTVA)  + ',' + str(meanONVA) + ','
+                                        str(meanITVA)  + ',' + str(meanCTVA)  + ',' + str(meanONVA) + ','
 
                         # gather satellite ephemeris XYZ
                         ephemeris   +=  str(ephemX)     + ',' + str(ephemY) + ',' + str(ephemZ) + ','
@@ -346,23 +304,13 @@ def stereopairs(imageDir):
                                         str(urlon)      + ',' + str(urlat) + ',' + \
                                         str(lrlon)      + ',' + str(lrlat) + ','
 
-                        outline     +=  str(catID)      + ',' + \
-                                        str(meanSatEl)  + ',' + str(meanSatAz) + ',' + \
-                                        str(meanSunEl)  + ',' + str(meanSunAz) + ',' + \
-                                        str(meanCTVA)   + ',' + str(meanONVA) + ',' + \
-                                        str(ephemX)     + ',' + str(ephemY) + ',' + str(ephemZ) + ',' + \
-                                        str(ullon)      + ',' + str(ullat) + ',' + \
-                                        str(lllon)      + ',' + str(lllat) + ',' + \
-                                        str(urlon)      + ',' + str(urlat) + ',' + \
-                                        str(lrlon)      + ',' + str(lrlat) + ',' + \
-                                        str(centLon)    + ',' + str(centLat) + ','
 
                     # Calc stereo angles
-                    stereoAngs = stereoAngles(meanSatEl_1,meanSatAz_1,meanSatEl,meanSatAz,ephemX_1,ephemY_1,ephemZ_1,ephemX,ephemY,ephemZ,centLat,centLon)
-##                    print "stereoAngs:" # testing
-##                    print stereoAngs
+                    stereoAngs = calc_stereoAngles(meanSatEl_1,meanSatAz_1,meanSatEl,meanSatAz,ephemX_1,ephemY_1,ephemZ_1,ephemX,ephemY,ephemZ,centLat,centLon)
+                    ##print "stereoAngs:" # testing
+                    ##print stereoAngs
                     outCSVline = Names + SSGangles + centCoords + ephemeris + cornerCoords + str(stereoAngs[0]) + "," + str(stereoAngs[1]) + "," + str(stereoAngs[2])+'\n'
-##                    print outCSVline
+                    ##print outCSVline
 
                     # Write line
                     csvfile.write(outCSVline)
