@@ -3,17 +3,19 @@
 # Multi-res Filtering of ASP Point Clouds for estimating Forest Canopy Heights
 # 
 # formerly "test_point2dem.sh"
+# 
 # Example call:
 # pupsh "hostname ~ 'ecotone05'" "do_dem_filt-TEST.sh WV01_20110912_10200100157A5A00_1020010015E8D800 1 4 5 2 true true true true"
-#
+# or
+# pmontesa@ecotone05:~$ do_dem_filt-TEST.sh WV01_20110912_10200100157A5A00_1020010015E8D800 1 4 5 2 true true true true
+
 pairname=$1
 res_fine=$2			# the fine pixel res for DEMs
 res_coarse=$3		# the coarse pixel res for DEMs
-max_slope=$4
+max_slope=$4		# the max slope above which pixels will be masked out
 
-# Search radius (# pixels) used for point2dem filtering
-#	larger for denser forests, but will introduce errors on slopes
-search_rad=$5
+# Larger for denser forests, but will introduce errors on slopes
+search_rad=$5		# Search radius (# pixels) used for point2dem filtering 
 
 PUBREPO=$6		#Input data in /att/pubrepo/DEM/hrsi_dsm ? 
 DO_P2D=$7		#Do the point2dem block of this script?
