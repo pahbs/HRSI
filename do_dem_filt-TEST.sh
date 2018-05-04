@@ -189,8 +189,8 @@ for dz in `ls ${workdir}/${pairname}*dz_eul.tif` ; do
 done
 
 rm -v $workdir/out_*dz_eul*
-#rm -v $workdir/*slope*.tif
-#rm -v $workdir/*masked.tif
+rm -v $workdir/*slope*.tif
+rm -v $workdir/*masked.tif
 rm -v $workdir/*.vrt
 rm $workdir/*color.tif
 rm $workdir/*ramp.txt
