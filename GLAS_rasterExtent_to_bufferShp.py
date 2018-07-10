@@ -87,6 +87,14 @@ def create_pointShp_fromRasterExtent(rasterStack, outShpDir):
 
                 # Lastly, throw out point if the three conditions are not all met:
                 # FRir_qa_flg = 15 and satNdx < 2 and cld1_mswf_flg < 15
+                # test
+                try:
+                    print int(row_list[hdr_list.index('FRir_qaFlag')])
+                except IndexError:
+                    print row_list
+                    print hdr_list
+                    sys.exit()
+
                 if int(row_list[hdr_list.index('FRir_qaFlag')]) != 15 or \
                    int(row_list[hdr_list.index('satNdx')]) >=2 or \
                    int(row_list[hdr_list.index('cld1_mswf')]) >= 15:
