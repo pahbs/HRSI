@@ -6,8 +6,8 @@ Process: Get GCS extent from UTM raster, find corresponding GLAS .csv files, fil
 
 Notes:
    - To run the buffer portion you must have GEOS support enabled. On ADAPT: source /opt/PGSCplus-2.2.2/init-gdal.sh
-   - GLAS shots are excluded from output shapefile if they: are outside of raster extent, are missing columns, have longitude > 360, have a 'bad' record index (i.e. do not have a corresponding laser campaign/year)
-   - Three columns are added to output shapefile: uniqueID for zonal stats, laser ID, laser campaign year
+   - GLAS shots are excluded from output shapefile if they: are outside of raster extent, are missing columns, have longitude > 360, do not pass the 3 flag qualifications
+   - Four columns are added to output shapefile: uniqueID for zonal stats, laserID, shot year, and shot day (julian day). And the 0-360 longitude is replace by (-180, 180) long.
 """
 
 import os, sys
@@ -18,6 +18,7 @@ from osgeo import gdal,ogr,osr
 from GLAS_functions import Parameters as params
 import GLAS_functions as functions
 
+import datetime
 
 def create_pointShp_fromRasterExtent(rasterStack, outShpDir):
 
@@ -48,10 +49,10 @@ def create_pointShp_fromRasterExtent(rasterStack, outShpDir):
     for inCsv in GLAS_csv_list:
         with open(inCsv, 'r') as csvF:
 
-            # first get the column names from header, and create a list of fields (header plus others -- laserID, campaignYear, uniqueID)
+            # first get the column names from header, and create a list of fields (header plus others -- laserID, shotYear, shotDay, uniqueID) for output
             if not hdr_row: # Only do this is we are on the first csv
                 hdr_row = csvF.readline().strip()
-                fld_row = 'uniqueID,laserID,campaignYear,{}'.format(hdr_row)
+                fld_row = 'uniqueID,laserID,shotYear,shotDay,{}'.format(hdr_row)
                 hdr_list = hdr_row.split(',')
                 fld_list = fld_row.split(',')
                 for f in fld_list: outShp.field(f)
@@ -70,10 +71,7 @@ def create_pointShp_fromRasterExtent(rasterStack, outShpDir):
 ##                    print "cannot use row {}".format(row) # temp
                     continue # continue to the next point
 
-                # 6/12/2018: old way when we thought you could just subtract 360 from everything:
-##                lon = lon_uncorr - 360 # get standard longitude in GCS
-
-                # 6/12/2018: new way now that we know you only "correct" for eastern hemisphere longitudes
+                # only "correct" longitude for eastern hemisphere
                 if lon_uncorr > 180:
                     lon = lon_uncorr - 360
                 else: lon = lon_uncorr
@@ -81,13 +79,32 @@ def create_pointShp_fromRasterExtent(rasterStack, outShpDir):
 
                 # Now throw out point if it is outside a buffer of extent
                 extBuff = 0.00003 # in degrees
-                if (lat > ymax+extBuff) or (lat < ymin-extBuff) or (lon < xmin-extBuff) or (lon > xmax+extBuff):
+                if (lat > ymax+extBuff) or (lat < ymin-extBuff) or \
+                  (lon < xmin-extBuff) or (lon > xmax+extBuff):
 ##                    print "cannot use point {}, {}. outside of AOI extent".format(lat, lon) # temp
                     continue
 
-                # get the three additional columns and create the output row
+                # Lastly, throw out point if the three conditions are not all met:
+                # FRir_qa_flg = 15 and satNdx < 2 and cld1_mswf_flg < 15
+                if int(row_list[hdr_list.index('FRir_qa_flg')]) != 15 or \
+                   int(row_list[hdr_list.index('satNdx')]) >=2 or \
+                   int(row_list[hdr_list.index('cld1_mswf_flg')]) >= 15:
+
+                    print "cannot use point with flags:" # temp
+                    print row_list[hdr_list.index('FRir_qa_flg')], row_list[hdr_list.index('satNdx')], row_list[hdr_list.index('cld1_mswf_flg')] # temp
+                    continue
+
+                # get the additional columns and create the output row
                 rndx = int(row_list[hdr_list.index('rec_ndx')])
-                lID, year = functions.get_year_laserID_from_recndx(rndx)
+                lID, year = functions.get_year_laserID_from_recndx(rndx) # this might not return anything if recndx is not in list
+
+                # get the shot day (julian) and year from the date column
+                # Date column represents days since January 1, 2013
+                daysSinceStart = float(row_list[hdr_list.index('date')])
+                startDate = datetime.datetime.strptime('2003-01-01', "%Y-%m-%d")
+                shotDate = startDate + datetime.timedelta(days=daysSinceStart)
+                shotYear = shotDate.timetuple().tm_year
+                shotDay = shotDate.timetuple().tm_yday
 
 ##                # temp block
 ##                outRow = '{},{},{},{}'.format(uid, lID, year, row)
@@ -95,19 +112,20 @@ def create_pointShp_fromRasterExtent(rasterStack, outShpDir):
 ##                with open(testC, 'a') as tc:
 ##                    tc.write('{}\n'.format(outRow))
 
-                if not lID: continue #lID, year = '2aa', 2000 # temporary for now. Figure out with paul/guoqing
-                if len(row_list) != len(hdr_list): continue # temporary for now. Figure out with paul/guoqing
+##                if not lID: continue #lID, year = '2aa', 2000 # temporary for now. Figure out with paul/guoqing # don't skip anymore since we do have date
+                if len(row_list) != len(hdr_list): continue # temporary for now. Figure out with paul/guoqing. Hopefully should never be the case at this point
 
                 # At this point, we know we are adding this point to the shp
                 uid += 1
 
-                outRow = '{},{},{},{}'.format(uid, lID, year, row)
+                outRow = '{},{},{},{}'.format(uid, lID, shotYear, shotDay, row)
                 outRow = outRow.replace(str(lon_uncorr), str(lon)) # also replace the uncorrected longtidue with the corrected one.
                 outRow_list = outRow.split(',')
 
                 # now we can use the point/row to build the shp
                 outShp.point(lon,lat) # create point geometry
-                outShp.record(*tuple([outRow_list[f] for f, j in enumerate(fld_list)]))
+                outShp.record(*tuple([outRow_list[f] \
+                                            for f, j in enumerate(fld_list)]))
     if uid == 0:
         sys.exit("There were 0 GLAS shots within stack, cannot process. Quitting program")
     print "\n{} features added to shp".format(uid)
