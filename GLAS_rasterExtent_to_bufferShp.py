@@ -59,7 +59,7 @@ def create_pointShp_fromRasterExtent(rasterStack, outShpDir):
             else: h = csvF.readline().strip() # still need to skip the row
             print hdr_list
             for row in csvF.readlines():
-                print row
+
                 row = row.strip().strip(',') # some erroneous commas at the end
                 row_list = row.split(',')
 
