@@ -124,8 +124,7 @@ def create_pointShp_fromRasterExtent(rasterStack, outShpDir):
 
                 # now we can use the point/row to build the shp
                 outShp.point(lon,lat) # create point geometry
-                outShp.record(*tuple([outRow_list[f] \
-                                            for f, j in enumerate(fld_list)]))
+                outShp.record(*tuple([outRow_list[f] for f, j in enumerate(fld_list)]))
     if uid == 0:
         sys.exit("There were 0 GLAS shots within stack, cannot process. Quitting program")
     print "\n{} features added to shp".format(uid)
