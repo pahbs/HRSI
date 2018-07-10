@@ -57,8 +57,9 @@ def create_pointShp_fromRasterExtent(rasterStack, outShpDir):
                 fld_list = fld_row.split(',')
                 for f in fld_list: outShp.field(f)
             else: h = csvF.readline().strip() # still need to skip the row
-
+            print hdr_list
             for row in csvF.readlines():
+                print row
                 row = row.strip().strip(',') # some erroneous commas at the end
                 row_list = row.split(',')
 
@@ -121,7 +122,8 @@ def create_pointShp_fromRasterExtent(rasterStack, outShpDir):
                 outRow = '{},{},{},{}'.format(uid, lID, shotYear, shotDay, row)
                 outRow = outRow.replace(str(lon_uncorr), str(lon)) # also replace the uncorrected longtidue with the corrected one.
                 outRow_list = outRow.split(',')
-
+                print outRow_list
+                print fld_list
                 # now we can use the point/row to build the shp
                 outShp.point(lon,lat) # create point geometry
                 outShp.record(*tuple([outRow_list[f] for f, j in enumerate(fld_list)]))
