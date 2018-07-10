@@ -19,8 +19,9 @@ if [ "$TYPE" = HRSIDSM ] ; then
     COARSEN_PCT=0.25 # 1pct at 1m will be a 100m res ; 0.25 is good value for speed and accuracy
     OUT_SHP=HRSI_DSM_footprints_pct${COARSEN_PCT}
 
-    TMP_DIR=$HOME/tmp/tmp_outASP_${TYPE}
-    OUT_DIR=${RAS_DIR}/_footprints
+    TMP_DIR=$NOBACKUP/tmp/tmp_${TYPE}
+    OUT_DIR=/att/gpfsfs/atrepo01/data/hma_data/ASTER/_footprints
+    mkdir -p $TMP_DIR
     mkdir -p $OUT_DIR
     opts="-dsm"
 fi
@@ -76,7 +77,7 @@ if [ "$TYPE" = OTHER ] ; then
     COARSEN_PCT=$4
     OUT_SHP=footprints_$(basename ${RAS_DIR})_${RAS_EXT%.*}_pct${COARSEN_PCT}
 
-    TMP_DIR=$NOBACKUP/tmp/tmp_${TYPE}
+    TMP_DIR=$HOME/tmp/tmp_${TYPE}
     OUT_DIR=$5
 fi
 
@@ -112,9 +113,13 @@ args="$RAS_DIR $OUT_DIR"
 
 #time footprint_rasters.py -dsm -kml -ras_ext $RAS_EXT -out_shp ${OUT_SHP}_${now} -c_pct $COARSEN_PCT -tmp_dir $TMP_DIR $RAS_DIR $OUT_DIR -dir_exc_list _ v d c l
 
-time footprint_rasters.py $opts $args -dir_exc_list _ v d c l o
+cmd="footprint_rasters.py $opts $args -dir_exc_list _ v d c l o"
+echo $cmd
+eval $cmd
 
-zip ${OUT_SHP%.*}.zip ${OUT_SHP%.*}*
+zip ${OUT_DIR}/${OUT_SHP%.*}.zip ${OUT_DIR}/${OUT_SHP%.*}*
+
+rm -v ${TMP_DIR}/*
 
 t_end=$(date +%s)
 t_diff=$(expr $t_end - $t_start)

@@ -1,3 +1,4 @@
+#! /usr/bin/env python
 #-------------------------------------------------------------------------------
 # Name:        compute_windowsum.py
 # Purpose:
@@ -8,7 +9,8 @@
 # Copyright:   (c) pmontesa 2017
 # Licence:     <your licence>
 #-------------------------------------------------------------------------------
-#! /usr/bin/env python
+
+
 """Compute a sum per pixel from a moving window on a raster and return a GTiff
 
 """

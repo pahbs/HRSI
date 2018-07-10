@@ -1,11 +1,10 @@
 #!/usr/bin/python
-
 # Adapted from compute_dz.py
 # by
 #David Shean
 #dshean@gmail.com
 
-#Utility to compute elevation change (canopy height) from two input DEMs of different sun elevation angles
+#Utility to compute elevation change (canopy height) from two input DEMs
 # Added slope filter computed on warped version of dem1
 
 import sys
@@ -22,36 +21,46 @@ from pygeotools.lib import geolib
 from pygeotools.lib import warplib
 
 def slope_fltr(dem_fn, reduce_pct, diffndv, slopelim=(0.1, 40)):
-    
+    print "\n\tSlope filtering..."
     #Get a coarsened version of DEM on which to calc slope
-    #dem_fn_pct = os.path.splitext(dem_fn)[0]+'_'+ reduce_pct +'pct.vrt'
-    #run_os("gdal_translate -of VRT -r cubic -outsize " + reduce_pct + "% " + reduce_pct + "% " + dem_fn + " " + dem_fn_pct)
+    dem_fn_pct = os.path.splitext(dem_fn)[0]+'_'+ str(reduce_pct) +'pct.vrt'
+    print "\tReducing percent by %s..." %(str(reduce_pct))
+    run_os("gdal_translate -of VRT -r cubic -outsize " + str(reduce_pct) + "% " + str(reduce_pct) + "% " + dem_fn + " " + dem_fn_pct)
+
+    #print "\tReducing res to 10m..."
+    #dem_fn_10m = os.path.splitext(dem_fn)[0] + "_10m.tif"
+    #run_os("gdal_translate -r cubic -tr 10 10 " + dem_fn + " " + dem_fn_10m)
 
     # Run slope
-    #dem_slope = geolib.gdaldem_slope(dem_fn_pct)
-    dem_slope = geolib.gdaldem_slope(dem_fn)
+    dem_slope = geolib.gdaldem_slope(dem_fn_pct)
+    #dem_slope = geolib.gdaldem_slope(dem_fn)
+    #dem_slope = geolib.gdaldem_slope(dem_fn_10m)
     
     # Get original DEM
     dem = iolib.fn_getma(dem_fn)
     dem_ds = iolib.fn_getds(dem_fn)
 
-    # Set up mask at orig res
-    # Binary closing on the mask of the coarsened slope to un-mask small areas captured by the slope filter
-    # ---If coarsened with reduce_pct, how to go back to original res after this operation?
-    #struct1=morph.generate_binary_structure(2,2)
-    #dem_slope=morph.binary_dilation(dem_slope,structure=struct1,iterations=2).astype(dem_slope.dtype)
+	# **!! There is often a numpy mask error that results from reducing the res in this way:
+	# 		eg:	numpy.ma.core.MaskError: Mask and data not compatible: data size is 210888486, mask size is 8432248.
 
     # Apply mask from slope to original DEM
-    ###out_array = np.ma.array(dem, mask=np.ma.masked_outside(dem_slope, *slopelim).mask, keep_mask=True, fill_value=dem.fill_value)
-    dem_mask = np.ma.masked_outside(dem_slope, *slopelim).mask
-    out_array = np.ma.array(dem, mask=dem_mask , keep_mask=True, fill_value=dem.fill_value)
+    dem = np.ma.array(dem, mask=np.ma.masked_outside(dem_slope, *slopelim).mask, keep_mask=True, fill_value=dem.fill_value)
+
+    # -----Play with further mask adjustment combos
+
+    #dem = np.ma.array(dem, mask=malib.maskfill_edgeinclude(dem, iterations=5))
+    ## mask-maskfill..this runs but doesnt seem to do anything in addition to just the slope mask
+    #dem = np.ma.array(dem, mask=malib.maskfill(np.ma.masked_outside(dem_slope, *slopelim).mask))
+
+    #dem = np.ma.array(dem, mask=malib.mask_erode(dem, erode=True)) 
+    #dem = malib.mask_islands(dem)
 
     # Remove the slope raster now
     run_os("rm -f " + os.path.splitext(dem_fn)[0]+'_slope.tif')
 
     # Save the slope-filtered DEM to be used in the differencing
     dst_fn = os.path.splitext(dem_fn)[0]+'_slopefilt.tif'
-    iolib.writeGTiff(out_array, dst_fn, dem_ds, ndv=diffndv)
+    iolib.writeGTiff(dem, dst_fn, dem_ds, ndv=diffndv)
     return dst_fn
 
 
@@ -72,6 +81,9 @@ def getparser():
     parser = argparse.ArgumentParser(description="Compute difference between two rasters")
     parser.add_argument('fn1', type=str, help='Raster filename 1')
     parser.add_argument('fn2', type=str, help='Raster filename 2')
+    parser.add_argument('-tr', default='max', help='Output resolution (default: %(default)s)')
+    parser.add_argument('-te', default='intersection', help='Output extent (default: %(default)s)')
+    parser.add_argument('-t_srs', default='first', help='Output projection (default: %(default)s)')
     parser.add_argument('-max_slope', type=int, default=20, help='Max slope (degrees) that will be included')
     parser.add_argument('-slope_reduce_pct', type=int, default=20, help='The pct of the input dem res by which slope is initially coarsened before masking')
     parser.add_argument('-outdir', default=None, help='Output directory')
@@ -92,15 +104,17 @@ def main():
     if dem1_fn == dem2_fn:
         sys.exit('Input filenames are identical')
 
-    # Filter the hi sun elev (dem1) warp-trans-ref DEM to mask out steep slopes
-    #Apply slope filter
+    # Apply slope filter:
+    #    filter the hi sun elev (dem1) warp-trans-ref DEM to mask out steep slopes
+    #    * for the multi-res approach (using 2 diff res of the same data)
+	#		maybe filter both, at multiple resolutions?, to increase the num pixels masked
     dem1_slpfilt_fn = slope_fltr(dem1_fn, slope_reduce_pct, diffndv, slopelim=(0.1, max_slope))
 
     #fn_list = [dem1_fn, dem2_fn]
     fn_list = [dem1_slpfilt_fn, dem2_fn, ]
 
     print("Warping DEMs to same res/extent/proj")
-    dem1_ds, dem2_ds = warplib.memwarp_multi_fn(fn_list, extent='intersection', res='max')
+    dem1_ds, dem2_ds = warplib.memwarp_multi_fn(fn_list, extent=args.te, res=args.tr, t_srs=args.t_srs)
 
     outdir = args.outdir
     if outdir is None:

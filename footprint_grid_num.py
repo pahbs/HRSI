@@ -154,7 +154,7 @@ def main():
     ntfDict = {}
 
     for ntf in ntfLyr: #each ntf is of type "feature"
-        print "\tUID_index: %s" %(args.UID_index)
+        #print "\tUID_index: %s" %(args.UID_index)
         ID_index = ntf.GetFieldIndex(args.UID_index)
         ntfID = ntf.GetField(ID_index)
 

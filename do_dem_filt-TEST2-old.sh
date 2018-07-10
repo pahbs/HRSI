@@ -109,6 +109,24 @@ if [ "${DO_P2D}" = true ]; then
     done
     eval parallel -verbose -j 4 ::: $cmd_list
 
+    # Handle nmad
+    for filt in $filt_list ; do
+    if [ "$filt" = "nmad" ] ; then
+        
+        # Rename the nmad and do overviews in parallel
+        cmd_list=''
+
+        #for res in $res_list ; do
+            cmd=''
+            out_nmad=${workdir}/${pairname}_${res_fine}m-sr${search_rad_frmt}-nmad-DEM.tif
+            mv  $workdir/out_${res_fine}m-sr${search_rad_frmt}-nmad-DEM.tif $out_nmad
+            cmd="gdaladdo -ro -r average ${out_nmad} 2 4 8 16 32 64 ; "
+            cmd_list+=\ \'$cmd\'
+        #done
+
+        eval parallel -verbose -j 2 ::: $cmd_list
+    fi
+    done
 fi
 
 if [ "${DO_DZ}" = true ] ; then
@@ -116,12 +134,12 @@ if [ "${DO_DZ}" = true ] ; then
     echo; echo "Get a slope masks from 2 resolutions..."; echo
     rp_multi=100
     cmd_list=''
-    if [ ! -e "$workdir/out-DEM_24m_slopemasked.tif" ] ; then
-        cmd="slopemask_dem.py $workdir/out-DEM_24m.tif -max_slope ${max_slope} ; "
+    if [ ! -e "$workdir/out-DEM_24m_${rp_multi}pct_slope_mask.tif" ] ; then
+        cmd="compute_masked_slope.py $workdir/out-DEM_24m.tif -max_slope ${max_slope} -reduce_pct ${rp_multi} ; "
         cmd_list+=\ \'$cmd\'
     fi
-    if [ ! -e "$workdir/out-DEM_4m_slopemasked.tif" ] ; then
-        cmd="slopemask_dem.py $workdir/out-DEM_4m.tif -max_slope ${max_slope} ; "
+    if [ ! -e "$workdir/out-DEM_4m_${rp_multi}pct_slope_mask.tif" ] ; then
+        cmd="compute_masked_slope.py $workdir/out-DEM_4m.tif -max_slope ${max_slope} -reduce_pct ${rp_multi} ; "
         cmd_list+=\ \'$cmd\'
     fi
     eval parallel -verbose -j 2 ::: $cmd_list
@@ -135,15 +153,14 @@ if [ "${DO_DZ}" = true ] ; then
         
         for res in $res_list ; do
             cmd_list=''
-            cmd=''
             # !!!! PROBLEM; Applying slope mask to 1m DSM; getting 'Memory Error'
             dsm=$workdir/out_${res}m-sr${search_rad_frmt}-${filt}-DEM.tif
             
             if [ -e "$dsm" ] ; then
-                # These two must be in serial
-                cmd+="apply_mask.py -extent intersection ${dsm} $workdir/out-DEM_24m_slopemasked.tif ; "
-                cmd+="apply_mask.py -extent intersection ${dsm%.*}_masked.tif $workdir/out-DEM_4m_slopemasked.tif ; "
-                cmd_list+=\ \'$cmd\'  
+                cmd+="apply_mask.py -extent intersection ${dsm} $workdir/out-DEM_24m_${rp_multi}pct_slope_mask.tif ; "
+                cmd+="apply_mask.py -extent intersection ${dsm%.*}_masked.tif $workdir/out-DEM_4m_${rp_multi}pct_slope_mask.tif ; "
+                cmd_list+=\ \'$cmd\'
+                
             fi
             eval parallel -verbose -j 2 ::: $cmd_list
         done

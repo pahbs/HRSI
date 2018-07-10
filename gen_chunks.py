@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-
 import csv, math
 import argparse
 

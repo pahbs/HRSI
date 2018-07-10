@@ -1,7 +1,7 @@
 #!/bin/bash
 # 
 # Multi-res Filtering of ASP Point Clouds for estimating Forest Canopy Heights
-# 
+#  
 # formerly "test_point2dem.sh"
 # 
 # Example call:
@@ -92,13 +92,13 @@ if [ "${DO_P2D}" = true ]; then
 
         cmd=''
         if [ "$filt" = "min" ] ; then
-            res=4
+            res=${res_coarse}
         else
-            res=1
+            res=${res_fine}
         fi
         
         if [ -e $workdir/out_${res}m-sr${search_rad_frmt}-${filt}-DEM.tif ] ; then
-            echo; echo "DEM exists: out_${res}m-sr${search_rad_frmt}-${filt}-DEM.tif"; echo
+            echo "DEM exists: out_${res}m-sr${search_rad_frmt}-${filt}-DEM.tif"
         else
             echo "Get the $filt DEM at ${res}m using search radius ${search_rad}" 
             cmd+="point2dem --filter $filt $p2d_opts --tr $res -o $workdir/out_${res}m-sr${search_rad_frmt} $workdir/out-PC.tif ; "
@@ -106,15 +106,18 @@ if [ "${DO_P2D}" = true ]; then
             cmd_list+=\ \'$cmd\'
         fi
     done
-    eval parallel -verbose -j 4 ::: $cmd_list
-
+    if [ -z "$cmd_list" ] ; then
+        echo "DEMs already exist."
+    else
+        eval parallel -j 4 ::: $cmd_list
+    fi
 fi
 
 if [ "${DO_DZ}" = true ] ; then
 
     echo; echo "Get a slope masks from 2 resolutions..."; echo
     rp_multi=100
-    cmd_list=''
+    cmd_list=""
     if [ ! -e "$workdir/out-DEM_24m_slopemasked.tif" ] ; then
         cmd="slopemask_dem.py $workdir/out-DEM_24m.tif -max_slope ${max_slope} ; "
         cmd_list+=\ \'$cmd\'
@@ -123,58 +126,61 @@ if [ "${DO_DZ}" = true ] ; then
         cmd="slopemask_dem.py $workdir/out-DEM_4m.tif -max_slope ${max_slope} ; "
         cmd_list+=\ \'$cmd\'
     fi
-    eval parallel -verbose -j 2 ::: $cmd_list
+    if [ -z "$cmd_list" ] ; then
+        echo "Slopemasked DEMs already exist."
+    else
+        eval parallel -j 2 ::: $cmd_list
+    fi
 
- 
-    # Apply slope masks
-    
-        cmd_list=''
-        for filt in $filt_list ; do
-        
-        for res in $res_list ; do
-            ##cmd_list=''
-            cmd=''
-            # !!!! PROBLEM; Applying slope mask to 1m DSM; getting 'Memory Error'
-            dsm=$workdir/out_${res}m-sr${search_rad_frmt}-${filt}-DEM.tif
-            
-            if [ -e "$dsm" ] && [ ! -e "${dsm%.*}_masked_masked.tif" ] ; then
-                echo; echo "Apply slope masks from 2 resolutions..."
-                # These two must be in serial
-                cmd+="apply_mask_pm.py -extent intersection ${dsm} $workdir/out-DEM_24m_slopemasked.tif ; "
-                cmd+="apply_mask_pm.py -extent intersection ${dsm%.*}_masked.tif $workdir/out-DEM_4m_slopemasked.tif ; "
-                echo; echo $cmd ; echo
-                cmd_list+=\ \'$cmd\'  
-            fi
-            ##eval parallel -verbose -j 1 ::: $cmd_list
-        done
-        
-        done
-        eval parallel -verbose -j 2 ::: $cmd_list
-        
-    cmd_list=''
-
+    # Set intermediate tail; ground (min) and canopy (max) DSMs; and out_dz file name
     tail="-DEM_masked_masked"
+    min_dsm=$workdir/out_${res_coarse}m-sr${search_rad_frmt}-min${tail}.tif
+    max_dsm=$workdir/out_${res_fine}m-sr${search_rad_frmt}-max${tail}.tif
+    out_dz_tmp=${min_dsm%.*}_$(basename ${max_dsm%.*})_dz_eul.tif
+    out_dz=${workdir}/${pairname}_sr${search_rad_frmt}_$(echo $(basename ${out_dz_tmp}) | sed -e 's/out_//g' | sed -e "s/${tail}//g" )
+    
+    echo; echo $(basename ${out_dz}) ; echo
+    if [ ! -e "$out_dz" ] ; then
 
-    for min_dsm in $workdir/out_${res_coarse}m-sr${search_rad_frmt}-min${tail}.tif; do
-        for max_dsm in $workdir/out_${res_fine}m-sr${search_rad_frmt}-max${tail}.tif ; do                
-                out_dz_tmp=${min_dsm%.*}_$(basename ${max_dsm%.*})_dz_eul.tif
-                out_dz=${workdir}/${pairname}_sr${search_rad_frmt}_$(echo $(basename ${out_dz_tmp}) | sed -e 's/out_//g' | sed -e "s/${tail}//g" )
+        # Apply slope masks
+        cmd_list=''
+
+        for filt in $filt_list ; do 
+            for res in $res_list ; do
+                cmd=''
+                dsm=$workdir/out_${res}m-sr${search_rad_frmt}-${filt}-DEM.tif   
+                if [ -e "$dsm" ] && [ ! -e "${dsm%.*}_masked_masked.tif" ] ; then
+                    echo "Apply slope masks from 2 resolutions..."
+                    # These two must be in serial
+                    cmd+="apply_mask_pm.py -extent intersection ${dsm} $workdir/out-DEM_24m_slopemasked.tif ; "
+                    cmd+="apply_mask_pm.py -extent intersection ${dsm%.*}_masked.tif $workdir/out-DEM_4m_slopemasked.tif ; "
+                    echo; echo $cmd ; echo
+                    cmd_list+=\ \'$cmd\'  
+                fi
+                
+            done   
+        done
+
+        eval parallel -j 2 ::: $cmd_list
+        
+        cmd_list=''   
+
+        #for min_dsm in $workdir/out_${res_coarse}m-sr${search_rad_frmt}-min${tail}.tif; do
+        #for max_dsm in $workdir/out_${res_fine}m-sr${search_rad_frmt}-max${tail}.tif ; do                
                 
                 echo; echo "Min dsm, Max dsm: $(basename $min_dsm) , $(basename $max_dsm)"
                 echo $(basename $out_dz)
                 
-                cmd=''
-                
-                cmd+="compute_dz.py -tr $out_dz_res $min_dsm $max_dsm ;"
-                cmd+="mv ${out_dz_tmp} ${out_dz} ; "
-                cmd+="gdaladdo -ro -r average ${out_dz} 2 4 8 16 32 64 ; "
+                compute_dz.py -tr $out_dz_res $min_dsm $max_dsm
+                mv ${out_dz_tmp} ${out_dz}
+                gdaladdo -ro -r average ${out_dz} 2 4 8 16 32 64
 
-                cmd_list+=\ \'$cmd\'
-        done
-    done
-
-    eval parallel -verbose -j 4 ::: $cmd_list
+        #done
+        #done
+    fi
 fi
+
+echo; echo "Done with ${pairname}" ; echo
 
 # Make links to completed dZ tifs in a top level 'chm' dir for easy access
 for dz in `ls ${workdir}/${pairname}*dz_eul.tif` ; do
@@ -183,8 +189,8 @@ for dz in `ls ${workdir}/${pairname}*dz_eul.tif` ; do
 done
 
 #rm -v $workdir/out_*dz_eul*
-rm -v $workdir/*slope.tif
-rm -v $workdir/*_masked.tif
+rm ${workdir}/*slope.tif
+#rm ${workdir}/*_masked.tif
 #rm -v $workdir/*.vrt
 
 rm -rf /tmp/magick-*

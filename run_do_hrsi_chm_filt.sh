@@ -23,10 +23,10 @@ res_coarse=4		# the coarse pixel res for DEMs
 max_slope=10		# the max slope above which pixels will be masked out
 
 if [ "$SPARSE" = true ] ; then
-    echo; echo "Sparse forest filtering only."; echo
+    echo; echo "Sparse forest filtering only." ; echo
     search_rad_list="2"
 else
-    echo; echo "Dense forest filtering."; echo
+    echo; echo "Dense forest filtering." ; echo
     search_rad_list="2 5 10"
 fi
 
@@ -67,13 +67,13 @@ while read -r pairname; do
         rm ${main_dir}/${pairname}/bbox*
     else
         echo "No bbox specified."
-        p2d_extent=''
+        p2d_extent=""
         #p2d_extent="439903 7184954 446392 7174636"
     fi
 
-    for search_rad in $search_rad_list ; do
-        cmd="${script_name} $pairname ${res_fine} ${res_coarse} ${max_slope} ${search_rad} true true true \"$p2d_extent\"" 
-        echo $cmd
+    for search_rad in ${search_rad_list} ; do
+        cmd="${script_name} ${pairname} ${res_fine} ${res_coarse} ${max_slope} ${search_rad} true true true \"$p2d_extent\"" 
+        echo; echo $cmd ; echo
         eval $cmd | tee ${main_dir}/logs/${script_name%.*}_${hostN}_${pairname}_searchrad${search_rad}.log
     done
 
