@@ -85,22 +85,17 @@ def create_pointShp_fromRasterExtent(rasterStack, outShpDir):
 ##                    print "cannot use point {}, {}. outside of AOI extent".format(lat, lon) # temp
                     continue
 
+                # this needs to be before the filtering because it will fail if all cols arent there for a row
+                if len(row_list) != len(hdr_list): continue # temporary for now. Figure out with paul/guoqing
+
                 # Lastly, throw out point if the three conditions are not all met:
                 # FRir_qa_flg = 15 and satNdx < 2 and cld1_mswf_flg < 15
-                # test
-                try:
-                    print int(row_list[hdr_list.index('FRir_qaFlag')])
-                except IndexError:
-                    print row_list
-                    print hdr_list
-                    sys.exit()
-
                 if int(row_list[hdr_list.index('FRir_qaFlag')]) != 15 or \
                    int(row_list[hdr_list.index('satNdx')]) >=2 or \
                    int(row_list[hdr_list.index('cld1_mswf')]) >= 15:
 
-                    print "cannot use point with flags:" # temp
-                    print row_list[hdr_list.index('FRir_qaFlag')], row_list[hdr_list.index('satNdx')], row_list[hdr_list.index('cld1_mswf')] # temp
+##                    print "cannot use point with flags:" # temp
+##                    print row_list[hdr_list.index('FRir_qaFlag')], row_list[hdr_list.index('satNdx')], row_list[hdr_list.index('cld1_mswf')] # temp
                     continue
 
                 # get the additional columns and create the output row
@@ -122,7 +117,6 @@ def create_pointShp_fromRasterExtent(rasterStack, outShpDir):
 ##                    tc.write('{}\n'.format(outRow))
 
 ##                if not lID: continue #lID, year = '2aa', 2000 # temporary for now. Figure out with paul/guoqing # don't skip anymore since we do have date
-                if len(row_list) != len(hdr_list): continue # temporary for now. Figure out with paul/guoqing. Hopefully should never be the case at this point
 
                 # At this point, we know we are adding this point to the shp
                 uid += 1
