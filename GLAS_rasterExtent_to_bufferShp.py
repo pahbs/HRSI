@@ -58,6 +58,7 @@ def create_pointShp_fromRasterExtent(rasterStack, outShpDir):
                 for f in fld_list: outShp.field(f)
             else: h = csvF.readline().strip() # still need to skip the row
             print hdr_list
+            print inCsv
             for row in csvF.readlines():
 
                 row = row.strip().strip(',') # some erroneous commas at the end
