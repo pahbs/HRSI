@@ -156,7 +156,7 @@ def main(input_raster, input_polygon, outDir, zstats = params.default_zstats, lo
         functions.write_dict_toDatabase(outCsvFile, outDict, key_name)
         print '-----------'
 
-    print "Finished: {}".format(datetime.datetime.now().strftime("%m%d%Y-%H%M"))
+    print "\nFinished: {}".format(datetime.datetime.now().strftime("%m%d%Y-%H%M"))
 
     raster_epsg = functions.get_proj_info(input_raster)[2]
     if outputShapefile:
