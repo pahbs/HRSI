@@ -69,7 +69,7 @@ def create_pointShp_fromRasterExtent(rasterStack, outShpDir):
 
 
                 if lon_uncorr > 360: # Check 1: If longitude is > 360, throw it out
-##                    print "cannot use row {}".format(row) # temp
+                    print "cannot use row {}".format(row) # temp
                     continue # continue to the next point
 
                 # only "correct" longitude for eastern hemisphere
@@ -82,7 +82,7 @@ def create_pointShp_fromRasterExtent(rasterStack, outShpDir):
                 extBuff = 0.00003 # in degrees
                 if (lat > ymax+extBuff) or (lat < ymin-extBuff) or \
                   (lon < xmin-extBuff) or (lon > xmax+extBuff):
-##                    print "cannot use point {}, {}. outside of AOI extent".format(lat, lon) # temp
+                    print "cannot use point {}, {}. outside of AOI extent".format(lat, lon) # temp
                     continue
 
                 # Lastly, throw out point if the three conditions are not all met:
@@ -122,6 +122,7 @@ def create_pointShp_fromRasterExtent(rasterStack, outShpDir):
                 outRow = '{},{},{},{}'.format(uid, lID, shotYear, shotDay, row)
                 outRow = outRow.replace(str(lon_uncorr), str(lon)) # also replace the uncorrected longtidue with the corrected one.
                 outRow_list = outRow.split(',')
+                print outRow
                 print outRow_list
                 print fld_list
                 # now we can use the point/row to build the shp
