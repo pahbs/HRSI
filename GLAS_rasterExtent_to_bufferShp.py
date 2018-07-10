@@ -86,12 +86,12 @@ def create_pointShp_fromRasterExtent(rasterStack, outShpDir):
 
                 # Lastly, throw out point if the three conditions are not all met:
                 # FRir_qa_flg = 15 and satNdx < 2 and cld1_mswf_flg < 15
-                if int(row_list[hdr_list.index('FRir_qa_flg')]) != 15 or \
+                if int(row_list[hdr_list.index('FRir_qaFla')]) != 15 or \
                    int(row_list[hdr_list.index('satNdx')]) >=2 or \
-                   int(row_list[hdr_list.index('cld1_mswf_flg')]) >= 15:
+                   int(row_list[hdr_list.index('cld1_mswf')]) >= 15:
 
                     print "cannot use point with flags:" # temp
-                    print row_list[hdr_list.index('FRir_qa_flg')], row_list[hdr_list.index('satNdx')], row_list[hdr_list.index('cld1_mswf_flg')] # temp
+                    print row_list[hdr_list.index('FRir_qaFla')], row_list[hdr_list.index('satNdx')], row_list[hdr_list.index('cld1_mswf')] # temp
                     continue
 
                 # get the additional columns and create the output row
