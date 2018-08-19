@@ -90,7 +90,7 @@ def main(input_raster, input_polygon, outDir, zstats = params.default_zstats, lo
     if inKeyExists:
         with open(stack_inputLog, 'r') as sil:
             stackList = sil.readlines()
-        stackList = [s.strip('\n') for i, s in enumerate(stackList) if i>1] # at this point, stack list should have number of layers +1 (end time still there, removed first two lines)
+        stackList = [s.strip('\n') for i, s in enumerate(stackList) if i>0] # skip header line # at this point, stack list should have number of layers +1 (end time still there, removed first two lines)
 
     if logFile:
         print "See {} for log".format(logFile)
@@ -115,7 +115,7 @@ def main(input_raster, input_polygon, outDir, zstats = params.default_zstats, lo
     # loop through layers, run zonal stats and start to build the dictionary for the csv
     for l in range(0, n_layers):
 
-        if inKeyExists: layerName = os.path.basename(stackList[l]).strip('.tif') # Get the layer name from text file
+        if inKeyExists: layerName = '{}__{}'.format(stackList[l].split(',')[0], os.path.basename(stackList[l].split(',')[1]).strip('.tif')) # Get the layer name from text file: layerN (from log) __ layerName
         else: layerName = str(l+1)
 
         print "\nLayer {}: {}".format(l+1, layerName)
@@ -129,7 +129,7 @@ def main(input_raster, input_polygon, outDir, zstats = params.default_zstats, lo
         attr_fields = fields[0:(len(fields)-n_stats)]
         attr_fields.append('stackName') # want to add a field that has the name of the stack in case we want to combine later
         stat_fields = fields[-n_stats:] # get just the stat field names
-        stat_fields = ['{}__{}'.format(layerName, s) for s in stat_fields] # rename with layer name appended to stat
+        stat_fields = ['{}__{}'.format(s, layerName) for s in stat_fields] # rename with layer name appended to stat
 
 
         # dict method. the header is the first entry in the output dictionary. uniqueID is the key, others are the values
