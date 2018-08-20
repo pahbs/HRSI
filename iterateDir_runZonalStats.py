@@ -8,10 +8,10 @@ indir = '/att/gpfsfs/briskfs01/ppl/wcwagne1/3DSI/hrsi_chms/Stacks_20180717/'
 # indir is set up like this: indir/<pairname>/stack.tif'
 globDir = os.path.join(indir, '*', '*stack.tif')
 
-outdir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/Stacks_20180717'
-csvDir = os.path.join(outdir, 'csv')
-shpDir = os.path.join(outdir, 'shp')
-logDir = os.path.join(outdir, 'logs')
+outdir_base = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/Stacks_20180717'
+outDir = os.path.join(outdir_base, 'outputs')
+shpDir = os.path.join(outdir_base, 'shp')
+logDir = os.path.join(outdir_base, 'logs')
 
 for d in [csvDir, shpDir, logDir]:
     os.system('mkdir -p {}'.format(d))
