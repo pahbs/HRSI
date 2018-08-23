@@ -79,4 +79,4 @@ class ConvertToWRS:
                 res.append({'path': poly[1], 'row': poly[2]})
 
         # Return the results list to the user
-return res
+        return res
