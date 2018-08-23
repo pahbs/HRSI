@@ -144,7 +144,7 @@ def main(input_raster, input_polygon, bufferSize, outDir, zstats = params.defaul
         attr_fields = fields[0:(len(fields)-n_stats)]
         attr_fields.extend(['stackName', 'wrs2', 'bufferSize']) # Add fields: stackName, wrs2_pathrows, bufferSize
         stat_fields = fields[-n_stats:] # get just the stat field names
-        stat_fields = ['{}__{}'.format(layerN, s) for s in stat_fields] # rename with layer name appended to stat
+        stat_fields = ['{}__{}'.format(layerN, s) for s in stat_fields] # rename with layer number appended to stat
 
 
         # dict method. the header is the first entry in the output dictionary. uniqueID is the key, others are the values
@@ -166,6 +166,9 @@ def main(input_raster, input_polygon, bufferSize, outDir, zstats = params.defaul
                 lat,lon = [float(vals[fields.index('lat')]), float(vals[fields.index('lon')])]
                 pathrows = get_pathrows(lat,lon)
                 attr_vals.extend([stackName, pathrows, bufferSize]) # add attributes field names: stackName, pathrows, bufferSize
+                print attr_vals
+                print stackName, pathrows, bufferSize
+                print type(pathrows)
                 outDict[attr_vals[0]] = attr_vals[1:]
             outDict[attr_vals[0]].extend(stat_vals) # always add stat vals
 
