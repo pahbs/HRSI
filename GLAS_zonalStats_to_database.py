@@ -84,8 +84,11 @@ def database_to_shp(inCsv, outEPSG = 4326, latField = 'lat', lonField = 'lon'): 
         return outShpPath
 
 
-def main(input_raster, input_polygon, outDir, bufferSize, zstats = params.default_zstats, logFile = None, outputShapefile = True):
-
+def main(input_raster, input_polygon, bufferSize, outDir, zstats = params.default_zstats, logFile = None, outputShapefile = True):
+    print input_raster, input_polygon
+    print bufferSize
+    print outDir
+    print zstats
     stackName = os.path.basename(input_raster).strip('_stack.tif').strip('.tif')
     stack_inputLog = input_raster.replace('.tif', '_Log.txt')
     if not os.path.isfile(stack_inputLog):
