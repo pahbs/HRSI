@@ -152,13 +152,15 @@ def main(input_raster, input_polygon, outDir, zstats = params.default_zstats, lo
 
             fields = [str(s) for s in zonalStatsDict[i]['properties'].keys()]
             vals = [str(s) for s in zonalStatsDict[i]['properties'].values()]
-            print fields
-            print vals
+
             attr_vals = vals[0:(len(fields)-n_stats)]
-            attr_vals.append(stackName) # add attributes: stackName, pathrows, bufferSize
             stat_vals = vals[-n_stats:] # get just the statistics
 
-            if l == 0: outDict[attr_vals[0]] = attr_vals[1:] # if we are on layer 1, start dict entry with attribute values
+            if l == 0: # if we are on layer 1, get & add other attributes for row:
+                lat,lon = [float(vals[fields.index('lat')]), float(vals[fields.index('lon')])]
+                pathrows = get_pathrows(lat,lon)
+                attr_vals.append(stackName, pathrows, bufferSize) # add attributes field names: stackName, pathrows, bufferSize
+                outDict[attr_vals[0]] = attr_vals[1:]
             outDict[attr_vals[0]].extend(stat_vals) # always add stat vals
 
 
