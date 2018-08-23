@@ -32,7 +32,7 @@ def main(dataStack, bufferSize, shpDir, outDir, zstats, logDir):
     buffShp = GLAS_rasterExtent_to_bufferShp.main(dataStack, bufferSize, shpDir, logFile)
 
     # get zonal stats and write to csv:
-    outCsvFile, outShp = GLAS_zonalStats_to_database.main(dataStack, buffShp, outDir, zstats, logFile)
+    outCsvFile, outShp = GLAS_zonalStats_to_database.main(dataStack, buffShp, bufferSize, outDir, zstats, logFile)
 
     print "\n\nOutput csv: {}".format(outCsvFile)
     if outShp: print "Output shapefile: {}".format(outShp)
