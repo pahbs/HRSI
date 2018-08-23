@@ -84,7 +84,7 @@ def database_to_shp(inCsv, outEPSG = 4326, latField = 'lat', lonField = 'lon'): 
         return outShpPath
 
 
-def main(input_raster, input_polygon, outDir, zstats = params.default_zstats, logFile = None, outputShapefile = True):
+def main(input_raster, input_polygon, outDir, bufferSize, zstats = params.default_zstats, logFile = None, outputShapefile = True):
 
     stackName = os.path.basename(input_raster).strip('_stack.tif').strip('.tif')
     stack_inputLog = input_raster.replace('.tif', '_Log.txt')
@@ -139,7 +139,7 @@ def main(input_raster, input_polygon, outDir, zstats = params.default_zstats, lo
         fields = [str(s) for s in zonalStatsDict[0]['properties'].keys()]
         # split the fields and values based on attributes and statistics
         attr_fields = fields[0:(len(fields)-n_stats)]
-        attr_fields.append('stackName', 'wrs2', 'bufferSize') # Add fields: stackName, wrs2_pathrows, bufferSize
+        attr_fields.extend(['stackName', 'wrs2', 'bufferSize']) # Add fields: stackName, wrs2_pathrows, bufferSize
         stat_fields = fields[-n_stats:] # get just the stat field names
         stat_fields = ['{}__{}'.format(layerN, s) for s in stat_fields] # rename with layer name appended to stat
 
@@ -162,7 +162,7 @@ def main(input_raster, input_polygon, outDir, zstats = params.default_zstats, lo
             if l == 0: # if we are on layer 1, get & add other attributes for row:
                 lat,lon = [float(vals[fields.index('lat')]), float(vals[fields.index('lon')])]
                 pathrows = get_pathrows(lat,lon)
-                attr_vals.append(stackName, pathrows, bufferSize) # add attributes field names: stackName, pathrows, bufferSize
+                attr_vals.extend([stackName, pathrows, bufferSize]) # add attributes field names: stackName, pathrows, bufferSize
                 outDict[attr_vals[0]] = attr_vals[1:]
             outDict[attr_vals[0]].extend(stat_vals) # always add stat vals
 
@@ -181,7 +181,7 @@ def main(input_raster, input_polygon, outDir, zstats = params.default_zstats, lo
 
 if __name__ == "__main__":
 
-    # Arguments passed to this process: dataStack, buffShp, outDir, zstats (optional, defaults to median, mean, std, nmad), logFile (optional). refer to buffer script for changes needed to make this standalone
+    # Arguments passed to this process: dataStack, buffShp, bufferSize, outDir, zstats (optional, defaults to median, mean, std, nmad), logFile (optional). refer to buffer script for changes needed to make this standalone
 ##    poly = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/zonal_data/WV02_20160904_103001005CB63300_103001005CB00300_Bonanza_Creek_300kHz_Jul2014_l9s622_buffer-15m.shp'
 ##    rast = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/zonal_data/WV02_20160904_103001005CB63300_103001005CB00300_Bonanza_Creek_300kHz_Jul2014_l9s622_stack.tif'
     if len(sys.argv) == 7:

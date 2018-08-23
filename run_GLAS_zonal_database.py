@@ -16,7 +16,7 @@ def main(dataStack, bufferSize, shpDir, outDir, zstats, logDir):
 
     if not os.path.isfile(dataStack):
         print "Input raster {} does not exist. Quitting program".format(dataStack)
-        return None
+        return None, None
 
     GLAS_csv_dir = params.GLAS_csv_dir # where input GLAS csv's are located (Northern latitudes)
 
