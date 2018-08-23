@@ -13,6 +13,14 @@ Could work standalone if you provide the following command line inputs:
     * = Required parameter
 """
 
+def get_pathrows(lat, lon):
+    import get_wrs
+
+    result = get_wrs.ConvertToWRS().get_wrs(lat, lon)
+    pr_list = ['{}{}'.format(str(i["path"]).zfill(3), str(i["row"]).zfill(3)) for i in result]
+
+    return ','.join(pr_list)
+
 def get_nmad(a, c=1.4826): # this gives the same results as the dshean's method but does not need all the other functions
     import numpy as np
     import warnings
@@ -127,7 +135,7 @@ def main(input_raster, input_polygon, outDir, zstats = params.default_zstats, lo
         fields = [str(s) for s in zonalStatsDict[0]['properties'].keys()]
         # split the fields and values based on attributes and statistics
         attr_fields = fields[0:(len(fields)-n_stats)]
-        attr_fields.append('stackName') # want to add a field that has the name of the stack in case we want to combine later
+        attr_fields.append('stackName')#, 'wrs2_pathrows', 'bufferSize') # Add fields: stackName, wrs2_pathrows, bufferSize
         stat_fields = fields[-n_stats:] # get just the stat field names
         stat_fields = ['{}__{}'.format(s, layerName) for s in stat_fields] # rename with layer name appended to stat
 
@@ -144,9 +152,10 @@ def main(input_raster, input_polygon, outDir, zstats = params.default_zstats, lo
 
             fields = [str(s) for s in zonalStatsDict[i]['properties'].keys()]
             vals = [str(s) for s in zonalStatsDict[i]['properties'].values()]
-
+            print fields
+            print vals
             attr_vals = vals[0:(len(fields)-n_stats)]
-            attr_vals.append(stackName) # add name of stack to attribute values list
+            attr_vals.append(stackName) # add attributes: stackName, pathrows, bufferSize
             stat_vals = vals[-n_stats:] # get just the statistics
 
             if l == 0: outDict[attr_vals[0]] = attr_vals[1:] # if we are on layer 1, start dict entry with attribute values
