@@ -19,7 +19,8 @@ def get_pathrows(lat, lon):
     result = get_wrs.ConvertToWRS().get_wrs(lat, lon)
     pr_list = ['{}{}'.format(str(i["path"]).zfill(3), str(i["row"]).zfill(3)) for i in result]
 
-    return ','.join(pr_list)
+    #return '"{}"'.format(','.join(pr_list))
+    return ';'.join(pr_list)
 
 def get_nmad(a, c=1.4826): # this gives the same results as the dshean's method but does not need all the other functions
     import numpy as np
