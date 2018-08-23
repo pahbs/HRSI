@@ -184,6 +184,8 @@ if __name__ == "__main__":
     # Arguments passed to this process: dataStack, buffShp, bufferSize, outDir, zstats (optional, defaults to median, mean, std, nmad), logFile (optional). refer to buffer script for changes needed to make this standalone
 ##    poly = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/zonal_data/WV02_20160904_103001005CB63300_103001005CB00300_Bonanza_Creek_300kHz_Jul2014_l9s622_buffer-15m.shp'
 ##    rast = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/zonal_data/WV02_20160904_103001005CB63300_103001005CB00300_Bonanza_Creek_300kHz_Jul2014_l9s622_stack.tif'
+    print sys.argv
+    print len(sys.argv)
     if len(sys.argv) == 7:
         main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6])
     if len(sys.argv) == 6:
