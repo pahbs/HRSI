@@ -123,8 +123,12 @@ def main(input_raster, input_polygon, outDir, zstats = params.default_zstats, lo
     # loop through layers, run zonal stats and start to build the dictionary for the csv
     for l in range(0, n_layers):
 
-        if inKeyExists: layerName = '{}__{}'.format(stackList[l].split(',')[0], os.path.basename(stackList[l].split(',')[1]).strip('.tif')) # Get the layer name from text file: layerN (from log) __ layerName
-        else: layerName = str(l+1)
+        if inKeyExists:
+            layerN = stackList[l].split(',')[0]
+            layerName = os.path.basename(stackList[l].split(',')[1]).strip('.tif') # Get the layer name from text file
+        else:
+            layerN = str(l+1)
+            layerName = str(l+1)
 
         print "\nLayer {}: {}".format(l+1, layerName)
 
@@ -135,9 +139,9 @@ def main(input_raster, input_polygon, outDir, zstats = params.default_zstats, lo
         fields = [str(s) for s in zonalStatsDict[0]['properties'].keys()]
         # split the fields and values based on attributes and statistics
         attr_fields = fields[0:(len(fields)-n_stats)]
-        attr_fields.append('stackName')#, 'wrs2_pathrows', 'bufferSize') # Add fields: stackName, wrs2_pathrows, bufferSize
+        attr_fields.append('stackName', 'wrs2', 'bufferSize') # Add fields: stackName, wrs2_pathrows, bufferSize
         stat_fields = fields[-n_stats:] # get just the stat field names
-        stat_fields = ['{}__{}'.format(s, layerName) for s in stat_fields] # rename with layer name appended to stat
+        stat_fields = ['{}__{}'.format(layerN, s) for s in stat_fields] # rename with layer name appended to stat
 
 
         # dict method. the header is the first entry in the output dictionary. uniqueID is the key, others are the values
@@ -152,7 +156,6 @@ def main(input_raster, input_polygon, outDir, zstats = params.default_zstats, lo
 
             fields = [str(s) for s in zonalStatsDict[i]['properties'].keys()]
             vals = [str(s) for s in zonalStatsDict[i]['properties'].values()]
-
             attr_vals = vals[0:(len(fields)-n_stats)]
             stat_vals = vals[-n_stats:] # get just the statistics
 
