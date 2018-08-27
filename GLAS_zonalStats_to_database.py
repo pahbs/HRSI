@@ -86,12 +86,23 @@ def database_to_shp(inCsv, outEPSG = 4326, latField = 'lat', lonField = 'lon'): 
         return outShpPath
 
 def add_to_db(outDbCsv, outDbShp, inCsv, epsg): # given an input csv we wanna add, add to the output Csv, then write contents to output Shp
-
+    import csv
     # First write the database csv
     if not os.path.isfile(outDbCsv): # if csv does not already exist...
         shutil.copy(inCsv, outDbCsv) # make a copy of the single csv to the output db
     else: # if the csv does exist
         print "{} does exist".format(outDbCsv)
+        with open(outDbCsv, 'r') as odc:
+            existingDb = list(csv.reader(odc))
+        print existingDb
+        print len(existingDb)
+
+        with open(inCsv, 'r') as ic:
+            addDb = list(csv.reader(ic))
+
+        print ''
+        print addDb
+        print len(addDb)
 ##        # read exising db into a list
 ##        # read csv to be added into list
 ##        # for each line, if line does not already exist in db, add it to csv
