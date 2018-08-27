@@ -12,7 +12,7 @@ import GLAS_rasterExtent_to_bufferShp
 import GLAS_zonalStats_to_database
 import os, sys
 
-def main(dataStack, bufferSize, shpDir, outDir, zstats, logDir):
+def main(dataStack, bufferSize, shpDir, outDir, zstats, logDir, mainDatabasePrefix):
 
     if not os.path.isfile(dataStack):
         print "Input raster {} does not exist. Quitting program".format(dataStack)
@@ -32,13 +32,12 @@ def main(dataStack, bufferSize, shpDir, outDir, zstats, logDir):
     buffShp = GLAS_rasterExtent_to_bufferShp.main(dataStack, bufferSize, shpDir, logFile)
 
     # get zonal stats and write to csv:
-    outCsvFile, outShp = GLAS_zonalStats_to_database.main(dataStack, buffShp, bufferSize, outDir, zstats, logFile)
+    outCsvFile, outShp = GLAS_zonalStats_to_database.main(dataStack, buffShp, bufferSize, outDir, zstats, logFile, mainDatabasePrefix)
 
     print "\n\nOutput csv: {}".format(outCsvFile)
     if outShp: print "Output shapefile: {}".format(outShp)
 
     return outCsvFile, outShp
-
 
 if __name__ == '__main__':
 
@@ -50,8 +49,10 @@ if __name__ == '__main__':
     ap.add_argument("-outDir", default = params.default_outCsvDir, help = "Output csv directory. Default = {}".format(params.default_outCsvDir)) # where the output csv's will go. default dir is stored in functions.py and can be changed if need be
     ap.add_argument("-zstats", default = params.default_zstats, help = "Zonal stats. Default = {}".format(params.default_zstats))
     ap.add_argument("-logDir", default = params.default_logdir, help = "Directory for logging output. Default = {}".format(params.default_logdir))
+    ap.add_argument("-mainDatabasePrefix", default = params.default_mainDatabase, help = "Path and file prefix for running database csv/shp. If extension is provided, exact file will be use. Otherwise, buffer will be appended. Default = {}".format(params.default_mainDatabase))
     #ap.add_argument("-slopeThresh", default = 10, type = int, help = "Slope threshold")
-
+    # addWrs2 ? default True
+    # outputShapefile ? default True
     kwargs = vars(ap.parse_args()) # parse args and convert to dict
 
     main(**kwargs) # run main with arguments

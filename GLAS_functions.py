@@ -16,7 +16,9 @@ class Parameters():
     default_outCsvDir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/zonal_outputs' # default directory for output csv's
     default_shpDir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/zonal_data' # where created shapefiles will go unless otherwise specified
     default_logdir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/logs'
-    default_zstats = "median mean std nmad"
+    default_zstats = "median mean std nmad min max"
+
+    default_mainDatabase = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/3DSI_GLAS_stats_database'#__{}'.format(datetime.datetime.now().strftime("%Y%m%d")) # will end in either __15m.csv or __15m.shp (depending on buffer size)
 
 
 def getWKT_PRJ(epsg_code): # generate a .prj file based off epsg from input

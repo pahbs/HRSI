@@ -192,7 +192,7 @@ def create_bufferShp_fromPointShp(inShpPath, bufferSize):
     copyfile(inShpPath.replace('.shp', '.prj'), buffShpPath.replace('.shp', '.prj'))
     os.system('rm {}'.format(inShpPath.replace('.shp', '.*'))) # remove point shp
 
-    print "\nCreated {}\n----------------------------------------------------------------------------\n".format(buffShpPath)
+    print "\nCreated {}\n".format(buffShpPath)
 
     return buffShpPath
 
@@ -205,8 +205,12 @@ def main(inStack, bufferDist, shpDir, logFile = None):
         os.dup2(so.fileno(), sys.stdout.fileno()) # redirect stdout and stderr to the log file opened above
         os.dup2(se.fileno(), sys.stderr.fileno())
 
+    print "Begin creating buffered shp: {}\n".format(datetime.datetime.now().strftime("%m%d%Y-%H%M"))
+
     pointShp = create_pointShp_fromRasterExtent(inStack, shpDir)
     outBuffShp = create_bufferShp_fromPointShp(pointShp, bufferDist)
+
+    print "Finished creating buffered shp: {}\n----------------------------------------------------------------------------\n".format(datetime.datetime.now().strftime("%m%d%Y-%H%M"))
 
     return outBuffShp
 

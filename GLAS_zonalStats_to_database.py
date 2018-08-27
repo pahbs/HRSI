@@ -4,6 +4,7 @@ import datetime
 from osgeo import gdal, ogr
 import GLAS_functions as functions
 from GLAS_functions import Parameters as params
+import shutil
 
 """
 This script takes as input a zone polygon (buffered GLAS shots) and raster stack from which statistics will be retrived and writes them + attributes to an ouput csv
@@ -84,18 +85,44 @@ def database_to_shp(inCsv, outEPSG = 4326, latField = 'lat', lonField = 'lon'): 
         print 'rm {}'.format(outShpPath_wgs.replace('.shp', '.*'))
         return outShpPath
 
+def add_to_db(outDbCsv, outDbShp, inCsv, epsg): # given an input csv we wanna add, add to the output Csv, then write contents to output Shp
 
-def main(input_raster, input_polygon, bufferSize, outDir, zstats = params.default_zstats, logFile = None, outputShapefile = True):
-    print input_raster, input_polygon
-    print bufferSize
-    print outDir
-    print zstats
+    # First write the database csv
+    if not os.path.isfile(outDbCsv): # if csv does not already exist...
+        shutil.copy(inCsv, outDbCsv) # make a copy of the single csv to the output db
+    else: # if the csv does exist
+        print "{} does exist".format(outDbCsv)
+##        # read exising db into a list
+##        # read csv to be added into list
+##        # for each line, if line does not already exist in db, add it to csv
+
+    # lastly, write the accumulated output csv db to shp
+    if os.path.exists(outDbShp): os.rename(outDbShp, outDbShp.replace('.shp', '__old.shp')) # first rename the existing shp db if it exists
+    database_to_shp(outDbCsv, epsg) # then create shp, outDbShp will be same name/path as .csv but with .shp extension
+
+
+def main(input_raster, input_polygon, bufferSize, outDir, zstats = params.default_zstats, logFile = None, addWrs2 = True, outputShapefile = True, mainDatabasePrefix = params.default_mainDatabase):
+
+    print "Begin running zonal stats: {}\n".format(datetime.datetime.now().strftime("%m%d%Y-%H%M"))
+
+    # set up the output csv/shp
+    if not mainDatabasePrefix.endswith('.csv') and not mainDatabasePrefix.endswith('.shp'):
+        outDatabaseCsv = '{}_{}m.csv'.format(mainDatabasePrefix, bufferSize)
+        outDatabaseShp = '{}_{}m.shp'.format(mainDatabasePrefix, bufferSize)
+    else:
+        if mainDatabasePrefix.endswith('.csv'):
+            outDatabaseCsv = mainDatabasePrefix
+            outDatabaseShp = outDatabaseCsv.replace('.csv', '.shp')
+        elif mainDatabasePrefix.endswith('.shp'):
+            outDatabaseShp = mainDatabasePrefix
+            outDatabaseCsv = outDatabaseShp.replace('.shp', '.csv')
+
     stackName = os.path.basename(input_raster).strip('_stack.tif').strip('.tif')
     stack_inputLog = input_raster.replace('.tif', '_Log.txt')
     if not os.path.isfile(stack_inputLog):
         print "Log for stack {} does not exist. Running without\n".format(stack_inputLog)
         inKeyExists = False
-        #return None # cannot run without log
+
     else: inKeyExists = True
 
     # Get the contents of the stack log in a list. This will change depending on new method going forward. numbers, key, etc?
@@ -143,10 +170,10 @@ def main(input_raster, input_polygon, bufferSize, outDir, zstats = params.defaul
         fields = [str(s) for s in zonalStatsDict[0]['properties'].keys()]
         # split the fields and values based on attributes and statistics
         attr_fields = fields[0:(len(fields)-n_stats)]
-        attr_fields.extend(['stackName', 'wrs2', 'bufferSize']) # Add fields: stackName, wrs2_pathrows, bufferSize
+        attr_fields.extend(['stackName', 'bufferSize']) # Add fields: stackName, bufferSize
+        if addWrs2: attr_fields.append('wrs2')
         stat_fields = fields[-n_stats:] # get just the stat field names
         stat_fields = ['{}__{}'.format(layerN, s) for s in stat_fields] # rename with layer number appended to stat
-
 
         # dict method. the header is the first entry in the output dictionary. uniqueID is the key, others are the values
         key_name = attr_fields[0]
@@ -164,17 +191,20 @@ def main(input_raster, input_polygon, bufferSize, outDir, zstats = params.defaul
             stat_vals = vals[-n_stats:] # get just the statistics
 
             if l == 0: # if we are on layer 1, get & add other attributes for row:
-                lat,lon = [float(vals[fields.index('lat')]), float(vals[fields.index('lon')])]
-                pathrows = get_pathrows(lat,lon)
-                attr_vals.extend([stackName, pathrows, bufferSize]) # add attributes field names: stackName, pathrows, bufferSize
-                print attr_vals
-                print stackName, pathrows, bufferSize
-                print type(pathrows)
+                attr_vals.extend([stackName, bufferSize]) # add attributes field names: stackName, bufferSize
+                if addWrs2:
+                    lat,lon = [float(vals[fields.index('lat')]), float(vals[fields.index('lon')])]
+                    pathrows = get_pathrows(lat,lon)
+                    attr_vals.append(pathrows)
                 outDict[attr_vals[0]] = attr_vals[1:]
+
             outDict[attr_vals[0]].extend(stat_vals) # always add stat vals
 
 
         functions.write_dict_toDatabase(outCsvFile, outDict, key_name)
+
+
+
         print '-----------'
 
     print "\nFinished: {}".format(datetime.datetime.now().strftime("%m%d%Y-%H%M"))
@@ -184,15 +214,24 @@ def main(input_raster, input_polygon, bufferSize, outDir, zstats = params.defaul
         outShpPath = database_to_shp(outCsvFile, raster_epsg)
     else: outShpPath = None
 
+    # lastly, append to running db
+    add_to_db(outDatabaseCsv, outDatabaseShp, outCsvFile, raster_epsg)
+    print "\nAdded outputs to {} and {}\n".format(outDatabaseCsv, outDatabaseShp)
+
+    print "\nFinished running zonal stats: {}\n----------------------------------------------------------------------------\n".format(datetime.datetime.now().strftime("%m%d%Y-%H%M"))
     return outCsvFile, outShpPath
 
 if __name__ == "__main__":
 
-    # Arguments passed to this process: dataStack, buffShp, bufferSize, outDir, zstats (optional, defaults to median, mean, std, nmad), logFile (optional). refer to buffer script for changes needed to make this standalone
+    # Arguments passed to this process: dataStack, buffShp, bufferSize, outDir, zstats (optional, defaults to median, mean, std, nmad), logFile (optional), addWrs2 (default is True), outputShp, database prefix. refer to buffer script for changes needed to make this standalone
 ##    poly = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/zonal_data/WV02_20160904_103001005CB63300_103001005CB00300_Bonanza_Creek_300kHz_Jul2014_l9s622_buffer-15m.shp'
 ##    rast = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/zonal_data/WV02_20160904_103001005CB63300_103001005CB00300_Bonanza_Creek_300kHz_Jul2014_l9s622_stack.tif'
-    print sys.argv
-    print len(sys.argv)
+    if len(sys.argv) == 10:
+        main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6], sys.argv[7], sys.argv[8], sys.argv[9])
+    if len(sys.argv) == 9:
+        main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6], sys.argv[7], sys.argv[8])
+    if len(sys.argv) == 8:
+        main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6], sys.argv[7])
     if len(sys.argv) == 7:
         main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6])
     if len(sys.argv) == 6:
