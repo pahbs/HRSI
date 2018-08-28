@@ -13,12 +13,12 @@ outDir = os.path.join(outdir_base, 'outputs')
 shpDir = os.path.join(outdir_base, 'shp')
 logDir = os.path.join(outdir_base, 'logs')
 
-for d in [csvDir, shpDir, logDir]:
+for d in [outDir, shpDir, logDir]:
     os.system('mkdir -p {}'.format(d))
 
 # default buffer size (15m); default zstats
 
 for pairStack in glob.glob(globDir):
-    comm = 'python {} {} -shpDir {} -outDir {} -logDir {}'.format(runScript, pairStack, shpDir, csvDir, logDir)
+    comm = 'python {} {} -shpDir {} -outDir {} -logDir {}'.format(runScript, pairStack, shpDir, outDir, logDir)
     print comm
     os.system(comm)
