@@ -100,6 +100,7 @@ def add_to_db(outDbCsv, outDbShp, inCsv, epsg): # given an input csv we wanna ad
                 print 'adding: {}'.format(line)
                 with open(outDbCsv, 'a') as odc:
                     odc.write('{}\n'.format(','.join(line)))
+            else: print '{} a;ready in db'.format(line)
 
     # lastly, write the accumulated output csv db to shp
     if os.path.exists(outDbShp): os.rename(outDbShp, outDbShp.replace('.shp', '__old.shp')) # first rename the existing shp db if it exists
