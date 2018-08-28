@@ -48,7 +48,6 @@ def database_to_shp(inCsv, outEPSG = 4326, latField = 'lat', lonField = 'lon'): 
     with open(inCsv, 'r') as csvF:
         hdr_row = csvF.readline().strip() # get the header/fields
         fld_list = hdr_row.split(',')
-##        print fld_list
 
         if (latField or lonField) not in fld_list:
             print "{} or {} field is missing from .csv. Cannot continue".format(latField, lonField)
@@ -97,10 +96,10 @@ def add_to_db(outDbCsv, outDbShp, inCsv, epsg): # given an input csv we wanna ad
 
         for line in addDb: # for each line, if line does not already exist in db, append it to csv
             if line in existingDb:
-                print 'adding: {}'.format(line)
-                with open(outDbCsv, 'a') as odc:
-                    odc.write('{}\n'.format(','.join(line)))
-            else: print '{} a;ready in db'.format(line)
+                print '{} already in db'.format(line)
+                continue
+            print 'adding: {}'.format(line)
+            with open(outDbCsv, 'a') as odc: odc.write('{}\n'.format(','.join(line)))
 
     # lastly, write the accumulated output csv db to shp
     if os.path.exists(outDbShp): os.rename(outDbShp, outDbShp.replace('.shp', '__old.shp')) # first rename the existing shp db if it exists
