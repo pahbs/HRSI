@@ -87,30 +87,23 @@ def database_to_shp(inCsv, outEPSG = 4326, latField = 'lat', lonField = 'lon'): 
 
 def add_to_db(outDbCsv, outDbShp, inCsv, epsg): # given an input csv we wanna add, add to the output Csv, then write contents to output Shp
     import csv
+
     # First write the database csv
     if not os.path.isfile(outDbCsv): # if csv does not already exist...
         shutil.copy(inCsv, outDbCsv) # make a copy of the single csv to the output db
-    else: # if the csv does exist
-        print "{} does exist".format(outDbCsv)
-        with open(outDbCsv, 'r') as odc:
-            existingDb = list(csv.reader(odc))
-        print existingDb
-        print len(existingDb)
+    else: # if the csv does exist, add unique lines to it
+        with open(outDbCsv, 'r') as odc: existingDb = list(csv.reader(odc)) # read exising db into a list
+        with open(inCsv, 'r') as ic: addDb = list(csv.reader(ic)) # read csv to be added into list
 
-        with open(inCsv, 'r') as ic:
-            addDb = list(csv.reader(ic))
-
-        print ''
-        print addDb
-        print len(addDb)
-##        # read exising db into a list
-##        # read csv to be added into list
-##        # for each line, if line does not already exist in db, add it to csv
+        for line in addDb: # for each line, if line does not already exist in db, append it to csv
+            if line in existingDb:
+                print 'adding: {}'.format(line)
+                with open(outDbCsv, 'a') as odc:
+                    odc.write('{}\n'.format(','.join(line)))
 
     # lastly, write the accumulated output csv db to shp
     if os.path.exists(outDbShp): os.rename(outDbShp, outDbShp.replace('.shp', '__old.shp')) # first rename the existing shp db if it exists
     database_to_shp(outDbCsv, epsg) # then create shp, outDbShp will be same name/path as .csv but with .shp extension
-
 
 def main(input_raster, input_polygon, bufferSize, outDir, zstats = params.default_zstats, logFile = None, addWrs2 = True, outputShapefile = True, mainDatabasePrefix = params.default_mainDatabase):
 

@@ -79,7 +79,7 @@ def create_pointShp_fromRasterExtent(rasterStack, outShpDir):
 
 
                 # Now throw out point if it is outside a buffer of extent
-                extBuff = 0.00003 # in degrees
+                extBuff = 0.00000000003 # in degrees
                 if (lat > ymax+extBuff) or (lat < ymin-extBuff) or \
                   (lon < xmin-extBuff) or (lon > xmax+extBuff):
 ##                    print "cannot use point {}, {}. outside of AOI extent".format(lat, lon) # temp
