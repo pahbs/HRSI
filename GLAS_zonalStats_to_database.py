@@ -96,9 +96,9 @@ def add_to_db(outDbCsv, outDbShp, inCsv, epsg): # given an input csv we wanna ad
 
         for line in addDb: # for each line, if line does not already exist in db, append it to csv
             if line in existingDb:
-                print '{} already in db'.format(line)
+##                print '{} already in db'.format(line)
                 continue
-            print 'adding: {}'.format(line)
+##            print 'adding: {}'.format(line)
             with open(outDbCsv, 'a') as odc: odc.write('{}\n'.format(','.join(line)))
 
     # lastly, write the accumulated output csv db to shp
