@@ -4,11 +4,13 @@ import os, sys
 import glob
 
 runScript = '/att/home/mwooten3/code/HRSI/run_GLAS_zonal_database.py'
-indir = '/att/gpfsfs/briskfs01/ppl/wcwagne1/3DSI/hrsi_chms/Stacks_20180717/'
+#indir = '/att/gpfsfs/briskfs01/ppl/wcwagne1/3DSI/hrsi_chms/Stacks_20180717/'
+indir = '/att/gpfsfs/briskfs01/ppl/wcwagne1/3DSI/hrsi_chms/Stacks_20180713/' #TEMP
 # indir is set up like this: indir/<pairname>/stack.tif'
 globDir = os.path.join(indir, '*', '*stack.tif')
 
-outdir_base = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/Stacks_20180717'
+#outdir_base = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/Stacks_20180717'
+outdir_base = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/Stacks_20180713' # TEMP
 outDir = os.path.join(outdir_base, 'outputs')
 shpDir = os.path.join(outdir_base, 'shp')
 logDir = os.path.join(outdir_base, 'logs')
@@ -29,6 +31,7 @@ for pairStack in glob.glob(globDir):
     if os.path.basename(pairStack) in skipFiles:
         print "{} already in db. skipping".format(os.path.basename(pairStack))
         continue
-    comm = 'python {} {} -shpDir {} -outDir {} -logDir {}'.format(runScript, pairStack, shpDir, outDir, logDir)
+    #comm = 'python {} {} -shpDir {} -outDir {} -logDir {}'.format(runScript, pairStack, shpDir, outDir, logDir)
+    comm = 'python {} {} -shpDir {} -outDir {} -logDir {} -mainDatabasePrefix /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/3DSI_GLAS_stats_database_15m__p2.csv'.format(runScript, pairStack, shpDir, outDir, logDir) # TEMP
     print comm
     os.system(comm)
