@@ -4,7 +4,7 @@
 # Process:
 # for csv's in dir:
   # read output csv into list
-import os
+import os, sys
 import glob
 from time import strftime
 import GLAS_zonalStats_to_database as zsd
