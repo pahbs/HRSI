@@ -84,7 +84,7 @@ def database_to_shp(inCsv, outEPSG = 4326, latField = 'lat', lonField = 'lon'): 
         print 'rm {}'.format(outShpPath_wgs.replace('.shp', '.*'))
         return outShpPath
 
-def add_to_db(outDbCsv, outDbShp, inCsv, epsg): # given an input csv we wanna add, add to the output Csv, then write contents to output Shp
+def add_to_db(outDbCsv, outDbShp, inCsv): # given an input csv we wanna add, add to the output Csv, then write contents to output Shp
     import csv
 
     # First write the database csv
@@ -103,9 +103,9 @@ def add_to_db(outDbCsv, outDbShp, inCsv, epsg): # given an input csv we wanna ad
 
     # lastly, write the accumulated output csv db to shp
     if os.path.exists(outDbShp): os.rename(outDbShp, outDbShp.replace('.shp', '__old.shp')) # first rename the existing shp db if it exists
-    database_to_shp(outDbCsv, epsg) # then create shp, outDbShp will be same name/path as .csv but with .shp extension
+    database_to_shp(outDbCsv, epsg='4326') # then create shp, outDbShp will be same name/path as .csv but with .shp extension. give it WGS84 epsg when creating big database
 
-def main(input_raster, input_polygon, bufferSize, outDir, zstats = params.default_zstats, logFile = None, addWrs2 = True, outputShapefile = True, mainDatabasePrefix = params.default_mainDatabase):
+def main(input_raster, input_polygon, bufferSize, outDir, zstats = params.default_zstats, logFile = None, mainDatabasePrefix = params.default_mainDatabase, addWrs2 = True, outputShapefile = True):
 
     print "Begin running zonal stats: {}\n".format(datetime.datetime.now().strftime("%m%d%Y-%H%M"))
 
@@ -219,7 +219,7 @@ def main(input_raster, input_polygon, bufferSize, outDir, zstats = params.defaul
     else: outShpPath = None
 
     # lastly, append to running db
-    add_to_db(outDatabaseCsv, outDatabaseShp, outCsvFile, raster_epsg)
+    add_to_db(outDatabaseCsv, outDatabaseShp, outCsvFile)
     print "\nAdded outputs to {} and {}\n".format(outDatabaseCsv, outDatabaseShp)
 
     print "\nFinished running zonal stats: {}\n----------------------------------------------------------------------------\n".format(datetime.datetime.now().strftime("%m%d%Y-%H%M"))
