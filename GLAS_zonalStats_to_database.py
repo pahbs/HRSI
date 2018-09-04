@@ -121,8 +121,10 @@ def main(input_raster, input_polygon, bufferSize, outDir, zstats = params.defaul
             outDatabaseShp = mainDatabasePrefix
             outDatabaseCsv = outDatabaseShp.replace('.shp', '.csv')
 
-    stackName = os.path.basename(input_raster).strip('_stack.tif').strip('.tif')
-    stack_inputLog = input_raster.replace('.tif', '_Log.txt')
+    stackExt = os.path.splitext(input_raster)[1] # could be either tif or vrt
+    stackName = os.path.basename(input_raster).strip('_stack.{}'.format(stackExt)).strip(stackExt)
+    stackDir = os.path.dirname(input_raster)
+    stack_inputLog = input_raster.replace(stackExt, '_Log.txt')
     if not os.path.isfile(stack_inputLog):
         print "Log for stack {} does not exist. Running without\n".format(stack_inputLog)
         inKeyExists = False
@@ -174,7 +176,7 @@ def main(input_raster, input_polygon, bufferSize, outDir, zstats = params.defaul
         fields = [str(s) for s in zonalStatsDict[0]['properties'].keys()]
         # split the fields and values based on attributes and statistics
         attr_fields = fields[0:(len(fields)-n_stats)]
-        attr_fields.extend(['stackName', 'bufferSize']) # Add fields: stackName, bufferSize
+        attr_fields.extend(['stackName', 'stackDir', 'bufferSize']) # Add fields: stackName, bufferSize, stackDir
         if addWrs2: attr_fields.append('wrs2')
         stat_fields = fields[-n_stats:] # get just the stat field names
         stat_fields = ['{}__{}'.format(layerN, s) for s in stat_fields] # rename with layer number appended to stat
@@ -195,7 +197,7 @@ def main(input_raster, input_polygon, bufferSize, outDir, zstats = params.defaul
             stat_vals = vals[-n_stats:] # get just the statistics
 
             if l == 0: # if we are on layer 1, get & add other attributes for row:
-                attr_vals.extend([stackName, bufferSize]) # add attributes field names: stackName, bufferSize
+                attr_vals.extend([stackName, stackDir, bufferSize]) # add attributes field names: stackName, bufferSize
                 if addWrs2:
                     lat,lon = [float(vals[fields.index('lat')]), float(vals[fields.index('lon')])]
                     pathrows = get_pathrows(lat,lon)
