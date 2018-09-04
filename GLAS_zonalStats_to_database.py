@@ -122,7 +122,7 @@ def main(input_raster, input_polygon, bufferSize, outDir, zstats = params.defaul
             outDatabaseCsv = outDatabaseShp.replace('.shp', '.csv')
 
     stackExt = os.path.splitext(input_raster)[1] # could be either tif or vrt
-    stackName = os.path.basename(input_raster).strip('_stack.{}'.format(stackExt)).strip(stackExt)
+    stackName = os.path.basename(input_raster).strip('_stack{}'.format(stackExt)).strip(stackExt)
     stackDir = os.path.dirname(input_raster)
     stack_inputLog = input_raster.replace(stackExt, '_Log.txt')
     if not os.path.isfile(stack_inputLog):

@@ -25,7 +25,8 @@ def main(dataStack, bufferSize, shpDir, outDir, zstats, logDir, mainDatabasePref
         if not os.path.exists(d): os.makedirs(d)
 
     # get log file name from rasterStack and begin logging:
-    logFile = os.path.join(logDir, '{}_zonalStats_log.txt'.format(os.path.basename(dataStack).strip('_stack.tif').strip('.tif')))
+    stackExt = os.path.splitext(dataStack)[1] # could be either tif or vrt
+    logFile = os.path.join(logDir, '{}_zonalStats_log.txt'.format(os.path.basename(dataStack).strip('_stack{}'.format(stackExt)).strip(stackExt)))
     if os.path.isfile(logFile): os.remove(logFile)
 
     # make GLAS shp:
