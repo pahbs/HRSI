@@ -20,8 +20,8 @@ def add_to_db(outDbCsv, inCsv): # given an input csv we wanna add, add to the ou
         with open(outDbCsv, 'r') as odc: existingDb = list(csv.reader(odc)) # read exising db into a list
         with open(inCsv, 'r') as ic: addDb = list(csv.reader(ic)) # read csv to be added into list
 
-        print existingDb
-        print addDb
+##        print existingDb
+##        print addDb
 
 ##        existingDbSubset = ['{},{}'.format(r[X], r[Y]) for r in existingDb] # where X is the index to get to shotN and Y is index to get to stackName
 
@@ -56,8 +56,8 @@ os.dup2(se.fileno(), sys.stderr.fileno())
 dir1 = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/Stacks_20180713/outputs' # Stacks_20180713
 dir2 = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/Stacks_20180717/outputs'
 
-outDbShp = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/3DSI_GLAS_stats_database__15m.shp'
-outDbCsv = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/3DSI_GLAS_stats_database__15m.csv'
+outDbShp = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/3DSI_GLAS_stats_database__15m.shp'
+outDbCsv = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/3DSI_GLAS_stats_database__15m.csv'
 
 print "Output Csv: {}".format(outDbCsv)
 print "Output Shp: {}\n".format(outDbShp)
