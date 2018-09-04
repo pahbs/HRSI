@@ -28,7 +28,8 @@ def create_pointShp_fromRasterExtent(rasterStack, outShpDir):
 ##    print GLAS_csv_list # temp
     (xmin, ymin, xmax, ymax) = functions.get_gcs_extent(rasterStack)
     raster_prj, raster_srs, raster_epsg = functions.get_proj_info(rasterStack)
-    stackName = os.path.basename(rasterStack).strip('_stack.tif').strip('.tif')
+    stackExt = os.path.splitext(rasterStack)[1] # could be either tif or vrt
+    stackName = os.path.basename(rasterStack).strip('_stack.{}'.format(stackExt)).strip(stackExt)
     outShpPath = os.path.join(outShpDir, '{}.shp'.format(stackName))
     outShpPath_wgs = outShpPath.replace('.shp', '_WGS84.shp')
 
