@@ -103,7 +103,7 @@ def add_to_db(outDbCsv, outDbShp, inCsv): # given an input csv we wanna add, add
 
     # lastly, write the accumulated output csv db to shp
     if os.path.exists(outDbShp): os.rename(outDbShp, outDbShp.replace('.shp', '__old.shp')) # first rename the existing shp db if it exists
-    database_to_shp(outDbCsv, epsg='4326') # then create shp, outDbShp will be same name/path as .csv but with .shp extension. give it WGS84 epsg when creating big database
+    database_to_shp(outDbCsv, outEPSG='4326') # then create shp, outDbShp will be same name/path as .csv but with .shp extension. give it WGS84 epsg when creating big database
 
 def main(input_raster, input_polygon, bufferSize, outDir, zstats = params.default_zstats, logFile = None, mainDatabasePrefix = params.default_mainDatabase, addWrs2 = True, outputShapefile = True):
 
