@@ -155,6 +155,7 @@ def main(input_raster, input_polygon, bufferSize, outDir, zstats = params.defaul
     print " Begin: {}".format(datetime.datetime.now().strftime("%m%d%Y-%H%M"))
     print " Statistics: {}".format(zstats)
     print " Number of layers = {}".format(n_layers)
+    print " Output database for stacks = {}".format(outDatabaseCsv)
 
 
     # loop through layers, run zonal stats and start to build the dictionary for the csv
