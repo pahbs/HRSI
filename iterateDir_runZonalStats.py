@@ -6,7 +6,7 @@ import glob
 runScript = '/att/home/mwooten3/code/HRSI/run_GLAS_zonal_database.py'
 indir = '/att/gpfsfs/briskfs01/ppl/wcwagne1/3DSI/hrsi_chms/Ontario/'
 # indir is set up like this: indir/<pairname>/stack.tif'
-globDir = os.path.join(indir, '*', '*stack.tif')
+globDir = os.path.join(indir, '*', '*stack.vrt')
 
 outdir_base = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/Stacks_Ontario'
 outDir = os.path.join(outdir_base, 'outputs')
