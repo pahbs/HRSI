@@ -4,17 +4,17 @@ import os, sys
 import glob
 
 runScript = '/att/home/mwooten3/code/HRSI/run_GLAS_zonal_database.py'
-indir = '/att/gpfsfs/briskfs01/ppl/wcwagne1/3DSI/hrsi_chms/Ontario/'
+indir = '/att/gpfsfs/briskfs01/ppl/wcwagne1/3DSI/hrsi_chms/Ontario/' #*
 # indir is set up like this: indir/<pairname>/stack.tif'
 globDir = os.path.join(indir, '*', '*stack.vrt')
 
-outdir_base = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/Stacks_Ontario'
+outdir_base = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/Stacks_Ontario' #*
 outDir = os.path.join(outdir_base, 'outputs')
 shpDir = os.path.join(outdir_base, 'shp')
 logDir = os.path.join(outdir_base, 'logs')
 
 # set mainDb = '' if you want to use the default
-mainDb = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/Stacks_Ontario/Ontario_Stacks__zonalStats_15m.csv'
+mainDb = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/Stacks_Ontario/Ontario_Stacks__zonalStats_15m.csv'  #*
 
 for d in [outDir, shpDir, logDir]:
     os.system('mkdir -p {}'.format(d))

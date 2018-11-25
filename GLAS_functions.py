@@ -11,7 +11,9 @@ class Parameters():
 
     # Default inputs (latter 2 can be changed by CL args when running run_GLAS_zonal_database.py):
     ddir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal'
-    GLAS_csv_dir = '/att/gpfsfs/briskfs01/ppl/pmontesa/userfs02/data/glas/tiles_5deg/n00_n70_csv'
+    #GLAS_csv_dir = '/att/gpfsfs/briskfs01/ppl/pmontesa/userfs02/data/glas/tiles_5deg/n00_n70_csv'
+    #* 11/25/2018 trying with new csv's
+    GLAS_csv_dir = '/att/gpfsfs/briskfs01/ppl/pmontesa/userfs02/data/glas/circ_boreal/N50_5dtiles/metrics_csv'
     default_buffSize = 15
     default_outCsvDir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/zonal_outputs' # default directory for output csv's
     default_shpDir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/zonal_data' # where created shapefiles will go unless otherwise specified
