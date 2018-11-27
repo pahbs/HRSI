@@ -9,6 +9,7 @@ areas_str = raw_input("Enter stack names (i.e. 'name1,name2,name3'): ")
 areas = areas_str.split(",")
 
 for area in areas:
+    area = area.strip('Stacks_') # 11/27 just in case
     runScript = '/att/home/mwooten3/code/HRSI/run_GLAS_zonal_database.py'
     indir = '/att/gpfsfs/briskfs01/ppl/wcwagne1/3DSI/hrsi_chms/{}/'.format(area) #*
     # indir is set up like this: indir/<pairname>/stack.tif'
