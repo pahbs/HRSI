@@ -156,7 +156,7 @@ def main(input_raster, input_polygon, bufferSize, outDir, zstats = params.defaul
     print " Statistics: {}".format(zstats)
     print " Number of layers = {}".format(n_layers)
     print " Output database for stacks = {}".format(outDatabaseCsv)
-
+#    import pdb; pdb.set_trace()
 
     # loop through layers, run zonal stats and start to build the dictionary for the csv
     for l in range(0, n_layers):
