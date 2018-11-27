@@ -57,6 +57,7 @@ def create_pointShp_fromRasterExtent(rasterStack, outShpDir):
                 fld_row = 'uniqueID,laserID,shotYear,shotDay,{}'.format(hdr_row)
                 hdr_list = hdr_row.split(',')
                 fld_list = fld_row.split(',')
+                print fld_list
                 for f in fld_list: outShp.field(f)
             else: h = csvF.readline().strip() # still need to skip the row
 
@@ -129,6 +130,9 @@ def create_pointShp_fromRasterExtent(rasterStack, outShpDir):
 
                 # now we can use the point/row to build the shp
                 outShp.point(lon,lat) # create point geometry
+                print outShp
+                print lon,lat
+                print tuple([outRow_list[f] for f, j in enumerate(fld_list)])
                 outShp.record(*tuple([outRow_list[f] for f, j in enumerate(fld_list)]))
 
     if uid == 0:
@@ -139,10 +143,11 @@ def create_pointShp_fromRasterExtent(rasterStack, outShpDir):
 #    print "\nSaving to output shp {}...".format(outShpPath)
 #    outShp.save(outShpPath_wgs.strip('.shp'))
 
-    # 11/27/2018 still want to "copy" outShpPath_wgs to outShpPath - via copy prj and ogr2ogr below
+    # write the prj file
     with open(outShpPath_wgs.replace('.shp', '.prj'), 'w') as prjFile:
         prjFile.write(functions.getWKT_PRJ(4326)) # Write in WGS84 since coordinates are in decimal degrees
 
+    # 11/27/2018 still want to "copy" outShpPath_wgs to outShpPath - via ogr2ogr below
     # And convert to UTM using ogr2ogr
     reproj_cmd = 'ogr2ogr -q -t_srs EPSG:{} {} {}'.format(raster_epsg, outShpPath, outShpPath_wgs)
     print "\nReprojecting to input UTM proj (EPSG:{})....".format(raster_epsg)
