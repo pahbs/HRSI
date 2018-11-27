@@ -55,7 +55,11 @@ def database_to_shp(inCsv, outEPSG = 4326, latField = 'lat', lonField = 'lon'): 
             print "{} or {} field is missing from .csv. Cannot continue".format(latField, lonField)
             return None
 
-        for f in fld_list: outShp.field(f) # set output fields in shp
+        for f in fld_list:
+            if f == '': # need length of this field to be 150
+                outShp.field(f, size = 150)
+            else: # default of 50
+                outShp.field(f) # set output fields in shp
 
         for row in csvF.readlines(): # now iterate through the rest of the points
             row_list = row.strip().split(',')
