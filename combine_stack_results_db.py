@@ -8,7 +8,7 @@ import os, sys
 import glob
 from time import strftime
 import GLAS_zonalStats_to_database as zsd
-
+import shutil
 
 def add_to_db(outDbCsv, inCsv): # given an input csv we wanna add, add to the output Csv, then write contents to output Shp
     import csv
@@ -53,8 +53,8 @@ sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0) # re-open stdout without buf
 os.dup2(so.fileno(), sys.stdout.fileno())           # redirect stdout and stderr to the log file opened above
 os.dup2(se.fileno(), sys.stderr.fileno())
 
-dir1 = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/Stacks_20180713/outputs' # Stacks_20180713
-dir2 = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/Stacks_20180717/outputs'
+dir1 = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/Stacks_20180713/outputs/' # Stacks_20180713
+dir2 = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/Stacks_20180717/outputs'
 
 outDbShp = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/3DSI_GLAS_stats_database__15m.shp'
 outDbCsv = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/3DSI_GLAS_stats_database__15m.csv'
@@ -78,7 +78,8 @@ for stackCsv in glob.glob(os.path.join(dir1, '*csv')):
     addedStacks.append(bname)
 
 print '---------------------------------------------'
-print"Adding stack results from {}:".format(dir2)
+# 9/5 remake db without 717 results
+print "Adding stack results from {}:".format(dir2)
 # loop through 0717 dir and add to db ONLY IF stack has not been added yet
 for stackCsv in glob.glob(os.path.join(dir2, '*csv')):
     bname = os.path.basename(stackCsv)

@@ -12,10 +12,11 @@ for area in areas:
 
     runScript = '/att/home/mwooten3/code/HRSI/run_GLAS_zonal_database.py'
     indir = '/att/gpfsfs/briskfs01/ppl/wcwagne1/3DSI/hrsi_chms/{}/'.format(area) #*
+    print indir
     # indir is set up like this: indir/<pairname>/stack.tif'
     area = area.strip('Stacks_') # 11/27 just in case it already has Stacks_ in the name, remove it
     globDir = os.path.join(indir, '*', '*stack.vrt')
-
+    print globDir, len(glob.glob(globDir))
     outdir_base = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/Stacks_{}'.format(area) #*
     outDir = os.path.join(outdir_base, 'outputs')
     shpDir = os.path.join(outdir_base, 'shp')
@@ -26,7 +27,7 @@ for area in areas:
 
     for d in [outDir, shpDir, logDir]:
         os.system('mkdir -p {}'.format(d))
-
+ 
     # default buffer size (15m); default zstats
     for pairStack in glob.glob(globDir):
 
