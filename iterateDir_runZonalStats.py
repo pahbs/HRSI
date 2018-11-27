@@ -9,10 +9,11 @@ areas_str = raw_input("Enter stack names (i.e. 'name1,name2,name3'): ")
 areas = areas_str.split(",")
 
 for area in areas:
-    area = area.strip('Stacks_') # 11/27 just in case
+
     runScript = '/att/home/mwooten3/code/HRSI/run_GLAS_zonal_database.py'
     indir = '/att/gpfsfs/briskfs01/ppl/wcwagne1/3DSI/hrsi_chms/{}/'.format(area) #*
     # indir is set up like this: indir/<pairname>/stack.tif'
+    area = area.strip('Stacks_') # 11/27 just in case it already has Stacks_ in the name, remove it
     globDir = os.path.join(indir, '*', '*stack.vrt')
 
     outdir_base = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/Stacks_{}'.format(area) #*
@@ -27,7 +28,6 @@ for area in areas:
         os.system('mkdir -p {}'.format(d))
 
     # default buffer size (15m); default zstats
-
     for pairStack in glob.glob(globDir):
 
     ##    # temporarily skip list of pairs that were run - stopped after due to system err
