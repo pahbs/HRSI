@@ -14,7 +14,8 @@ for area in areas:
     indir = '/att/gpfsfs/briskfs01/ppl/wcwagne1/3DSI/hrsi_chms/{}/'.format(area) #*
     # indir is set up like this: indir/<pairname>/stack.tif'
     area = area.strip('Stacks_') # 11/27 just in case it already has Stacks_ in the name, remove it
-    globDir = os.path.join(indir, '*', '*stack.vrt')
+    globDir = glob.glob(os.path.join(indir, '*', '*stack.vrt')) # some stack dirs still use tif's not vrt
+    if len(globDir) == 0: globDir = glob.glob(os.path.join(indir, '*', '*stack.tif'))
 
     outdir_base = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/Stacks_{}'.format(area) #*
     outDir = os.path.join(outdir_base, 'outputs')
@@ -28,7 +29,7 @@ for area in areas:
         os.system('mkdir -p {}'.format(d))
 
     # default buffer size (15m); default zstats
-    for pairStack in glob.glob(globDir):
+    for pairStack in globDir:
 
     ##    # temporarily skip list of pairs that were run - stopped after due to system err
     ##    if os.path.basename(pairStack) in skipFiles:
