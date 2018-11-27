@@ -57,7 +57,6 @@ def create_pointShp_fromRasterExtent(rasterStack, outShpDir):
                 fld_row = 'uniqueID,laserID,shotYear,shotDay,{}'.format(hdr_row)
                 hdr_list = hdr_row.split(',')
                 fld_list = fld_row.split(',')
-                print fld_list
                 for f in fld_list: outShp.field(f)
             else: h = csvF.readline().strip() # still need to skip the row
 
@@ -130,11 +129,6 @@ def create_pointShp_fromRasterExtent(rasterStack, outShpDir):
 
                 # now we can use the point/row to build the shp
                 outShp.point(lon,lat) # create point geometry
-                print outShp
-                print lon,lat
-                print tuple([outRow_list[f] for f, j in enumerate(fld_list)])
-                print len(tuple([outRow_list[f] for f, j in enumerate(fld_list)]))
-                print len(fld_list)
                 outShp.record(*tuple([outRow_list[f] for f, j in enumerate(fld_list)]))
 
     if uid == 0:
@@ -142,9 +136,9 @@ def create_pointShp_fromRasterExtent(rasterStack, outShpDir):
     print "\n{} features added to shp".format(uid)
 
     # Save the shp. and .prj # 11/27 no longer need this, already written to outShpPath_wgs with new version of pyshp (line ??)
-#    print "\nSaving to output shp {}...".format(outShpPath)
+    print "\nClosing output shp {}...".format(outShpPath_wgs)
 #    outShp.save(outShpPath_wgs.strip('.shp'))
-    outShp.close() # 11/27 - try
+    outShp.close() # 11/27 does not work without it. maybe garbage isnt colllected at this point yet ?
 
     # write the prj file
     with open(outShpPath_wgs.replace('.shp', '.prj'), 'w') as prjFile:
@@ -152,6 +146,7 @@ def create_pointShp_fromRasterExtent(rasterStack, outShpDir):
 
     # 11/27/2018 still want to "copy" outShpPath_wgs to outShpPath - via ogr2ogr below
     # And convert to UTM using ogr2ogr
+    print "Reprojecting {} to {}:".format(outShpPath_wgs, outShpPath)
     reproj_cmd = 'ogr2ogr -q -t_srs EPSG:{} {} {}'.format(raster_epsg, outShpPath, outShpPath_wgs)
     print "\nReprojecting to input UTM proj (EPSG:{})....".format(raster_epsg)
     print reproj_cmd

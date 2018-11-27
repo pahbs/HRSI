@@ -3,34 +3,40 @@
 import os, sys
 import glob
 
-runScript = '/att/home/mwooten3/code/HRSI/run_GLAS_zonal_database.py'
-indir = '/att/gpfsfs/briskfs01/ppl/wcwagne1/3DSI/hrsi_chms/Ontario/' #*
-# indir is set up like this: indir/<pairname>/stack.tif'
-globDir = os.path.join(indir, '*', '*stack.vrt')
+# 11/27/2018: Adding loop to run stacks for multiple areas. write to separate csv for each area
 
-outdir_base = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/Stacks_Ontario' #*
-outDir = os.path.join(outdir_base, 'outputs')
-shpDir = os.path.join(outdir_base, 'shp')
-logDir = os.path.join(outdir_base, 'logs')
+areas_str = raw_input("Enter stack names (i.e. 'name1,name2,name3'): ")
+areas = areas_str.split(",")
 
-# set mainDb = '' if you want to use the default
-mainDb = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/Stacks_Ontario/Ontario_Stacks__zonalStats_15m.csv'  #*
+for area in areas:
+    runScript = '/att/home/mwooten3/code/HRSI/run_GLAS_zonal_database.py'
+    indir = '/att/gpfsfs/briskfs01/ppl/wcwagne1/3DSI/hrsi_chms/{}/'.format(area) #*
+    # indir is set up like this: indir/<pairname>/stack.tif'
+    globDir = os.path.join(indir, '*', '*stack.vrt')
 
-for d in [outDir, shpDir, logDir]:
-    os.system('mkdir -p {}'.format(d))
+    outdir_base = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/Stacks_{}'.format(area) #*
+    outDir = os.path.join(outdir_base, 'outputs')
+    shpDir = os.path.join(outdir_base, 'shp')
+    logDir = os.path.join(outdir_base, 'logs')
 
-# default buffer size (15m); default zstats
+    # set mainDb = '' if you want to use the default -- 11/27 use separate for now
+    mainDb = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/Stacks_{0}/{0}_Stacks__zonalStats_15m.csv'.format(area)
 
-for pairStack in glob.glob(globDir):
+    for d in [outDir, shpDir, logDir]:
+        os.system('mkdir -p {}'.format(d))
 
-##    # temporarily skip list of pairs that were run - stopped after due to system err
-##    if os.path.basename(pairStack) in skipFiles:
-##        print "{} already in db. skipping".format(os.path.basename(pairStack))
-##        continue
-    comm = 'python {} {} -shpDir {} -outDir {} -logDir {}'.format(runScript, pairStack, shpDir, outDir, logDir)
-##    comm = 'python {} {} -shpDir {} -outDir {} -logDir {} -mainDatabasePrefix /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/3DSI_GLAS_stats_database_15m__p2.csv'.format(runScript, pairStack, shpDir, outDir, logDir) # TEMP
-    if mainDb:
-        comm += ' -mainDatabasePrefix {}'.format(mainDb)
+    # default buffer size (15m); default zstats
 
-    print comm
-    os.system(comm)
+    for pairStack in glob.glob(globDir):
+
+    ##    # temporarily skip list of pairs that were run - stopped after due to system err
+    ##    if os.path.basename(pairStack) in skipFiles:
+    ##        print "{} already in db. skipping".format(os.path.basename(pairStack))
+    ##        continue
+        comm = 'python {} {} -shpDir {} -outDir {} -logDir {}'.format(runScript, pairStack, shpDir, outDir, logDir)
+    ##    comm = 'python {} {} -shpDir {} -outDir {} -logDir {} -mainDatabasePrefix /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/3DSI_GLAS_stats_database_15m__p2.csv'.format(runScript, pairStack, shpDir, outDir, logDir) # TEMP
+        if mainDb:
+            comm += ' -mainDatabasePrefix {}'.format(mainDb)
+
+        print comm
+        os.system(comm)

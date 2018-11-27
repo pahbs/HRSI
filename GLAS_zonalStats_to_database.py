@@ -40,9 +40,11 @@ def database_to_shp(inCsv, outEPSG = 4326, latField = 'lat', lonField = 'lon'): 
 
     import shapefile as shp
 
-    # Create the framework for the shapefile
+    # Create the framework for the shapefile -- 11/27/2018: create shp in WGS84 first, new way with pyshp
     outShpPath = inCsv.replace('.csv', '.shp')
-    outShp = shp.Writer(shp.POINT)
+    outShpPath_wgs = outShpPath.replace('.shp', '_WGS84.shp')
+
+    outShp = shp.Writer(outShpPath_wgs, shapeType = shp.POINT)
     outShp.autoBalance = 1
 
     with open(inCsv, 'r') as csvF:
@@ -64,11 +66,11 @@ def database_to_shp(inCsv, outEPSG = 4326, latField = 'lat', lonField = 'lon'): 
             outShp.point(lon, lat) # create point geometry
             outShp.record(*tuple([row_list[f] for f, j in enumerate(fld_list)]))
 
-    print "\nSaving to output shp {}...".format(outShpPath)
+    print "\nClosing output shp {}...".format(outShpPath_wgs)
+    #outShp.save(outShpPath_wgs.strip('.shp')) # 11/27 - do not need this anymore, only close
+    outShp.close()
 
-    # create shp in WGS84 first
-    outShpPath_wgs = outShpPath.replace('.shp', '_WGS84.shp')
-    outShp.save(outShpPath_wgs.strip('.shp'))
+    # still need to write prj file
     with open(outShpPath_wgs.replace('.shp', '.prj'), 'w') as prjFile: # write prj file
         prjFile.write(functions.getWKT_PRJ(4326)) # Write in WGS84 since coordinates are in decimal degrees
 
