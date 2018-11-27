@@ -56,7 +56,7 @@ def database_to_shp(inCsv, outEPSG = 4326, latField = 'lat', lonField = 'lon'): 
             return None
 
         for f in fld_list:
-            if f == '': # need length of this field to be 150
+            if f == 'stackDir': # need length of this field to be 150
                 outShp.field(f, size = 150)
             else: # default of 50
                 outShp.field(f) # set output fields in shp
