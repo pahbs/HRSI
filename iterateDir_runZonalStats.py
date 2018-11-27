@@ -12,7 +12,7 @@ for area in areas:
 
     runScript = '/att/home/mwooten3/code/HRSI/run_GLAS_zonal_database.py'
     indir = '/att/gpfsfs/briskfs01/ppl/wcwagne1/3DSI/hrsi_chms/{}/'.format(area) #*
-    print indir
+
     # indir is set up like this: indir/<pairname>/stack.tif'
     area = area.strip('Stacks_') # 11/27 just in case it already has Stacks_ in the name, remove it
 
