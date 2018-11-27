@@ -124,7 +124,8 @@ def make_GLAS_csv_list(raster, GLAS_csv_dir):
             if y < 0: ySuff = 'S'
             else: ySuff = 'N'
 
-            glas_csv = os.path.join(GLAS_csv_dir, 'gla14_{}{}{}{}.csv'.format(ySuff, y, xSuff, x))
+            #glas_csv = os.path.join(GLAS_csv_dir, 'gla14_{}{}{}{}.csv'.format(ySuff, y, xSuff, x))
+            glas_csv = os.path.join(GLAS_csv_dir, '{}{}{}{}-data-metrices.csv.csv'.format(ySuff, y, xSuff, x)) #* 11/27 updated
             if os.path.isfile(glas_csv):
                 csv_list.append(glas_csv)
             else: print "{} does not exist".format(glas_csv)
