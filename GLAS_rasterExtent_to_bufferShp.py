@@ -39,7 +39,8 @@ def create_pointShp_fromRasterExtent(rasterStack, outShpDir):
     print " Output shapefile: {}\n".format(outShpPath)
 
     # Create the framework for the shapefile
-    outShp = shp.Writer(shp.POINT)
+#    outShp = shp.Writer(shp.POINT)
+    outShp = shp.Writer(outShpPath_wgs, shapeType = shp.POINT) # 11/27 new version of pyshp requires this
     outShp.autoBalance = 1
 
 ##    # temp to write to .csv
@@ -134,10 +135,11 @@ def create_pointShp_fromRasterExtent(rasterStack, outShpDir):
         sys.exit("There were 0 GLAS shots within stack, cannot process. Quitting program")
     print "\n{} features added to shp".format(uid)
 
-    # Save the shp. and .prj
-    print "\nSaving to output shp {}...".format(outShpPath)
-    outShp.save(outShpPath_wgs.strip('.shp'))
+    # Save the shp. and .prj # 11/27 no longer need this, already written to outShpPath_wgs with new version of pyshp (line ??)
+#    print "\nSaving to output shp {}...".format(outShpPath)
+#    outShp.save(outShpPath_wgs.strip('.shp'))
 
+    # 11/27/2018 still want to "copy" outShpPath_wgs to outShpPath - via copy prj and ogr2ogr below
     with open(outShpPath_wgs.replace('.shp', '.prj'), 'w') as prjFile:
         prjFile.write(functions.getWKT_PRJ(4326)) # Write in WGS84 since coordinates are in decimal degrees
 
@@ -191,7 +193,7 @@ def create_bufferShp_fromPointShp(inShpPath, bufferSize):
     # Copy the input .prj file
     from shutil import copyfile
     copyfile(inShpPath.replace('.shp', '.prj'), buffShpPath.replace('.shp', '.prj'))
-    os.system('rm {}'.format(inShpPath.replace('.shp', '.*'))) # remove point shp
+#    os.system('rm {}'.format(inShpPath.replace('.shp', '.*'))) # remove point shp
 
     print "\nCreated {}\n".format(buffShpPath)
 
