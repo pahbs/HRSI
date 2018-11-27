@@ -133,6 +133,8 @@ def create_pointShp_fromRasterExtent(rasterStack, outShpDir):
                 print outShp
                 print lon,lat
                 print tuple([outRow_list[f] for f, j in enumerate(fld_list)])
+                print len(tuple([outRow_list[f] for f, j in enumerate(fld_list)]))
+                print len(fld_list)
                 outShp.record(*tuple([outRow_list[f] for f, j in enumerate(fld_list)]))
 
     if uid == 0:
@@ -142,6 +144,7 @@ def create_pointShp_fromRasterExtent(rasterStack, outShpDir):
     # Save the shp. and .prj # 11/27 no longer need this, already written to outShpPath_wgs with new version of pyshp (line ??)
 #    print "\nSaving to output shp {}...".format(outShpPath)
 #    outShp.save(outShpPath_wgs.strip('.shp'))
+    outShp.close() # 11/27 - try
 
     # write the prj file
     with open(outShpPath_wgs.replace('.shp', '.prj'), 'w') as prjFile:
