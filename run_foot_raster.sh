@@ -15,12 +15,13 @@ TYPE=$1
 if [ "$TYPE" = HRSIDSM ] ; then
     RAS_DIR=$2 #/att/pubrepo/DEM/hrsi_dsm #/att/gpfsfs/briskfs01/ppl/pmontesa/userfs02/outASP #/att/gpfsfs/briskfs01/ppl/pmontesa/outASP/3DSI_pairset_01 #
     RAS_EXT=out-DEM_1m.tif
-    
+    /
     COARSEN_PCT=0.25 # 1pct at 1m will be a 100m res ; 0.25 is good value for speed and accuracy
-    OUT_SHP=HRSI_DSM_footprints_pct${COARSEN_PCT}
+    OUT_SHP=HRSI_DSM_footprints        #HRSI_DSM_footprints_pct${COARSEN_PCT}
 
     TMP_DIR=$NOBACKUP/tmp/tmp_${TYPE}
-    OUT_DIR=/att/gpfsfs/atrepo01/data/hma_data/ASTER/_footprints
+    #OUT_DIR=/att/gpfsfs/atrepo01/data/hma_data/ASTER/_footprints
+    OUT_DIR=${RAS_DIR}/_footprints
     mkdir -p $TMP_DIR
     mkdir -p $OUT_DIR
     opts="-dsm"
@@ -77,7 +78,7 @@ if [ "$TYPE" = OTHER ] ; then
     COARSEN_PCT=$4
     OUT_SHP=footprints_$(basename ${RAS_DIR})_${RAS_EXT%.*}_pct${COARSEN_PCT}
 
-    TMP_DIR=$HOME/tmp/tmp_${TYPE}
+    TMP_DIR=$HOME/tmp/tmp_${TYPE}_${OUT_SHP}
     OUT_DIR=$5
 fi
 
@@ -111,19 +112,21 @@ opts+=" -c_pct $COARSEN_PCT"
 opts+=" -tmp_dir $TMP_DIR"
 args="$RAS_DIR $OUT_DIR"
 
-#time footprint_rasters.py -dsm -kml -ras_ext $RAS_EXT -out_shp ${OUT_SHP}_${now} -c_pct $COARSEN_PCT -tmp_dir $TMP_DIR $RAS_DIR $OUT_DIR -dir_exc_list _ v d c l
+rm ${OUT_DIR}/${OUT_SHP%.*}.csv
 
 cmd="footprint_rasters.py $opts $args -dir_exc_list _ v d c l o"
-echo $cmd
-eval $cmd
+echo $cmd ; eval $cmd
+
+cmd="ogr2ogr -f 'GPKG' ${OUT_DIR}/${OUT_SHP}.gpkg ${OUT_DIR}/${OUT_SHP}.shp"
+#echo "Convert shapefile to Geopackage" ; echo $cmd ; eval $cmd
 
 zip ${OUT_DIR}/${OUT_SHP%.*}.zip ${OUT_DIR}/${OUT_SHP%.*}*
 
-rm -v ${TMP_DIR}/*
+#rsync -avs ${OUT_DIR}/HRSI_DSM_footprints.* $NOBACKUP/tmp
+
+rm ${TMP_DIR}/*
 
 t_end=$(date +%s)
 t_diff=$(expr $t_end - $t_start)
 t_diff_hr=$(printf '%0.4f' $(echo "$t_diff/3600" | bc -l))
-
-echo; date
-echo; echo "Total processing time (hr): $t_diff_hr"
+echo; date ; echo; echo "Total processing time (hr): $t_diff_hr"
