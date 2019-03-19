@@ -96,8 +96,8 @@ def create_pointShp_fromRasterExtent(rasterStack, outShpDir):
                 # if a no data mask () is supplied, make sure points are not in no data area (1 or None = NoData). keep where mask = 0
                 if os.path.isfile(noDataMask):
                     pt_geom = Point(lon, lat)
-                    print point_query([pt_geom], noDataMask)[0]
-                    if point_query([pt_geom], noDataMask)[0] != 0.0: # 0 = Data. 1 and None = NoData
+                    pt_val = point_query([pt_geom], noDataMask)[0]
+                    if pt_val == 1.0 or pt_val == None: # 0 = Data. 1 and None = NoData. some results might be float if within 2m of
                         continue # skip, don't include point
 
                 # this needs to be before the filtering because it will fail if all cols arent there for a row
