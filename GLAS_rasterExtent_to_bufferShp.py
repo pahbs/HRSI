@@ -96,6 +96,7 @@ def create_pointShp_fromRasterExtent(rasterStack, outShpDir):
                 # if a no data mask () is supplied, make sure points are not in no data area (1 or None = NoData). keep where mask = 0
                 if os.path.isfile(noDataMask):
                     pt_geom = Point(lon, lat)
+                    print point_query([pt_geom], noDataMask)[0]
                     if point_query([pt_geom], noDataMask)[0] != 0.0: # 0 = Data. 1 and None = NoData
                         continue # skip, don't include point
 
@@ -114,7 +115,8 @@ def create_pointShp_fromRasterExtent(rasterStack, outShpDir):
                         continue
 
                 except ValueError:
-                    print "At least one of FRir_qaFlag, satNdx, cld1_mswf columns does not exist"
+##                    print "At least one of FRir_qaFlag, satNdx, cld1_mswf columns does not exist"
+                    pass
 
                 # get the additional columns and create the output row
                 rndx = int(row_list[hdr_list.index('rec_ndx')])
