@@ -12,6 +12,8 @@ Notes:
 
 import os, sys
 import shapefile as shp
+from rasterstats import point_query
+from shapely.geometry import Point
 import csv
 from osgeo import gdal,ogr,osr
 
@@ -33,10 +35,14 @@ def create_pointShp_fromRasterExtent(rasterStack, outShpDir):
     outShpPath = os.path.join(outShpDir, '{}.shp'.format(stackName))
     outShpPath_wgs = outShpPath.replace('.shp', '_WGS84.shp')
 
+    noDataMask = rasterStack.replace(stackExt, '_mask_proj.tif')
+
     print "Processing shapefile for raster {}".format(rasterStack)
+    if os.path.isfile(noDataMask): print " NoData Mask used: {}".format(noDataMask)
     print " GLAS csv directory: {}".format(GLAS_csv_dir)
     print " GLAS csv list: {}".format(GLAS_csv_list)
     print " Output shapefile: {}\n".format(outShpPath)
+
 
     # Create the framework for the shapefile
 #    outShp = shp.Writer(shp.POINT)
@@ -86,6 +92,12 @@ def create_pointShp_fromRasterExtent(rasterStack, outShpDir):
                   (lon < xmin-extBuff) or (lon > xmax+extBuff):
 ##                    print "cannot use point {}, {}. outside of AOI extent".format(lat, lon) # temp
                     continue
+
+                # if a no data mask () is supplied, make sure points are not in no data area (1 or None = NoData). keep where mask = 0
+                if os.path.isfile(noDataMask):
+                    pt_geom = Point(lon, lat)
+                    if point_query([pt_geom], noDataMask)[0] != 0.0: # 0 = Data. 1 and None = NoData
+                        continue # skip, don't include point
 
                 # this needs to be before the filtering because it will fail if all cols arent there for a row
                 if len(row_list) != len(hdr_list): continue # temporary for now. Figure out with paul/guoqing
