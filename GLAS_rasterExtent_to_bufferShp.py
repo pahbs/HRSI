@@ -104,13 +104,17 @@ def create_pointShp_fromRasterExtent(rasterStack, outShpDir):
 
                 # Lastly, throw out point if the three conditions are not all met:
                 # FRir_qa_flg = 15 and satNdx < 2 and cld1_mswf_flg < 15
-                if int(row_list[hdr_list.index('FRir_qaFlag')]) != 15 or \
-                   int(row_list[hdr_list.index('satNdx')]) >=2 or \
-                   int(row_list[hdr_list.index('cld1_mswf')]) >= 15:
+                try: # in case csv does not have these columns
+                    if int(row_list[hdr_list.index('FRir_qaFlag')]) != 15 or \
+                        int(row_list[hdr_list.index('satNdx')]) >=2 or \
+                        int(row_list[hdr_list.index('cld1_mswf')]) >= 15:
 
 ##                    print "cannot use point with flags:" # temp
 ##                    print row_list[hdr_list.index('FRir_qaFlag')], row_list[hdr_list.index('satNdx')], row_list[hdr_list.index('cld1_mswf')] # temp
-                    continue
+                        continue
+
+                except ValueError:
+                    print "At least one of FRir_qaFlag, satNdx, cld1_mswf columns does not exist"
 
                 # get the additional columns and create the output row
                 rndx = int(row_list[hdr_list.index('rec_ndx')])
