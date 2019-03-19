@@ -35,7 +35,7 @@ def create_pointShp_fromRasterExtent(rasterStack, outShpDir):
     outShpPath = os.path.join(outShpDir, '{}.shp'.format(stackName))
     outShpPath_wgs = outShpPath.replace('.shp', '_WGS84.shp')
 
-    noDataMask = rasterStack.replace(stackExt, '_mask_proj.tif')
+    noDataMask = rasterStack.replace('_stack{}'.format(stackExt), '_mask_proj.tif')
 
     print "Processing shapefile for raster {}".format(rasterStack)
     if os.path.isfile(noDataMask): print " NoData Mask used: {}".format(noDataMask)
