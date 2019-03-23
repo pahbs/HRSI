@@ -46,7 +46,7 @@ def database_to_shp(inCsv, outEPSG = 4326, latField = 'lat', lonField = 'lon'): 
 
     outShp = shp.Writer(outShpPath_wgs, shapeType = shp.POINT)
     outShp.autoBalance = 1
-
+    r=0
     with open(inCsv, 'r') as csvF:
         hdr_row = csvF.readline().strip() # get the header/fields
         fld_list = hdr_row.split(',')
@@ -63,13 +63,16 @@ def database_to_shp(inCsv, outEPSG = 4326, latField = 'lat', lonField = 'lon'): 
 
         for row in csvF.readlines(): # now iterate through the rest of the points
             row_list = row.strip().split(',')
-
-            lat = float(row_list[fld_list.index(latField)])
-            lon = float(row_list[fld_list.index(lonField)])
+         
+            try: # in case, for whatever reason, this field cannot be got, skip row
+                lat = float(row_list[fld_list.index(latField)])
+                lon = float(row_list[fld_list.index(lonField)])
+            except ValueError:
+                continue
 
             outShp.point(lon, lat) # create point geometry
             outShp.record(*tuple([row_list[f] for f, j in enumerate(fld_list)]))
-
+            r+=1     
     print "\nClosing output shp {}...".format(outShpPath_wgs)
     #outShp.save(outShpPath_wgs.strip('.shp')) # 11/27 - do not need this anymore, only close
     outShp.close()
@@ -99,12 +102,18 @@ def add_to_db(outDbCsv, outDbShp, inCsv): # given an input csv we wanna add, add
     else: # if the csv does exist, add unique lines to it
         with open(outDbCsv, 'r') as odc: existingDb = list(csv.reader(odc)) # read exising db into a list
         with open(inCsv, 'r') as ic: addDb = list(csv.reader(ic)) # read csv to be added into list
+        dbHdrLen = len(existingDb[0]) # length of first line from existing db (assuming hdr/flds)
 
         for line in addDb: # for each line, if line does not already exist in db, append it to csv
             if line in existingDb:
 ##                print '{} already in db'.format(line)
                 continue
 ##            print 'adding: {}'.format(line)
+
+            if dbHdrLen != len(line):
+                print "Cannot add current output ({}) to {} because the number of columns is different.".format(inCsv, outDbCsv)
+                print "-This means we convert output db csv to shp either"
+                return
             with open(outDbCsv, 'a') as odc: odc.write('{}\n'.format(','.join(line)))
 
     # lastly, write the accumulated output csv db to shp

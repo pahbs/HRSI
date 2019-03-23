@@ -13,9 +13,9 @@ class Parameters():
     ddir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal'
     # METRICS
     #GLAS_csv_dir = '/att/gpfsfs/briskfs01/ppl/pmontesa/userfs02/data/glas/tiles_5deg/n00_n70_csv'  # old location of v1 CSVs
-    #* 11/25/2018 trying with new csv's
-    #GLAS_csv_dir = '/att/gpfsfs/briskfs01/ppl/pmontesa/userfs02/data/glas/circ_boreal/N50_5dtiles/metrics_csv' # location of v2 CSVs
-    GLAS_csv_dir = '/att/gpfsfs/briskfs01/ppl/pmontesa/userfs02/data/glas/misc/tiles_5deg_old/csv_files' # current location of v1
+    #GLAS_csv_dir = '/att/gpfsfs/briskfs01/ppl/pmontesa/userfs02/data/glas/circ_boreal/N50_5dtiles/metrics_csv' # old location of v2 CSVs
+#    GLAS_csv_dir = '/att/gpfsfs/briskfs01/ppl/pmontesa/userfs02/data/glas/misc/tiles_5deg_old/csv_files' # current location of v1
+    GLAS_csv_dir = '/att/gpfsfs/briskfs01/ppl/pmontesa/userfs02/data/glas/circ_boreal' # current location of v2
     default_buffSize = 15
     default_outCsvDir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/zonal_outputs' # default directory for output csv's
     default_shpDir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/zonal_data' # where created shapefiles will go unless otherwise specified
@@ -127,12 +127,13 @@ def make_GLAS_csv_list(raster, GLAS_csv_dir):
             else: ySuff = 'N'
 
             # METRICS
-            glas_csv = os.path.join(GLAS_csv_dir, 'gla14_{}{}{}{}.csv'.format(ySuff, y, xSuff, x))
-            #glas_csv = os.path.join(GLAS_csv_dir, '{}{}{}{}-data-metrices.csv'.format(ySuff, y, xSuff, x)) #* 11/27 updated
+            #glas_csv = os.path.join(GLAS_csv_dir, 'gla14_{}{}{}{}.csv'.format(ySuff, y, xSuff, x)) # v1
+            #glas_csv = os.path.join(GLAS_csv_dir, '{}{}{}{}-data-metrices.csv'.format(ySuff, y, xSuff, x)) #* 11/27/2018 updated -- old v2 names
+            glas_csv = os.path.join(GLAS_csv_dir, 'gla01-{}{}{}{}-data.csv'.format(ySuff, y, xSuff, x)) # 3/21/2019 updated
             if os.path.isfile(glas_csv):
                 csv_list.append(glas_csv)
             else: print "{} does not exist".format(glas_csv)
-
+    #return ['/att/gpfsfs/briskfs01/ppl/pmontesa/userfs02/data/glas/circ_boreal/gla01-boreal50up-fix2-data.csv']
     return csv_list
 
 def create_GLAS_point_shp(raster, GLAS_csv_dir, outputShpDir):

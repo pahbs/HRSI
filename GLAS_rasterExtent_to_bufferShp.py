@@ -65,13 +65,13 @@ def create_pointShp_fromRasterExtent(rasterStack, outShpDir):
                 fld_list = fld_row.split(',')
                 for f in fld_list: outShp.field(f)
             else: h = csvF.readline().strip() # still need to skip the row
-
+            #print inCsv, len(csvF.readlines())
             for row in csvF.readlines():
-
+                
                 row = row.strip().strip(',') # some erroneous commas at the end
                 row_list = row.split(',')
 
-        	    # Now we need to do some filtering to decide whether or not to add to the shp. Throw out if: lon > 360 or if lat/lon is outside of padded by 0.05 deg. extent
+         	# Now we need to do some filtering to decide whether or not to add to the shp. Throw out if: lon > 360 or if lat/lon is outside of padded by 0.05 deg. extent
                 lat = float(row_list[hdr_list.index('lat')])
                 lon_uncorr = float(row_list[hdr_list.index('lon')])
 
@@ -97,11 +97,13 @@ def create_pointShp_fromRasterExtent(rasterStack, outShpDir):
                 if os.path.isfile(noDataMask):
                     pt_geom = Point(lon, lat)
                     pt_val = point_query([pt_geom], noDataMask)[0]
-                    if pt_val == 1.0 or pt_val == None: # 0 = Data. 1 and None = NoData. some results might be float if within 2m of
+
+                    if pt_val >= 0.99 or pt_val == None: # 0 = Data. 1 and None = NoData. some results might be float if within 2m of data. .99 cause some no data points were returning that
                         continue # skip, don't include point
 
                 # this needs to be before the filtering because it will fail if all cols arent there for a row
-                if len(row_list) != len(hdr_list): continue # temporary for now. Figure out with paul/guoqing
+                if len(row_list) != len(hdr_list):
+                    continue # temporary for now. Figure out with paul/guoqing
 
                 # Lastly, throw out point if the three conditions are not all met:
                 # FRir_qa_flg = 15 and satNdx < 2 and cld1_mswf_flg < 15
@@ -109,9 +111,7 @@ def create_pointShp_fromRasterExtent(rasterStack, outShpDir):
                     if int(row_list[hdr_list.index('FRir_qaFlag')]) != 15 or \
                         int(row_list[hdr_list.index('satNdx')]) >=2 or \
                         int(row_list[hdr_list.index('cld1_mswf')]) >= 15:
-
-##                    print "cannot use point with flags:" # temp
-##                    print row_list[hdr_list.index('FRir_qaFlag')], row_list[hdr_list.index('satNdx')], row_list[hdr_list.index('cld1_mswf')] # temp
+                        
                         continue
 
                 except ValueError:
@@ -148,7 +148,7 @@ def create_pointShp_fromRasterExtent(rasterStack, outShpDir):
                 # now we can use the point/row to build the shp
                 outShp.point(lon,lat) # create point geometry
                 outShp.record(*tuple([outRow_list[f] for f, j in enumerate(fld_list)]))
-
+   
     if uid == 0:
         sys.exit("There were 0 GLAS shots within stack, cannot process. Quitting program")
     print "\n{} features added to shp".format(uid)
