@@ -29,7 +29,7 @@ for area in areas:
 
     for d in [outDir, shpDir, logDir]:
         os.system('mkdir -p {}'.format(d))
- 
+
     # default buffer size (15m); default zstats
     for pairStack in globDir:
 

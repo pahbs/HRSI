@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import time
+import GLAS_zonalStats_to_database as zs # for csv to db function
 
 # Set some variables
 # The main zonal stats database/csv where all data is kept
@@ -80,8 +81,16 @@ uClasses = db_df[classCol].unique()
 tempSummaryCsv = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/classYearSummary__{}.csv'.format(heightMetric)
 with open(tempSummaryCsv, 'w') as oc:
     oc.write('Class,TimeSinceDist,nSamples,medianHeight\n')
-#import pdb; pdb.set_trace()
-# iterate through classes: filter on class column
+
+
+# At this point, we have filtered down the points and we want to visualize this spatially
+# So write the filtered points to csv, then use csv to make a shp
+filteredCsv = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/spaceForTimeSwap/filteredPointCsvs/{}__filteredPoints.csv'.format(heightMetric)
+
+db_df.to_csv(filteredCsv, index=False)
+print zs.database_to_shp(filteredCsv)
+
+# iterate through classes
 for eco in uClasses:
 
     class_df = db_df[db_df[classCol]==eco]
