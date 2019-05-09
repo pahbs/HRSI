@@ -3,7 +3,7 @@
 #import lidarHeight_disturbance_database as main
 #GLAS_id_field = main.GLAS_id_field
 import os
-#import arcpy
+from osgeo import gdal,ogr,osr
 
 class Parameters():
     def __init__(self):
@@ -26,11 +26,18 @@ class Parameters():
 
 
 def getWKT_PRJ(epsg_code): # generate a .prj file based off epsg from input
-    import urllib
-    wkt = urllib.urlopen("http://spatialreference.org/ref/epsg/{0}/prettywkt/".format(epsg_code))
-    remove_spaces = wkt.read().replace(" ","")
-    output = remove_spaces.replace("\n", "")
-    return output
+    # as of 4.16/2019, spatialreference.org is down. Use GDAL API instead
+    
+    #wkt = urllib.urlopen("http://spatialreference.org/ref/epsg/{0}/prettywkt/".format(epsg_code))
+    #remove_spaces = wkt.read().replace(" ","")
+    #output = remove_spaces.replace("\n", "")
+    
+    from osgeo.osr import SpatialReference
+
+    srs = SpatialReference()
+    srs.ImportFromEPSG(epsg_code)
+    outWKT = srs.ExportToWkt()    
+    return str(outWKT)
 
 def get_year_laserID_from_recndx(rndx):
 
@@ -54,7 +61,6 @@ def get_year_laserID_from_recndx(rndx):
 
 def get_proj_info(raster): # get the SRS WKT string and EPSG code from input raster
 
-    from osgeo import gdal,osr
     prj = gdal.Open(raster).GetProjection()
     srs = osr.SpatialReference(wkt=prj)
     epsg = srs.GetAttrValue("AUTHORITY", 1)
@@ -62,8 +68,6 @@ def get_proj_info(raster): # get the SRS WKT string and EPSG code from input ras
     return (prj, srs, epsg) # returns PRJ str [0], SRS string [1] and EPSG code [2]
 
 def get_gcs_extent(raster): # get GCS (decimal degrees) extent from projected raster
-
-    from osgeo import gdal,ogr,osr
 
     # Get the extent from the geotransform
     ds=gdal.Open(raster)

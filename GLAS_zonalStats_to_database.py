@@ -111,14 +111,15 @@ def add_to_db(outDbCsv, outDbShp, inCsv): # given an input csv we wanna add, add
 ##            print 'adding: {}'.format(line)
 
             if dbHdrLen != len(line):
-                print "Cannot add current output ({}) to {} because the number of columns is different.".format(inCsv, outDbCsv)
-                print "-This means we convert output db csv to shp either"
-                return
+                print "\nCannot add current output ({}) to {} OR the output .shp because the number of columns is different.".format(inCsv, outDbCsv)
+                return None
+
             with open(outDbCsv, 'a') as odc: odc.write('{}\n'.format(','.join(line)))
 
     # lastly, write the accumulated output csv db to shp
     if os.path.exists(outDbShp): os.rename(outDbShp, outDbShp.replace('.shp', '__old.shp')) # first rename the existing shp db if it exists
     database_to_shp(outDbCsv, outEPSG='4326') # then create shp, outDbShp will be same name/path as .csv but with .shp extension. give it WGS84 epsg when creating big database
+    return "added"
 
 def main(input_raster, input_polygon, bufferSize, outDir, zstats = params.default_zstats, logFile = None, mainDatabasePrefix = params.default_mainDatabase, addWrs2 = True, outputShapefile = True):
 
@@ -237,8 +238,8 @@ def main(input_raster, input_polygon, bufferSize, outDir, zstats = params.defaul
     else: outShpPath = None
 
     # lastly, append to running db
-    add_to_db(outDatabaseCsv, outDatabaseShp, outCsvFile)
-    print "\nAdded outputs to {} and {}\n".format(outDatabaseCsv, outDatabaseShp)
+    db_result = add_to_db(outDatabaseCsv, outDatabaseShp, outCsvFile)
+    if db_result =='added': print "\nAdded outputs to {} and {}\n".format(outDatabaseCsv, outDatabaseShp)
 
     print "\nFinished running zonal stats: {}\n----------------------------------------------------------------------------\n".format(datetime.datetime.now().strftime("%m%d%Y-%H%M"))
     return outCsvFile, outShpPath
