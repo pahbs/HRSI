@@ -87,8 +87,8 @@ with open(tempSummaryCsv, 'w') as oc:
 # So write the filtered points to csv, then use csv to make a shp
 filteredCsv = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/spaceForTimeSwap/filteredPointCsvs/{}__filteredPoints.csv'.format(heightMetric)
 
-db_df.to_csv(filteredCsv, index=False)
-print zs.database_to_shp(filteredCsv)
+##db_df.to_csv(filteredCsv, index=False)
+##print zs.database_to_shp(filteredCsv)
 
 # iterate through classes
 for eco in uClasses:
@@ -96,7 +96,7 @@ for eco in uClasses:
     class_df = db_df[db_df[classCol]==eco]
     uYears = class_df['timeSinceDist'].unique() # unique time steps for class
 
-    #import pdb; pdb.set_trace()
+    import pdb; pdb.set_trace()
     X = [] # X = time since disturbance
     Y = [] # Y = height in meters
     for yr in uYears:
