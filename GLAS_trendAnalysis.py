@@ -36,12 +36,12 @@ minHeightFilter = 0.1 # must grow 0.1 meters + per year
 maxHeightFilter = 1   # cannot grow > 1 m + per year
 minTccFilter = 10 # blanket filter ... TCC must be 10% or more at all times
 maxTccFilter = 30 # TCC must be less than 30%
-minN = 100 # minumum number of samples per year needed to be included in trend
+minN = 30 # minumum number of samples per year needed to be included in trend
 
 
 # Read input database into Pandas dataframe
 db_df = pd.read_csv(databaseCsv)
-import pdb; pdb.set_trace()
+#import pdb; pdb.set_trace()
 # filter based on TCC; slope (?), other blanket filters; disturbance year not none
 db_df = db_df[(db_df[tccCol] >= minTccFilter) & (db_df[tccCol] <= maxTccFilter)] # 10% <= TCC <= 30%
 db_df = db_df[db_df[distYrCol] != 'None'] # Has a disturbance year
@@ -96,14 +96,30 @@ for eco in uClasses:
     class_df = db_df[db_df[classCol]==eco]
     uYears = class_df['timeSinceDist'].unique() # unique time steps for class
 
+    #import pdb; pdb.set_trace()
+    X = [] # X = time since disturbance
+    Y = [] # Y = height in meters
     for yr in uYears:
         year_df = class_df[class_df['timeSinceDist']==yr] # dataframe for eco class/year
 
         # get the number of rows from year_df
         nSamples = len(year_df)
+        if nSamples >= minN:
+            X.append(int(yr))
+        else:
+            print "Class {}, year {} has only {} samples\n".format(eco, yr, nSamples)
+            continue # move on
+
         # get median value of heights from year_df
         medHeight = year_df['height'].median()
+        Y.append(float(medHeight))
 
+
+    print "Class {}".format(eco)
+    print np.unique(X)
+    print np.polyfit(X, Y, 1)
+    print np.poly1d(np.polyfit(X, Y, 1))
+    plt.plot(np.unique(X), np.poly1d(np.polyfit(X, Y, 1))(np.unique(X)))
 ##        #print eco, yr, nSamples, medHeight
 ##        with open(tempSummaryCsv, 'a') as oc:
 ##            oc.write('{},{},{},{}\n'.format(eco, yr, nSamples, medHeight))
