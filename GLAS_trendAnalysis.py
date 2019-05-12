@@ -96,9 +96,9 @@ for eco in uClasses:
     class_df = db_df[db_df[classCol]==eco]
     uYears = class_df['timeSinceDist'].unique() # unique time steps for class
 
-    import pdb; pdb.set_trace()
-    X = [] # X = time since disturbance
-    Y = [] # Y = height in meters
+    #import pdb; pdb.set_trace()
+    X = [1] # X = time since disturbance
+    Y = [1.37] # Y = height in meters
     for yr in uYears:
         year_df = class_df[class_df['timeSinceDist']==yr] # dataframe for eco class/year
 
@@ -128,7 +128,7 @@ for eco in uClasses:
         # figure out how to send to least squares for growth rates
 
         # write to big CSV??? heightMetric, Class, growth rate, p-value
-
+    sys.exit()
 
 
 # iterate through points: filter based on height per year, write to CSV
