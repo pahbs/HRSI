@@ -116,7 +116,10 @@ for eco in uClasses:
 
 
     print "Class {}".format(eco)
+    print X
+    print Y
     print np.unique(X)
+    print np.unique(Y)
     print np.polyfit(X, Y, 1)
     print np.poly1d(np.polyfit(X, Y, 1))
     plt.plot(np.unique(X), np.poly1d(np.polyfit(X, Y, 1))(np.unique(X)))
