@@ -123,7 +123,7 @@ for eco in uClasses:
     print np.unique(Y)
     print np.polyfit(X, Y, 1)
     print np.poly1d(np.polyfit(X, Y, 1))
-    plt.plot(np.unique(X), np.poly1d(np.polyfit(X, Y, 1))(np.unique(X)))
+    #plt.plot(np.unique(X), np.poly1d(np.polyfit(X, Y, 1))(np.unique(X)))
 ##        #print eco, yr, nSamples, medHeight
 ##        with open(tempSummaryCsv, 'a') as oc:
 ##            oc.write('{},{},{},{}\n'.format(eco, yr, nSamples, medHeight))
