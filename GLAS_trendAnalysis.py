@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 import time
 import GLAS_zonalStats_to_database as zs # for csv to db function
 
-def regression(X, Y, order=1): # doing linear
+def regression(X, Y, order=2): # doing linear
 
     coeffs = np.polyfit(X, Y, order) # returns [ m  b ]
     print coeffs
@@ -152,6 +152,8 @@ for eco in uClasses:
     X = np.asarray(X)
     Y = np.asarray(Y)
     m,b,R2,fit = regression(X, Y)
+    print fit
+    print R2
     #import pdb; pdb.set_trace()
     outFig = os.path.join(swapDir, 'plot_{}_class{}.png'.format(heightMetric, eco))
     fig = plt.figure(figsize=(12,8.27))
