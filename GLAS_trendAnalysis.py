@@ -13,6 +13,27 @@ import matplotlib.pyplot as plt
 import time
 import GLAS_zonalStats_to_database as zs # for csv to db function
 
+def regression(X, Y, order=1): # doing linear
+
+    coeffs = np.polyfit(X, Y, order) # returns [ m  b ]
+    print coeffs
+    m,b = coeffs.tolist()
+
+    # get r-squared and fit [function(x) that predicts y]
+    fit = np.poly1d(coeffs)
+    #print fit
+    yhat = fit(X)
+    ybar = np.sum(Y)/float(len(Y))
+
+    ssreg = np.sum((yhat-ybar)**2) # same as np.sum([(yihat-ybar)**2 for yihat in yhat])
+    sstot = np.sum((Y-ybar)**2) # same as np.sum([(yi-ybar)**2 for yi in Y])
+    if sstot ==0:
+        print Y
+        print ybar
+    R2 = float(ssreg)/sstot
+
+    return m,b,R2,fit
+
 # Set some variables
 # The main zonal stats database/csv where all data is kept
 #databaseCsv = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/Stacks_20190328/outputs/WV01_20120817_102001001CD26500_102001001C4C8800__stats.csv' # temp
@@ -130,13 +151,14 @@ for eco in uClasses:
     # convert to np array:
     X = np.asarray(X)
     Y = np.asarray(Y)
-    import pdb; pdb.set_trace()
+    m,b,R2,fit = regression(X, Y)
+    #import pdb; pdb.set_trace()
     outFig = os.path.join(swapDir, 'plot_{}_class{}.png'.format(heightMetric, eco))
     fig = plt.figure(figsize=(12,8.27))
     #fig = Figure(figsize=(12,8.27))
     ax = fig.add_subplot(111)
     #ax.plot(X, m*X + b, color = 'blue')
-    ax.plot(X, np.poly1d(np.polyfit(X, Y, 1)), color = 'blue')
+    ax.plot(X, m*X + b, color = 'blue')
     ax.scatter(X, Y, color='green')
     ax.set_title('TITLE', fontsize=17, fontweight='bold')#, fontdict=fonts)
 ##    ax.set_xlim(min(X)-1, max(X)+1)
@@ -145,12 +167,13 @@ for eco in uClasses:
     ax.set_ylabel('Stand Height (m)', fontsize=14, fontweight='bold')
     plt.subplots_adjust(top=0.88)
     fig.savefig(outFig)
+    print "Wrote to {}\n".format(outFig)
 
         # create df to be written to CSV --> some attributes, height, timeSinceDist, other/all attributes temp for verification
         # figure out how to send to least squares for growth rates
 
         # write to big CSV??? heightMetric, Class, growth rate, p-value
-    sys.exit()
+    #sys.exit()
 
 
 # iterate through points: filter based on height per year, write to CSV
