@@ -127,6 +127,7 @@ for eco in uClasses:
 ##        #print eco, yr, nSamples, medHeight
 ##        with open(tempSummaryCsv, 'a') as oc:
 ##            oc.write('{},{},{},{}\n'.format(eco, yr, nSamples, medHeight))
+    import pdb; pdb.set_trace()
     outFig = os.path.join(swapDir, 'plot_class{}.png'.format(eco))
     fig = plt.figure(figsize=(12,8.27))
     #fig = Figure(figsize=(12,8.27))
