@@ -120,8 +120,8 @@ for eco in uClasses:
     uYears = class_df['timeSinceDist'].unique() # unique time steps for class
 
     #import pdb; pdb.set_trace()
-    X = [1] # X = time since disturbance
-    Y = [1.37] # Y = height in meters
+    X = []#[1] # X = time since disturbance
+    Y = []#[1.37] # Y = height in meters
     for yr in uYears:
         year_df = class_df[class_df['timeSinceDist']==yr] # dataframe for eco class/year
 
@@ -156,13 +156,13 @@ for eco in uClasses:
 ##    print fit
 ##    print R2
     fit = regression(X, Y)
-    import pdb; pdb.set_trace()
+    #import pdb; pdb.set_trace()
     outFig = os.path.join(swapDir, 'plot_{}_class{}.png'.format(heightMetric, eco))
     fig = plt.figure(figsize=(12,8.27))
     #fig = Figure(figsize=(12,8.27))
     ax = fig.add_subplot(111)
     #ax.plot(X, m*X + b, color = 'blue')
-    ax.plot(X, m*X + b, color = 'blue')
+    ax.plot(X, fit(X), color = 'blue')
     ax.scatter(X, Y, color='green')
     ax.set_title('TITLE', fontsize=17, fontweight='bold')#, fontdict=fonts)
 ##    ax.set_xlim(min(X)-1, max(X)+1)
