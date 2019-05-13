@@ -61,6 +61,7 @@ minTccFilter = 10 # blanket filter ... TCC must be 10% or more at all times
 maxTccFilter = 30 # TCC must be less than 30%
 minN = 30 # minumum number of samples per year needed to be included in trend
 
+order = 3 # messing around
 
 # Read input database into Pandas dataframe
 db_df = pd.read_csv(databaseCsv)
@@ -152,7 +153,7 @@ for eco in uClasses:
 ##        with open(tempSummaryCsv, 'a') as oc:
 ##            oc.write('{},{},{},{}\n'.format(eco, yr, nSamples, medHeight))
 
-    import pdb; pdb.set_trace()
+    #import pdb; pdb.set_trace()
     # convert to np array:
 ##    X = np.asarray(X)
 ##    Y = np.asarray(Y)
@@ -161,9 +162,9 @@ for eco in uClasses:
 ##    m,b,R2,fit = regression(X, Y)
 ##    print fit
 ##    print R2
-    fit = regression(X, Y)
+    fit = regression(X, Y, order)
     #import pdb; pdb.set_trace()
-    outFig = os.path.join(swapDir, 'plot_{}_class{}.png'.format(heightMetric, eco))
+    outFig = os.path.join(swapDir, 'plot_{}_class{}__order{}.png'.format(heightMetric, eco, order))
     fig = plt.figure(figsize=(12,8.27))
     #fig = Figure(figsize=(12,8.27))
     ax = fig.add_subplot(111)
@@ -177,6 +178,7 @@ for eco in uClasses:
     ax.set_ylabel('Stand Height (m)', fontsize=14, fontweight='bold')
     plt.subplots_adjust(top=0.88)
     fig.savefig(outFig)
+    print len(X)
     print "Wrote to {}\n".format(outFig)
 
         # create df to be written to CSV --> some attributes, height, timeSinceDist, other/all attributes temp for verification
