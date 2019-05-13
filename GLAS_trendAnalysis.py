@@ -16,21 +16,21 @@ import GLAS_zonalStats_to_database as zs # for csv to db function
 def regression(X, Y, order=2): # doing linear
 
     coeffs = np.polyfit(X, Y, order) # returns [ m  b ]
-    print coeffs
-    m,b = coeffs.tolist()
+##    print coeffs
+##    m,b = coeffs.tolist()
 
     # get r-squared and fit [function(x) that predicts y]
     fit = np.poly1d(coeffs)
-    #print fit
-    yhat = fit(X)
-    ybar = np.sum(Y)/float(len(Y))
-
-    ssreg = np.sum((yhat-ybar)**2) # same as np.sum([(yihat-ybar)**2 for yihat in yhat])
-    sstot = np.sum((Y-ybar)**2) # same as np.sum([(yi-ybar)**2 for yi in Y])
-    if sstot ==0:
-        print Y
-        print ybar
-    R2 = float(ssreg)/sstot
+##    #print fit
+##    yhat = fit(X)
+##    ybar = np.sum(Y)/float(len(Y))
+##
+##    ssreg = np.sum((yhat-ybar)**2) # same as np.sum([(yihat-ybar)**2 for yihat in yhat])
+##    sstot = np.sum((Y-ybar)**2) # same as np.sum([(yi-ybar)**2 for yi in Y])
+##    if sstot ==0:
+##        print Y
+##        print ybar
+##    R2 = float(ssreg)/sstot
 
     #return m,b,R2,fit
     return fit
