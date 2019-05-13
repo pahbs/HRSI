@@ -120,35 +120,38 @@ for eco in uClasses:
     uYears = class_df['timeSinceDist'].unique() # unique time steps for class
 
     #import pdb; pdb.set_trace()
-    X = []#[1] # X = time since disturbance
-    Y = []#[1.37] # Y = height in meters
+##    X = []#[1] # X = time since disturbance
+##    Y = []#[1.37] # Y = height in meters
+    valDict = {}
     for yr in uYears:
         year_df = class_df[class_df['timeSinceDist']==yr] # dataframe for eco class/year
 
         # get the number of rows from year_df
         nSamples = len(year_df)
-        if nSamples >= minN:
-            X.append(int(yr))
-        else:
+        if nSamples < minN:
+            #X.append(int(yr))
+ #       else:
             print "Class {}, year {} has only {} samples\n".format(eco, yr, nSamples)
             continue # move on
 
         # get median value of heights from year_df
         medHeight = year_df['height'].median()
-        Y.append(float(medHeight))
+        #Y.append(float(medHeight))
+        valDict[int(yr)] = float(medHeight)
 
-
-    print "Class {}".format(eco)
-    print X
-    print Y
-    print np.unique(X)
-    print np.unique(Y)
-    print np.polyfit(X, Y, 1)
-    print np.poly1d(np.polyfit(X, Y, 1))
+##    print "Class {}".format(eco)
+##    print X
+##    print Y
+##    print np.unique(X)
+##    print np.unique(Y)
+##    print np.polyfit(X, Y, 1)
+##    print np.poly1d(np.polyfit(X, Y, 1))
     #plt.plot(np.unique(X), np.poly1d(np.polyfit(X, Y, 1))(np.unique(X)))
 ##        #print eco, yr, nSamples, medHeight
 ##        with open(tempSummaryCsv, 'a') as oc:
 ##            oc.write('{},{},{},{}\n'.format(eco, yr, nSamples, medHeight))
+
+    import pdb; pdb.set_trace()
     # convert to np array:
     X = np.asarray(X)
     Y = np.asarray(Y)
