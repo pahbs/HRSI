@@ -127,8 +127,11 @@ for eco in uClasses:
 ##        #print eco, yr, nSamples, medHeight
 ##        with open(tempSummaryCsv, 'a') as oc:
 ##            oc.write('{},{},{},{}\n'.format(eco, yr, nSamples, medHeight))
+    # convert to np array:
+    X = np.asarray(X)
+    Y = np.asarray(Y)
     import pdb; pdb.set_trace()
-    outFig = os.path.join(swapDir, 'plot_class{}.png'.format(eco))
+    outFig = os.path.join(swapDir, 'plot_{}_class{}.png'.format(heightMetric, eco))
     fig = plt.figure(figsize=(12,8.27))
     #fig = Figure(figsize=(12,8.27))
     ax = fig.add_subplot(111)
