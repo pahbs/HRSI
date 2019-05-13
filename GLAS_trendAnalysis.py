@@ -24,6 +24,7 @@ heightMetric = sys.argv[1]#'GLAS' # metric being used for height, which column(s
 # DSM: '2__median' (sr05_4m-sr05-min_1m-sr05-max_dz_eul_type_warp.tif median)
 # Combined: '3__median' (DSM median) - 'elev_groun' (ground height from GLAS)
 
+swapDir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/spaceForTimeSwap'
 
 tccCol = '6__median' # median of LS7_CC_type_warp.tif; aka Tree Canopy Cover
 inClassCol = '10__max' # input class val from PCA class tiff. Use max for now
@@ -78,9 +79,9 @@ db_df[classCol] = (db_df[inClassCol]/100000000).astype('float32').round().astype
 uClasses = db_df[classCol].unique()
 
 # temporary, create csv of overview --> class, year, nSamples, median Height
-tempSummaryCsv = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/classYearSummary__{}.csv'.format(heightMetric)
-with open(tempSummaryCsv, 'w') as oc:
-    oc.write('Class,TimeSinceDist,nSamples,medianHeight\n')
+##tempSummaryCsv = os.path.join(swapDir, 'classYearSummary__{}.csv'.format(heightMetric))
+##with open(tempSummaryCsv, 'w') as oc:
+##    oc.write('Class,TimeSinceDist,nSamples,medianHeight\n')
 
 
 # At this point, we have filtered down the points and we want to visualize this spatially
@@ -126,6 +127,20 @@ for eco in uClasses:
 ##        #print eco, yr, nSamples, medHeight
 ##        with open(tempSummaryCsv, 'a') as oc:
 ##            oc.write('{},{},{},{}\n'.format(eco, yr, nSamples, medHeight))
+    outFig = os.path.join(swapDir, 'plot_class{}.png'.format(eco))
+    fig = plt.figure(figsize=(12,8.27))
+    #fig = Figure(figsize=(12,8.27))
+    ax = fig.add_subplot(111)
+    #ax.plot(X, m*X + b, color = 'blue')
+    ax.plot(X, np.poly1d(np.polyfit(X, Y, 1)), color = 'blue')
+    ax.scatter(X, Y, color='green')
+    ax.set_title('TITLE', fontsize=17, fontweight='bold')#, fontdict=fonts)
+##    ax.set_xlim(min(X)-1, max(X)+1)
+##    ax.set_ylim(-5, 35)
+    ax.set_xlabel('Time Since Disturbance (years)', fontsize=14, fontweight='bold')
+    ax.set_ylabel('Stand Height (m)', fontsize=14, fontweight='bold')
+    plt.subplots_adjust(top=0.88)
+    fig.savefig(outFig)
 
         # create df to be written to CSV --> some attributes, height, timeSinceDist, other/all attributes temp for verification
         # figure out how to send to least squares for growth rates
