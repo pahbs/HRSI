@@ -138,6 +138,7 @@ for eco in uClasses:
         medHeight = year_df['height'].median()
         #Y.append(float(medHeight))
         valDict[int(yr)] = float(medHeight)
+        print yr, medHeight
 
 ##    print "Class {}".format(eco)
 ##    print X
@@ -153,8 +154,10 @@ for eco in uClasses:
 
     import pdb; pdb.set_trace()
     # convert to np array:
-    X = np.asarray(X)
-    Y = np.asarray(Y)
+##    X = np.asarray(X)
+##    Y = np.asarray(Y)
+    X = np.asarray(valDict.keys())
+    Y = np.asarray(valDict.values())
 ##    m,b,R2,fit = regression(X, Y)
 ##    print fit
 ##    print R2
