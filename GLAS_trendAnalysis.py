@@ -32,7 +32,8 @@ def regression(X, Y, order=2): # doing linear
         print ybar
     R2 = float(ssreg)/sstot
 
-    return m,b,R2,fit
+    #return m,b,R2,fit
+    return fit
 
 # Set some variables
 # The main zonal stats database/csv where all data is kept
@@ -151,10 +152,11 @@ for eco in uClasses:
     # convert to np array:
     X = np.asarray(X)
     Y = np.asarray(Y)
-    m,b,R2,fit = regression(X, Y)
-    print fit
-    print R2
-    #import pdb; pdb.set_trace()
+##    m,b,R2,fit = regression(X, Y)
+##    print fit
+##    print R2
+    fit = regression(X, Y)
+    import pdb; pdb.set_trace()
     outFig = os.path.join(swapDir, 'plot_{}_class{}.png'.format(heightMetric, eco))
     fig = plt.figure(figsize=(12,8.27))
     #fig = Figure(figsize=(12,8.27))
