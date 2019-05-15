@@ -195,7 +195,7 @@ for eco in uClasses:
     #fit = regression(X, Y, order) # try doing all. order 2
     m, b, r_value, p_value, std_err = stats.linregress(X, Y)
     print "{}*x + {}".format(m, b)
-    #import pdb; pdb.set_trace()
+    import pdb; pdb.set_trace()
     outFig = os.path.join(swapDir, 'plot_{}_class{}__order{}.png'.format(heightMetric, eco, order))
     fig = plt.figure(figsize=(12,8.27))
     #fig = Figure(figsize=(12,8.27))
