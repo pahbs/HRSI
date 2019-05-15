@@ -190,6 +190,7 @@ for eco in uClasses:
     ax = fig.add_subplot(111)
     #ax.plot(X, m*X + b, color = 'blue')
     ax.plot(X, fit(X), color = 'blue')
+    ax.scatter(X_all, Y_all, color='black', s=15) # look at all points too
     ax.scatter(X, Y, color='green')
     ax.set_title('TITLE', fontsize=17, fontweight='bold')#, fontdict=fonts)
 ##    ax.set_xlim(min(X)-1, max(X)+1)
