@@ -118,10 +118,15 @@ uClasses = db_df[classCol].unique()
 
 # At this point, we have filtered down the points and we want to visualize this spatially
 # So write the filtered points to csv, then use csv to make a shp
-filteredCsv = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/spaceForTimeSwap/filteredPointCsvs/{}__filteredPoints.csv'.format(heightMetric)
+filteredCsv = os.path.join(swapDir, 'filteredPointCsvs/{}__filteredPoints.csv'.format(heightMetric))
 
 ##db_df.to_csv(filteredCsv, index=False)
 ##print zs.database_to_shp(filteredCsv)
+
+# csv for all heights and time since disturbance. One per height metric
+valueCsv = os.path.join(swapDir, 'valueCsvs', '{}__heights.csv'.format(heightMetric))
+with open(valueCsv, 'w') as vc:
+    vc.write('Class,Age,Height\n')
 
 # iterate through classes
 for eco in uClasses:
@@ -191,6 +196,13 @@ for eco in uClasses:
 ##    # temporary:
 ##    X = X_all
 ##    Y = Y_all
+
+    # write all the heights to a csv if pass sample threshold
+    for i, x in enumeratue(X_all):
+        y = X_all[i]
+        with open(valueCsv, 'a') as vc:
+            vc.write('{},{},{}\n'.format(eco, x, y))
+
 
     #fit = regression(X, Y, order) # try doing all. order 2
     m, b, r_value, p_value, std_err = stats.linregress(X, Y)
