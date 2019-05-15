@@ -117,6 +117,7 @@ filteredCsv = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/spaceForTimeSw
 # iterate through classes
 for eco in uClasses:
 
+
     class_df = db_df[db_df[classCol]==eco]
     uYears = class_df['timeSinceDist'].unique() # unique time steps for class
 
@@ -129,7 +130,7 @@ for eco in uClasses:
     for yr in uYears:
 
         year_df = class_df[class_df['timeSinceDist']==yr] # dataframe for eco class/year
-        if str(eco) == '20' and str(yr) == '14.0':
+        if int(eco) == 20 and int(yr) == 14.0:
             import pdb; pdb.set_trace()
         # get the number of rows from year_df
         nSamples = len(year_df)
