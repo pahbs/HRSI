@@ -177,7 +177,11 @@ for eco in uClasses:
         print "Not enough years with samples for class {}".format(eco)
         continue
 
-    fit = regression(X_all, Y_all, order) # try doing all. order 2
+    # temporary:
+    X = X_all
+    Y = Y_all
+
+    fit = regression(X, Y, order) # try doing all. order 2
 
     #import pdb; pdb.set_trace()
     outFig = os.path.join(swapDir, 'plot_{}_class{}__order{}.png'.format(heightMetric, eco, order))
