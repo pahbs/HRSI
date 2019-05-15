@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 import time
 import GLAS_zonalStats_to_database as zs # for csv to db function
 
-def regression(X, Y, order=2): # doing linear
+def regression(X, Y, order=1): # doing linear
 
     coeffs = np.polyfit(X, Y, order) # returns [ m  b ]
 ##    print coeffs
