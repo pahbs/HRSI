@@ -196,6 +196,7 @@ for eco in uClasses:
     m, b, r_value, p_value, std_err = stats.linregress(X, Y)
     print "{}*x + {}".format(m, b)
     print p_value
+    title = 'Ecoregion {}     |     y = {}*x + {}     |     p-value = {}'.format(eco, m, b, p_value)
     #import pdb; pdb.set_trace()
     outFig = os.path.join(swapDir, 'plot_{}_class{}__order{}.png'.format(heightMetric, eco, order))
     fig = plt.figure(figsize=(12,8.27))
