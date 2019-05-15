@@ -196,7 +196,7 @@ for eco in uClasses:
     m, b, r_value, p_value, std_err = stats.linregress(X, Y)
     print "{}*x + {}".format(m, b)
     print p_value
-    title = 'Ecoregion {}     |     y = {}*x + {}     |     p-value = {}'.format(eco, m, b, p_value)
+    title = 'Ecoregion {}     |     y = {}*x + {}     |     p-value = {}'.format(eco, round(m,2), round(b, 2), round(p_value, 2))
     #import pdb; pdb.set_trace()
     outFig = os.path.join(swapDir, 'plot_{}_class{}.png'.format(heightMetric, eco))
     fig = plt.figure(figsize=(12,8.27))
@@ -207,7 +207,7 @@ for eco in uClasses:
     ax.plot(X, m*X + b, color = 'blue')
     ax.scatter(X_all, Y_all, color='black', s=15) # look at all points too
     ax.scatter(X, Y, color='green')
-    ax.set_title(title, fontsize=17, fontweight='bold')#, fontdict=fonts)
+    ax.set_title(title, fontsize=13, fontweight='bold')#, fontdict=fonts)
 ##    ax.set_xlim(min(X)-1, max(X)+1)
 ##    ax.set_ylim(-5, 35)
     ax.set_xlabel('Time Since Disturbance (years)', fontsize=14, fontweight='bold')
