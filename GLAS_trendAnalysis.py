@@ -121,9 +121,11 @@ for eco in uClasses:
     uYears = class_df['timeSinceDist'].unique() # unique time steps for class
 
     #import pdb; pdb.set_trace()
-##    X = []#[1] # X = time since disturbance
-##    Y = []#[1.37] # Y = height in meters
-    valDict = {}
+    # for all points
+    X_all = []#[1] # X = time since disturbance
+    Y_all = []#[1.37] # Y = height in meters
+    medDict = {} # for median values
+    valDict = {} # for all values
     for yr in uYears:
 
         year_df = class_df[class_df['timeSinceDist']==yr] # dataframe for eco class/year
@@ -136,8 +138,16 @@ for eco in uClasses:
             print "Class {}, year {} has only {} samples\n".format(eco, yr, nSamples)
             continue # move on
 
+        year_heights = year_df['height']
+
+        # get all values: -- this won't work, it will replace the key every time. try lists
+        for i in year_heights:
+            X_all.append(int(yr))
+            Y_all.append(float(i))
+
+
         # get median value of heights from year_df
-        medHeight = year_df['height'].median()
+        medHeight = year_heights.median()
         #Y.append(float(medHeight))
         valDict[int(yr)] = float(medHeight)
         print yr, medHeight
@@ -167,7 +177,7 @@ for eco in uClasses:
         print "Not enough years with samples for class {}".format(eco)
         continue
 
-    fit = regression(X, Y, order)
+    fit = regression(X_all, Y_all, order) # try doing all. order 2
 
     #import pdb; pdb.set_trace()
     outFig = os.path.join(swapDir, 'plot_{}_class{}__order{}.png'.format(heightMetric, eco, order))
