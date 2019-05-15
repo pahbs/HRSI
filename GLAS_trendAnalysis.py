@@ -198,7 +198,7 @@ for eco in uClasses:
 ##    Y = Y_all
 
     # write all the heights to a csv if pass sample threshold
-    for i, x in enumeratue(X_all):
+    for i, x in enumerate(X_all):
         y = X_all[i]
         with open(valueCsv, 'a') as vc:
             vc.write('{},{},{}\n'.format(eco, x, y))
