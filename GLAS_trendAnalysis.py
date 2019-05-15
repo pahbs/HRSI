@@ -195,14 +195,14 @@ for eco in uClasses:
     #fit = regression(X, Y, order) # try doing all. order 2
     m, b, r_value, p_value, std_err = stats.linregress(X, Y)
     print "{}*x + {}".format(m, b)
-    import pdb; pdb.set_trace()
+    #import pdb; pdb.set_trace()
     outFig = os.path.join(swapDir, 'plot_{}_class{}__order{}.png'.format(heightMetric, eco, order))
     fig = plt.figure(figsize=(12,8.27))
     #fig = Figure(figsize=(12,8.27))
     ax = fig.add_subplot(111)
     #ax.plot(X, m*X + b, color = 'blue')
     #ax.plot(X, fit(X), color = 'blue')
-    ax.plot(X, [m*X + b], color = 'blue')
+    ax.plot(X, m*X + b, color = 'blue')
     ax.scatter(X_all, Y_all, color='black', s=15) # look at all points too
     ax.scatter(X, Y, color='green')
     ax.set_title('TITLE', fontsize=17, fontweight='bold')#, fontdict=fonts)
