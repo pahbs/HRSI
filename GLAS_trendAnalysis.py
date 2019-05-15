@@ -129,7 +129,8 @@ for eco in uClasses:
     for yr in uYears:
 
         year_df = class_df[class_df['timeSinceDist']==yr] # dataframe for eco class/year
-
+        if str(eco) == '20' and str(yr) == '14.0':
+            import pdb; pdb.set_trace()
         # get the number of rows from year_df
         nSamples = len(year_df)
         if nSamples < minN:
