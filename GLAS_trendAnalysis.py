@@ -61,7 +61,7 @@ minTccFilter = 10 # blanket filter ... TCC must be 10% or more at all times
 maxTccFilter = 30 # TCC must be less than 30%
 minN = 30 # minumum number of samples per year needed to be included in trend
 
-order = 2 # messing around
+order = 1 # messing around
 
 # Read input database into Pandas dataframe
 db_df = pd.read_csv(databaseCsv)
