@@ -162,7 +162,10 @@ for eco in uClasses:
 ##    m,b,R2,fit = regression(X, Y)
 ##    print fit
 ##    print R2
-    fit = regression(X, Y, order)
+    try:
+        fit = regression(X, Y, order)
+    except TypeError:
+        import pdb;pdb.set_trace()
     #import pdb; pdb.set_trace()
     outFig = os.path.join(swapDir, 'plot_{}_class{}__order{}.png'.format(heightMetric, eco, order))
     fig = plt.figure(figsize=(12,8.27))
