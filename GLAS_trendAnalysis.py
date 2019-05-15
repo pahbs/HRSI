@@ -12,28 +12,37 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import time
 import GLAS_zonalStats_to_database as zs # for csv to db function
+from scipy import stats
 
-def regression(X, Y, order=1): # doing linear
-
-    coeffs = np.polyfit(X, Y, order) # returns [ m  b ]
-##    print coeffs
-##    m,b = coeffs.tolist()
-
-    # get r-squared and fit [function(x) that predicts y]
-    fit = np.poly1d(coeffs)
-##    #print fit
-##    yhat = fit(X)
-##    ybar = np.sum(Y)/float(len(Y))
+##def regression(X, Y, order=1): # doing linear
 ##
-##    ssreg = np.sum((yhat-ybar)**2) # same as np.sum([(yihat-ybar)**2 for yihat in yhat])
-##    sstot = np.sum((Y-ybar)**2) # same as np.sum([(yi-ybar)**2 for yi in Y])
-##    if sstot ==0:
-##        print Y
-##        print ybar
-##    R2 = float(ssreg)/sstot
+##    coeffs = np.polyfit(X, Y, order) # returns [ m  b ]
+####    print coeffs
+####    m,b = coeffs.tolist()
+##
+##    # get r-squared and fit [function(x) that predicts y]
+##    fit = np.poly1d(coeffs)
+####    #print fit
+####    yhat = fit(X)
+####    ybar = np.sum(Y)/float(len(Y))
+####
+####    ssreg = np.sum((yhat-ybar)**2) # same as np.sum([(yihat-ybar)**2 for yihat in yhat])
+####    sstot = np.sum((Y-ybar)**2) # same as np.sum([(yi-ybar)**2 for yi in Y])
+####    if sstot ==0:
+####        print Y
+####        print ybar
+####    R2 = float(ssreg)/sstot
+##
+##    #return m,b,R2,fit
+##    return fit
 
-    #return m,b,R2,fit
-    return fit
+### try scipy, has the p-value already:
+##def regression(X, Y):
+
+
+
+
+
 
 # Set some variables
 # The main zonal stats database/csv where all data is kept
@@ -183,15 +192,17 @@ for eco in uClasses:
 ##    X = X_all
 ##    Y = Y_all
 
-    fit = regression(X, Y, order) # try doing all. order 2
-
+    #fit = regression(X, Y, order) # try doing all. order 2
+    m, b, r_value, p_value, std_err = stats.linregress(X, Y)
+    print "{}*x + {}".format(m, b)
     #import pdb; pdb.set_trace()
     outFig = os.path.join(swapDir, 'plot_{}_class{}__order{}.png'.format(heightMetric, eco, order))
     fig = plt.figure(figsize=(12,8.27))
     #fig = Figure(figsize=(12,8.27))
     ax = fig.add_subplot(111)
     #ax.plot(X, m*X + b, color = 'blue')
-    ax.plot(X, fit(X), color = 'blue')
+    #ax.plot(X, fit(X), color = 'blue')
+    ax.plot(X, [m*X + b], color = 'blue')
     ax.scatter(X_all, Y_all, color='black', s=15) # look at all points too
     ax.scatter(X, Y, color='green')
     ax.set_title('TITLE', fontsize=17, fontweight='bold')#, fontdict=fonts)
