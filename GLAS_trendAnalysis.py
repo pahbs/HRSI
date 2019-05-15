@@ -139,8 +139,8 @@ for eco in uClasses:
     for yr in uYears:
 
         year_df = class_df[class_df['timeSinceDist']==yr] # dataframe for eco class/year
-        if int(eco) == 20 and int(yr) == 14.0:
-            import pdb; pdb.set_trace()
+##        if int(eco) == 20 and int(yr) == 14.0:
+##            import pdb; pdb.set_trace()
         # get the number of rows from year_df
         nSamples = len(year_df)
         if nSamples < minN:
@@ -195,6 +195,7 @@ for eco in uClasses:
     #fit = regression(X, Y, order) # try doing all. order 2
     m, b, r_value, p_value, std_err = stats.linregress(X, Y)
     print "{}*x + {}".format(m, b)
+    print p_value
     #import pdb; pdb.set_trace()
     outFig = os.path.join(swapDir, 'plot_{}_class{}__order{}.png'.format(heightMetric, eco, order))
     fig = plt.figure(figsize=(12,8.27))
