@@ -125,6 +125,7 @@ for eco in uClasses:
 ##    Y = []#[1.37] # Y = height in meters
     valDict = {}
     for yr in uYears:
+
         year_df = class_df[class_df['timeSinceDist']==yr] # dataframe for eco class/year
 
         # get the number of rows from year_df
@@ -162,10 +163,12 @@ for eco in uClasses:
 ##    m,b,R2,fit = regression(X, Y)
 ##    print fit
 ##    print R2
-    try:
-        fit = regression(X, Y, order)
-    except TypeError:
-        import pdb;pdb.set_trace()
+    if len(X) < 2: # no year/only one year for class passed the minN threshold
+        print "Not enough years with samples for class {}".format(eco)
+        continue
+
+    fit = regression(X, Y, order)
+
     #import pdb; pdb.set_trace()
     outFig = os.path.join(swapDir, 'plot_{}_class{}__order{}.png'.format(heightMetric, eco, order))
     fig = plt.figure(figsize=(12,8.27))
