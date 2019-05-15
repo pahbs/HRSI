@@ -177,9 +177,9 @@ for eco in uClasses:
         print "Not enough years with samples for class {}".format(eco)
         continue
 
-    # temporary:
-    X = X_all
-    Y = Y_all
+##    # temporary:
+##    X = X_all
+##    Y = Y_all
 
     fit = regression(X, Y, order) # try doing all. order 2
 
