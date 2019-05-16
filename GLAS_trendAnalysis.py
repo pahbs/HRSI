@@ -204,7 +204,7 @@ for eco in uClasses:
             vc.write('{},{},{}\n'.format(eco, x, y))
 
     # and build X_violin and Y_violin for violin plots
-    import pdb; pdb.set_trace()
+##    import pdb; pdb.set_trace()
     X_violin = []
     Y_violin = []
     for uX in list(set(X_all)): # for each unique X
@@ -236,6 +236,7 @@ for eco in uClasses:
     ax.plot(X, m*X + b, color = 'blue')
     ax.scatter(X_all, Y_all, color='black', s=15) # look at all points too
     ax.scatter(X, Y, color='green')
+    ax.violinplot(X_violin, Y_violin)
     ax.set_title(title, fontsize=13, fontweight='bold')#, fontdict=fonts)
 ##    ax.set_xlim(min(X)-1, max(X)+1)
 ##    ax.set_ylim(-5, 35)
