@@ -236,8 +236,11 @@ for eco in uClasses:
     ax.plot(X, m*X + b, color = 'blue')
     ax.scatter(X_all, Y_all, color='black', s=15) # look at all points too
     ax.scatter(X, Y, color='green')
-    print len(X_violin), len(Y_violin)
-    ax.violinplot(Y_violin, X_violin)
+    #print len(X_violin), len(Y_violin)
+    # 1
+    #ax.violinplot(Y_violin, X_violin)
+    # 2
+    ax.violinplot(Y_violin, X_violin, width=1)
     ax.set_title(title, fontsize=13, fontweight='bold')#, fontdict=fonts)
 ##    ax.set_xlim(min(X)-1, max(X)+1)
 ##    ax.set_ylim(-5, 35)
