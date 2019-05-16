@@ -203,6 +203,23 @@ for eco in uClasses:
         with open(valueCsv, 'a') as vc:
             vc.write('{},{},{}\n'.format(eco, x, y))
 
+    # and build X_violin and Y_violin for violin plots
+    import pdb; pdb.set_trace()
+    X_violin = []
+    Y_violin = []
+    for uXi, uX in list(set(X_all)): # for each unique X
+        X_violin[uXi] = uX # set the x in the array
+        Y_arr = [] # empty list temporarily
+        for aXi, aX in enumerate(X_all): # for all x's
+            if uX == aX: # if current x matches unique x we are interested in
+                Y_arr.append(Y_all[aXi]) # add corresponding Y to it
+        # now convert Y_arr to np array and add to violin list
+        Y_violin[uXi] = np.asarray(Y_arr)
+    # now X_violin should be list of unique (len X) values and
+    # Y_violin should be list of len X with each item the corresponding Y vals
+
+
+
 
     #fit = regression(X, Y, order) # try doing all. order 2
     m, b, r_value, p_value, std_err = stats.linregress(X, Y)
