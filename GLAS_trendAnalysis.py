@@ -208,11 +208,11 @@ for eco in uClasses:
     X_violin = []
     Y_violin = []
     for uX in list(set(X_all)): # for each unique X
-        X_violin.append(uX) # set the x in the array
+        X_violin.append(float(uX)) # set the x in the array
         Y_arr = [] # empty list temporarily
         for aXi, aX in enumerate(X_all): # for all x's
             if uX == aX: # if current x matches unique x we are interested in
-                Y_arr.append(Y_all[aXi]) # add corresponding Y to it
+                Y_arr.append(float(Y_all[aXi])) # add corresponding Y to it
         # now convert Y_arr to np array and add to violin list
         Y_violin.append(np.asarray(Y_arr))
     # now X_violin should be list of unique (len X) values and
@@ -236,6 +236,7 @@ for eco in uClasses:
     ax.plot(X, m*X + b, color = 'blue')
     ax.scatter(X_all, Y_all, color='black', s=15) # look at all points too
     ax.scatter(X, Y, color='green')
+    print len(X_violin), len(Y_violin)
     ax.violinplot(X_violin, Y_violin)
     ax.set_title(title, fontsize=13, fontweight='bold')#, fontdict=fonts)
 ##    ax.set_xlim(min(X)-1, max(X)+1)
