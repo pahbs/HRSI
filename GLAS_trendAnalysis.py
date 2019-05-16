@@ -207,7 +207,7 @@ for eco in uClasses:
     import pdb; pdb.set_trace()
     X_violin = []
     Y_violin = []
-    for uXi, uX in list(set(X_all)): # for each unique X
+    for uXi, uX in enumerate(list(set(X_all))): # for each unique X
         X_violin[uXi] = uX # set the x in the array
         Y_arr = [] # empty list temporarily
         for aXi, aX in enumerate(X_all): # for all x's
