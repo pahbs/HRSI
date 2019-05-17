@@ -115,18 +115,20 @@ uClasses = db_df[classCol].unique()
 ##with open(tempSummaryCsv, 'w') as oc:
 ##    oc.write('Class,TimeSinceDist,nSamples,medianHeight\n')
 
-
 # At this point, we have filtered down the points and we want to visualize this spatially
 # So write the filtered points to csv, then use csv to make a shp
 filteredCsv = os.path.join(swapDir, 'filteredPointCsvs/{}__filteredPoints.csv'.format(heightMetric))
 
-##db_df.to_csv(filteredCsv, index=False)
-##print zs.database_to_shp(filteredCsv)
 
 # csv for all heights and time since disturbance. One per height metric
 valueCsv = os.path.join(swapDir, 'valueCsvs', '{}__heights.csv'.format(heightMetric))
 with open(valueCsv, 'w') as vc:
-    vc.write('Class,Age,Height\n')
+    vc.write('Ecoregion,Age,Height\n')
+
+# last csv, we will be joining to the PCA shp
+rateCsv = os.path.join(swapDir, '{}__growthRates.csv'.format(heightMetric))
+with open(rateCsv, 'w') as rc:
+    rc.write('Ecoregion,slope,intercept,p-val\n')
 
 # iterate through classes
 for eco in uClasses:
@@ -222,6 +224,11 @@ for eco in uClasses:
     fig.savefig(outFig)
 ##    print len(X)
     print "Wrote to {}\n".format(outFig)
+
+
+    # lastly, write stuff to csv:
+    with open(rateCsv, 'a') as rc:
+        rc.write('{:d},{:f},{:f},{:f}\n'.format(int(eco), m, b, p_value))
 
         # create df to be written to CSV --> some attributes, height, timeSinceDist, other/all attributes temp for verification
         # figure out how to send to least squares for growth rates
