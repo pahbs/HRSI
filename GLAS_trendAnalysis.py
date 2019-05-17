@@ -241,9 +241,9 @@ for eco in uClasses:
     #ax.violinplot(Y_violin, X_violin)
     # 2
     ax.violinplot(Y_violin, X_violin, widths=.75)
-    ax.set_title(title, fontsize=13, fontweight='bold')#, fontdict=fonts)
-##    ax.set_xlim(min(X)-1, max(X)+1)
-##    ax.set_ylim(-5, 35)
+    ax.set_title(title, fontsize=16, fontweight='bold')#, fontdict=fonts)
+    ax.set_xlim(0, 35)
+    ax.set_ylim(0, 25)
     ax.set_xlabel('Time Since Disturbance (years)', fontsize=14, fontweight='bold')
     ax.set_ylabel('Stand Height (m)', fontsize=14, fontweight='bold')
     plt.subplots_adjust(top=0.88)
