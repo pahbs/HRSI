@@ -213,7 +213,7 @@ for eco in uClasses:
     # 1
     #ax.violinplot(Y_violin, X_violin)
     # 2
-    ax.violinplot(Y_violin, X_violin, widths=.75, points=500, bw_method='silverman')
+    ax.violinplot(Y_violin, X_violin, widths=.75, points=500)#, bw_method='silverman')
     ax.set_title(title, fontsize=16, fontweight='bold')#, fontdict=fonts)
     ax.set_xlim(0, 35)
     ax.set_ylim(0, 25)
