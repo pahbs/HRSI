@@ -202,7 +202,7 @@ for eco in uClasses:
     m, b, r_value, p_value, std_err = stats.linregress(X, Y)
 ##    print "{}*x + {}".format(m, b), value
 
-    title = 'Ecoregion {}     |     y = {:1.2f}*x + {1.2f}     |     p-value = {:1.2f}'.format(eco, round(m,2), round(b, 2), round(p_value, 2))
+    title = 'Ecoregion {}     |     y = {:1.2f}*x + {:1.2f}     |     p-value = {:1.2f}'.format(eco, round(m,2), round(b, 2), round(p_value, 2))
     outFig = os.path.join(swapDir, 'plot_{}_class{}.png'.format(heightMetric, eco))
     fig = plt.figure(figsize=(12,8.27))
 
