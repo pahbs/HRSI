@@ -207,21 +207,20 @@ for eco in uClasses:
     ax = fig.add_subplot(111)
 
     ax.scatter(X_all, Y_all, color='black', alpha = 0.60, s=9) # all points
-    ax.plot(X, m*X + b, color = 'blue')
-    ax.scatter(X, Y, color='green')
-    #print len(X_violin), len(Y_violin)
-    # 1
-    #ax.violinplot(Y_violin, X_violin)
-    # 2
+    ax.plot(X, m*X + b, color = 'blue') # trendline
     ax.violinplot(Y_violin, X_violin, widths=.75, points=500)#, bw_method='silverman')
+    ax.scatter(X, Y, color='green') # median points
     ax.set_title(title, fontsize=16, fontweight='bold')#, fontdict=fonts)
-    ax.set_xlim(0, 35)
-    ax.set_ylim(0, 25)
+
     ax.set_xlabel('Years Since Disturbance', fontsize=14, fontweight='bold')
     ax.set_ylabel('Stand Height (m)', fontsize=14, fontweight='bold')
+
+    ax.set_xlim(0, 35)
+    ax.set_ylim(0, 25)
+
     plt.subplots_adjust(top=0.88)
     fig.savefig(outFig)
-    print len(X)
+##    print len(X)
     print "Wrote to {}\n".format(outFig)
 
         # create df to be written to CSV --> some attributes, height, timeSinceDist, other/all attributes temp for verification
