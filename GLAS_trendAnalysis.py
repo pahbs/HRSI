@@ -168,34 +168,14 @@ for eco in uClasses:
         valDict[int(yr)] = float(medHeight)
         print yr, medHeight
 
-##    print "Class {}".format(eco)
-##    print X
-##    print Y
-##    print np.unique(X)
-##    print np.unique(Y)
-##    print np.polyfit(X, Y, 1)
-##    print np.poly1d(np.polyfit(X, Y, 1))
-    #plt.plot(np.unique(X), np.poly1d(np.polyfit(X, Y, 1))(np.unique(X)))
-##        #print eco, yr, nSamples, medHeight
-##        with open(tempSummaryCsv, 'a') as oc:
-##            oc.write('{},{},{},{}\n'.format(eco, yr, nSamples, medHeight))
-
-    #import pdb; pdb.set_trace()
-    # convert to np array:
-##    X = np.asarray(X)
-##    Y = np.asarray(Y)
     X = np.asarray(valDict.keys())
     Y = np.asarray(valDict.values())
 ##    m,b,R2,fit = regression(X, Y)
-##    print fit
-##    print R2
+
     if len(X) < 2: # no year/only one year for class passed the minN threshold
         print "Not enough years with samples for class {}".format(eco)
         continue
 
-##    # temporary:
-##    X = X_all
-##    Y = Y_all
 
     # write all the heights to a csv if pass sample threshold
     for i, x in enumerate(X_all):
@@ -204,47 +184,40 @@ for eco in uClasses:
             vc.write('{},{},{}\n'.format(eco, x, y))
 
     # and build X_violin and Y_violin for violin plots
-##    import pdb; pdb.set_trace()
     X_violin = []
     Y_violin = []
     for uX in list(set(X_all)): # for each unique X
         X_violin.append(uX) # set the x in the array
-        Y_arr = [] # empty list temporarily
-        for aXi, aX in enumerate(X_all): # for all x's
+        Y_arr = [] # empty list to store y's from corresponding x
+        for aXi, aX in enumerate(X_all): # for all x's (and by ext, y's)
             if uX == aX: # if current x matches unique x we are interested in
                 Y_arr.append(float(Y_all[aXi])) # add corresponding Y to it
-        # now convert Y_arr to np array and add to violin list
-        Y_violin.append(np.asarray(Y_arr))
+        Y_violin.append(np.asarray(Y_arr)) # convert Y_arr to np, add to  list
     # now X_violin should be list of unique (len X) values and
     # Y_violin should be list of len X with each item the corresponding Y vals
 
-
-
-
-    #fit = regression(X, Y, order) # try doing all. order 2
+    # scipy's least square linregress
     m, b, r_value, p_value, std_err = stats.linregress(X, Y)
-    print "{}*x + {}".format(m, b)
-    print p_value
-    title = 'Ecoregion {}     |     y = {}*x + {}     |     p-value = {}'.format(eco, round(m,2), round(b, 2), round(p_value, 2))
-    #import pdb; pdb.set_trace()
+##    print "{}*x + {}".format(m, b), value
+
+    title = 'Ecoregion {}     |     y = {}*x + {}     |     p-value = {:1.2f}'.format(eco, round(m,2), round(b, 2), round(p_value, 2))
     outFig = os.path.join(swapDir, 'plot_{}_class{}.png'.format(heightMetric, eco))
     fig = plt.figure(figsize=(12,8.27))
-    #fig = Figure(figsize=(12,8.27))
+
     ax = fig.add_subplot(111)
-    #ax.plot(X, m*X + b, color = 'blue')
-    #ax.plot(X, fit(X), color = 'blue')
+
+    ax.scatter(X_all, Y_all, color='black', alpha = 0.65, s=11) # look at all points too
     ax.plot(X, m*X + b, color = 'blue')
-    ax.scatter(X_all, Y_all, color='black', s=15) # look at all points too
     ax.scatter(X, Y, color='green')
     #print len(X_violin), len(Y_violin)
     # 1
     #ax.violinplot(Y_violin, X_violin)
     # 2
-    ax.violinplot(Y_violin, X_violin, widths=.75)
+    ax.violinplot(Y_violin, X_violin, widths=.75, bw_method='silverman')
     ax.set_title(title, fontsize=16, fontweight='bold')#, fontdict=fonts)
     ax.set_xlim(0, 35)
     ax.set_ylim(0, 25)
-    ax.set_xlabel('Time Since Disturbance (years)', fontsize=14, fontweight='bold')
+    ax.set_xlabel('Years Since Disturbance', fontsize=14, fontweight='bold')
     ax.set_ylabel('Stand Height (m)', fontsize=14, fontweight='bold')
     plt.subplots_adjust(top=0.88)
     fig.savefig(outFig)
