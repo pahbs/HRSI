@@ -206,14 +206,14 @@ for eco in uClasses:
 
     ax = fig.add_subplot(111)
 
-    ax.scatter(X_all, Y_all, color='black', alpha = 0.65, s=11) # look at all points too
+    ax.scatter(X_all, Y_all, color='black', alpha = 0.60, s=9) # all points
     ax.plot(X, m*X + b, color = 'blue')
     ax.scatter(X, Y, color='green')
     #print len(X_violin), len(Y_violin)
     # 1
     #ax.violinplot(Y_violin, X_violin)
     # 2
-    ax.violinplot(Y_violin, X_violin, widths=.75, bw_method='silverman')
+    ax.violinplot(Y_violin, X_violin, widths=.75)#, bw_method='silverman')
     ax.set_title(title, fontsize=16, fontweight='bold')#, fontdict=fonts)
     ax.set_xlim(0, 35)
     ax.set_ylim(0, 25)
