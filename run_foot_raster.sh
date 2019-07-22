@@ -14,26 +14,26 @@ TYPE=$1
 
 if [ "$TYPE" = HRSIDSM ] ; then
     RAS_DIR=$2 #/att/pubrepo/DEM/hrsi_dsm #/att/gpfsfs/briskfs01/ppl/pmontesa/userfs02/outASP #/att/gpfsfs/briskfs01/ppl/pmontesa/outASP/3DSI_pairset_01 #
-    RAS_EXT=out-DEM_1m.tif
-    /
-    COARSEN_PCT=0.25 # 1pct at 1m will be a 100m res ; 0.25 is good value for speed and accuracy
-    OUT_SHP=HRSI_DSM_footprints        #HRSI_DSM_footprints_pct${COARSEN_PCT}
+    RAS_EXT=${3:-'out-DEM_1m.tif'}
 
-    TMP_DIR=$NOBACKUP/tmp/tmp_${TYPE}
+    COARSEN_PCT=0.25 # 1pct at 1m will be a 100m res ; 0.25 is good value for speed and accuracy
+    OUT_SHP=HRSI_DSM_footprints_$(basename $RAS_DIR)        #HRSI_DSM_footprints_pct${COARSEN_PCT}
+
     #OUT_DIR=/att/gpfsfs/atrepo01/data/hma_data/ASTER/_footprints
     OUT_DIR=${RAS_DIR}/_footprints
-    mkdir -p $TMP_DIR
+    TMP_DIR=${OUT_DIR}/tmp_${RAS_EXT%.*}
     mkdir -p $OUT_DIR
+    mkdir -p $TMP_DIR
     opts="-dsm"
 fi
 if [ "$TYPE" = CHM ] ; then
-    RAS_DIR=/att/gpfsfs/briskfs01/ppl/pmontesa/hrsi_chm_work/hrsi_chm_multres
-    RAS_EXT=chm.tif
+    RAS_DIR=$2  #/att/gpfsfs/briskfs01/ppl/pmontesa/hrsi_chm_work/hrsi_chm_multres
+    RAS_EXT=${3:-'chm.tif'}
 
     COARSEN_PCT=0.5 # 0.5 pct at 2m will be a 100m res
-    OUT_SHP=HRSI_CHM_footprints_pct${COARSEN_PCT}
+    OUT_SHP=HRSI_CHM_footprints_${RAS_EXT}
 
-    TMP_DIR=$HOME/tmp/tmp_${TYPE}
+    TMP_DIR=$NOBACKUP/tmp/tmp_${RAS_EXT%.*}
     OUT_DIR=${RAS_DIR}/_footprints
 fi
 
@@ -44,7 +44,7 @@ if [ "$TYPE" = ARCTICDEM ] ; then
     COARSEN_PCT=0.5 # 0.5 pct at 2m will be a 100m res
     OUT_SHP=ARCTICDEM_footprints_pct${COARSEN_PCT}
 
-    TMP_DIR=$HOME/tmp/tmp_${TYPE}
+    TMP_DIR=$NOBACKUP/tmp/tmp_${RAS_EXT%.*}
     OUT_DIR=/att/pubrepo/DEM/hrsi_dsm/_footprints
 fi
 
@@ -55,7 +55,7 @@ if [ "$TYPE" = ARCTICDEMSUB ] ; then
     COARSEN_PCT=0.25 # 0.5 pct at 2m will be a 100m res
     OUT_SHP=ARCTICDEM_footprints_gliht_pct${COARSEN_PCT}
 
-    TMP_DIR=$HOME/tmp/tmp_${TYPE}
+    TMP_DIR=$NOBACKUP/tmp/tmp_${RAS_EXT%.*}
     OUT_DIR=$RAS_DIR
     opts="-dsm"
 fi
@@ -67,7 +67,7 @@ if [ "$TYPE" = TDX ] ; then
     COARSEN_PCT=50 # 0.5 pct at 2m will be a 100m res
     OUT_SHP=TANDEMXDEM_footprints_pct${COARSEN_PCT}
 
-    TMP_DIR=$HOME/tmp/tmp_${TYPE}
+    TMP_DIR=$NOBACKUP/tmp/tmp_${RAS_EXT%.*}
     OUT_DIR=/att/pubrepo/DEM/hrsi_dsm/_footprints
 fi
 
@@ -75,11 +75,13 @@ if [ "$TYPE" = OTHER ] ; then
     RAS_DIR=$2
     RAS_EXT=$3
     
-    COARSEN_PCT=$4
-    OUT_SHP=footprints_$(basename ${RAS_DIR})_${RAS_EXT%.*}_pct${COARSEN_PCT}
+    COARSEN_PCT=${4:-'0.25'}
+    OUT_SHP=footprints_$(basename ${RAS_DIR})_${RAS_EXT%.*}
 
-    TMP_DIR=$HOME/tmp/tmp_${TYPE}_${OUT_SHP}
-    OUT_DIR=$5
+    OUT_DIR=${RAS_DIR}/_footprints
+    TMP_DIR=${OUT_DIR}/tmp_${RAS_EXT%.*}
+    mkdir -p $OUT_DIR
+    mkdir -p $TMP_DIR
 fi
 
 if [ "$TYPE" = ASTER ] ; then
@@ -89,7 +91,7 @@ if [ "$TYPE" = ASTER ] ; then
     COARSEN_PCT=10
     OUT_SHP=${TYPE}_footprints_${RAS_EXT%.*}_pct${COARSEN_PCT}
 
-    TMP_DIR=$HOME/tmp/tmp_${TYPE}
+    TMP_DIR=$NOBACKUP/tmp/tmp_${RAS_EXT%.*}
     OUT_DIR=/att/gpfsfs/atrepo01/data/hma_data/ASTER/L1A_out
 fi
 
