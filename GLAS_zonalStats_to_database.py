@@ -63,7 +63,7 @@ def database_to_shp(inCsv, outEPSG = 4326, latField = 'lat', lonField = 'lon'): 
 
         for row in csvF.readlines(): # now iterate through the rest of the points
             row_list = row.strip().split(',')
-         
+
             try: # in case, for whatever reason, this field cannot be got, skip row
                 lat = float(row_list[fld_list.index(latField)])
                 lon = float(row_list[fld_list.index(lonField)])
@@ -72,7 +72,7 @@ def database_to_shp(inCsv, outEPSG = 4326, latField = 'lat', lonField = 'lon'): 
 
             outShp.point(lon, lat) # create point geometry
             outShp.record(*tuple([row_list[f] for f, j in enumerate(fld_list)]))
-            r+=1     
+            r+=1
     print "\nClosing output shp {}...".format(outShpPath_wgs)
     #outShp.save(outShpPath_wgs.strip('.shp')) # 11/27 - do not need this anymore, only close
     outShp.close()
@@ -148,10 +148,15 @@ def main(input_raster, input_polygon, bufferSize, outDir, zstats = params.defaul
     else: inKeyExists = True
 
     # Get the contents of the stack log in a list. This will change depending on new method going forward. numbers, key, etc?
+    addSunAngle = False
     if inKeyExists:
         with open(stack_inputLog, 'r') as sil:
             stackList = sil.readlines()
         stackList = [s.strip('\n') for i, s in enumerate(stackList) if i>0] # skip header line # at this point, stack list should have number of layers +1 (end time still there, removed first two lines)
+        if stackList[-1].split(',')[0] == '*':
+            addSunAngle = True
+            useXml = stackList[-1].split(',')[1]
+            sunAngle = functions.getSunAngle(useXml)
 
     if logFile:
         print "See {} for log".format(logFile)
@@ -195,6 +200,7 @@ def main(input_raster, input_polygon, bufferSize, outDir, zstats = params.defaul
         attr_fields = fields[0:(len(fields)-n_stats)]
         attr_fields.extend(['stackName', 'stackDir', 'bufferSize']) # Add fields: stackName, bufferSize, stackDir
         if addWrs2: attr_fields.append('wrs2')
+        if addSunAngle: attr_fields.append('sunElAngle')
         stat_fields = fields[-n_stats:] # get just the stat field names
         stat_fields = ['{}__{}'.format(layerN, s) for s in stat_fields] # rename with layer number appended to stat
 
@@ -219,6 +225,8 @@ def main(input_raster, input_polygon, bufferSize, outDir, zstats = params.defaul
                     lat,lon = [float(vals[fields.index('lat')]), float(vals[fields.index('lon')])]
                     pathrows = get_pathrows(lat,lon)
                     attr_vals.append(pathrows)
+                if addSunAngle:
+                    attr_vals.append(sunAngle)
                 outDict[attr_vals[0]] = attr_vals[1:]
 
             outDict[attr_vals[0]].extend(stat_vals) # always add stat vals

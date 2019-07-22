@@ -194,7 +194,7 @@ for eco in uClasses:
         for aXi, aX in enumerate(X_all): # for all x's (and by ext, y's)
             if uX == aX: # if current x matches unique x we are interested in
                 Y_arr.append(float(Y_all[aXi])) # add corresponding Y to it
-        Y_violin.append(np.asarray(Y_arr)) # convert Y_arr to np, add to  list
+        Y_violin.append(np.asarray(Y_arr)) # convert Y_arr to np, add to list
     # now X_violin should be list of unique (len X) values and
     # Y_violin should be list of len X with each item the corresponding Y vals
 

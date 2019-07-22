@@ -4,6 +4,7 @@
 #GLAS_id_field = main.GLAS_id_field
 import os
 from osgeo import gdal,ogr,osr
+import xml.etree.ElementTree as ET
 
 class Parameters():
     def __init__(self):
@@ -27,16 +28,16 @@ class Parameters():
 
 def getWKT_PRJ(epsg_code): # generate a .prj file based off epsg from input
     # as of 4.16/2019, spatialreference.org is down. Use GDAL API instead
-    
+
     #wkt = urllib.urlopen("http://spatialreference.org/ref/epsg/{0}/prettywkt/".format(epsg_code))
     #remove_spaces = wkt.read().replace(" ","")
     #output = remove_spaces.replace("\n", "")
-    
+
     from osgeo.osr import SpatialReference
 
     srs = SpatialReference()
     srs.ImportFromEPSG(epsg_code)
-    outWKT = srs.ExportToWkt()    
+    outWKT = srs.ExportToWkt()
     return str(outWKT)
 
 def get_year_laserID_from_recndx(rndx):
@@ -106,6 +107,15 @@ def get_gcs_extent(raster): # get GCS (decimal degrees) extent from projected ra
 
     return (xmin, ymin, xmax, ymax)
 
+def getSunAngle(useXml):
+
+    tree = ET.parse(useXml)
+    IMD = tree.getroot().find('IMD')
+
+    try:
+        return str(float(IMD.find('IMAGE').find('MEANSUNEL').text))
+    except:
+        return None
 
 def make_GLAS_csv_list(raster, GLAS_csv_dir):
 
