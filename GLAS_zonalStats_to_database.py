@@ -149,6 +149,7 @@ def main(input_raster, input_polygon, bufferSize, outDir, zstats = params.defaul
 
     # Get the contents of the stack log in a list. This will change depending on new method going forward. numbers, key, etc?
     addSunAngle = False
+    addEcoregion = False # add simplified ecoregion column if this layer exists --> relies on the log to have: ecoregionLayer = PCAkmn_type_warp.tif
     if inKeyExists:
         with open(stack_inputLog, 'r') as sil:
             stackList = sil.readlines()
@@ -157,6 +158,10 @@ def main(input_raster, input_polygon, bufferSize, outDir, zstats = params.defaul
             addSunAngle = True
             useXml = stackList[-1].split(',')[1]
             sunAngle = functions.getSunAngle(useXml)
+        #TD
+        # if ecoregionLayer is in stack list:
+            #addEcoregion = True
+            #store ecoregion layer number
 
     if logFile:
         print "See {} for log".format(logFile)
@@ -178,6 +183,7 @@ def main(input_raster, input_polygon, bufferSize, outDir, zstats = params.defaul
     print " Number of layers = {}".format(n_layers)
     print " Output database for stacks = {}".format(outDatabaseCsv)
 #    import pdb; pdb.set_trace()
+    majority_bnames = params.majority_basenames # if layer's basename is in this list, use majority for zonal stats
 
     # loop through layers, run zonal stats and start to build the dictionary for the csv
     for l in range(0, n_layers):
@@ -185,14 +191,24 @@ def main(input_raster, input_polygon, bufferSize, outDir, zstats = params.defaul
         if inKeyExists:
             layerN = stackList[l].split(',')[0]
             layerName = os.path.basename(stackList[l].split(',')[1]).strip('.tif') # Get the layer name from text file
+##            if layerName in majority_bnames:
+##                print "using majority"
+##                zstats = ["majority"]
         else:
             layerN = str(l+1)
             layerName = str(l+1)
 
         print "\nLayer {}: {}".format(l+1, layerName)
 
-        if "nmad" in zstats: zonalStatsDict = zonal_stats(input_polygon, input_raster, stats=zstats.replace("nmad", ""), add_stats={'nmad':get_nmad}, geojson_out=True, band=l+1)
-        else: zonalStatsDict = zonal_stats(input_polygon, input_raster, stats=zstats, geojson_out=True, band=l+1)
+        if layerName in majority_bnames:
+            print "using majority", layerName
+            zonalStatsDict = zonal_stats(input_polygon, input_raster, stats="majority", geojson_out=True, band=l+1)
+        else: # in any other case, run like normal
+            print "using default stats", layerName
+            if "nmad" in zstats:
+                zonalStatsDict = zonal_stats(input_polygon, input_raster, stats=zstats.replace("nmad", ""), add_stats={'nmad':get_nmad}, geojson_out=True, band=l+1)
+            else:
+                zonalStatsDict = zonal_stats(input_polygon, input_raster, stats=zstats, geojson_out=True, band=l+1)
 
         # before iterating through rows, just get the field information from the first feature
         fields = [str(s) for s in zonalStatsDict[0]['properties'].keys()]

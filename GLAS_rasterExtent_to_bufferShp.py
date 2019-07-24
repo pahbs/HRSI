@@ -67,7 +67,7 @@ def create_pointShp_fromRasterExtent(rasterStack, outShpDir):
             else: h = csvF.readline().strip() # still need to skip the row
             #print inCsv, len(csvF.readlines())
             for row in csvF.readlines():
-                
+
                 row = row.strip().strip(',') # some erroneous commas at the end
                 row_list = row.split(',')
 
@@ -111,7 +111,7 @@ def create_pointShp_fromRasterExtent(rasterStack, outShpDir):
                     if int(row_list[hdr_list.index('FRir_qaFlag')]) != 15 or \
                         int(row_list[hdr_list.index('satNdx')]) >=2 or \
                         int(row_list[hdr_list.index('cld1_mswf')]) >= 15:
-                        
+
                         continue
 
                 except ValueError:
@@ -148,7 +148,7 @@ def create_pointShp_fromRasterExtent(rasterStack, outShpDir):
                 # now we can use the point/row to build the shp
                 outShp.point(lon,lat) # create point geometry
                 outShp.record(*tuple([outRow_list[f] for f, j in enumerate(fld_list)]))
-   
+
     if uid == 0:
         sys.exit("There were 0 GLAS shots within stack, cannot process. Quitting program")
     print "\n{} features added to shp".format(uid)

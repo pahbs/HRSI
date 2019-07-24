@@ -25,6 +25,8 @@ class Parameters():
 
     default_mainDatabase = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/3DSI_GLAS_stats_database'#__{}'.format(datetime.datetime.now().strftime("%Y%m%d")) # will end in either __15m.csv or __15m.shp (depending on buffer size)
 
+    majority_basenames = ['C2C_change_year_type_warp', 'C2C_change_type_type_warp', 'AK_NWCanada_Fire1965_2013_ras2_type_warp', 'MCD12Q1_A2017001_LC_Type1_type_warp',
+                        'PCAkmn_type_warp', 'PCA3_b1_warp', 'PCA3_b2_warp', 'PCA3_b3_warp']
 
 def getWKT_PRJ(epsg_code): # generate a .prj file based off epsg from input
     # as of 4.16/2019, spatialreference.org is down. Use GDAL API instead
