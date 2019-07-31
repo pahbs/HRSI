@@ -39,11 +39,6 @@ from scipy import stats
 ### try scipy, has the p-value already:
 ##def regression(X, Y):
 
-
-
-
-
-
 # Set some variables
 # The main zonal stats database/csv where all data is kept
 #databaseCsv = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/Stacks_20190328/outputs/WV01_20120817_102001001CD26500_102001001C4C8800__stats.csv' # temp
@@ -57,6 +52,7 @@ heightMetric = sys.argv[1]#'GLAS' # metric being used for height, which column(s
 
 swapDir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/spaceForTimeSwap'
 
+# PAY ATTENTION!!!
 tccCol = '6__median' # median of LS7_CC_type_warp.tif; aka Tree Canopy Cover
 inClassCol = '10__max' # input class val from PCA class tiff. Use max for now
 classCol = 'class' # simplified class row which will be calculated below
@@ -117,8 +113,10 @@ uClasses = db_df[classCol].unique()
 
 # At this point, we have filtered down the points and we want to visualize this spatially
 # So write the filtered points to csv, then use csv to make a shp
+# original purpose was never used iirc. now paul wants his own csv of points that have been filtered
 filteredCsv = os.path.join(swapDir, 'filteredPointCsvs/{}__filteredPoints.csv'.format(heightMetric))
-
+# write filtered data frame to csv **
+db_df.to_csv(filteredCsv, header=True)
 
 # csv for all heights and time since disturbance. One per height metric
 valueCsv = os.path.join(swapDir, 'valueCsvs', '{}__heights.csv'.format(heightMetric))
@@ -215,7 +213,7 @@ for eco in uClasses:
     ax.set_title(title, fontsize=16, fontweight='bold')#, fontdict=fonts)
 
     ax.set_xlabel('Years Since Disturbance', fontsize=14, fontweight='bold')
-    ax.set_ylabel('Stand Height (m)', fontsize=14, fontweight='bold')
+    ax.set_ylabel('Forest Vertical Structure (m)', fontsize=14, fontweight='bold')
 
     ax.set_xlim(0, 35)
     ax.set_ylim(0, 25)
