@@ -116,7 +116,7 @@ uClasses = db_df[classCol].unique()
 # original purpose was never used iirc. now paul wants his own csv of points that have been filtered
 filteredCsv = os.path.join(swapDir, 'filteredPointCsvs/{}__filteredPoints.csv'.format(heightMetric))
 # write filtered data frame to csv **
-db_df.to_csv(filteredCsv, header=True)
+db_df.to_csv(filteredCsv, index=False)
 
 # csv for all heights and time since disturbance. One per height metric
 valueCsv = os.path.join(swapDir, 'valueCsvs', '{}__heights.csv'.format(heightMetric))
