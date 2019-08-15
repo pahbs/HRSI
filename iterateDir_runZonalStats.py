@@ -11,7 +11,7 @@ areas = areas_str.split(",")
 for area in areas:
 
     runScript = '/att/home/mwooten3/code/HRSI/run_GLAS_zonal_database.py'
-    indir = '/att/gpfsfs/briskfs01/ppl/wcwagne1/3DSI/hrsi_chms/{}/'.format(area) #*
+    indir = '/att/gpfsfs/briskfs01/ppl/pmontesa/userfs02/projects/3dsi/stacks/Out_Stacks/' #* 8/15/2019
 
     # indir is set up like this: indir/<pairname>/stack.tif'
     area = area.strip('Stacks_') # 11/27 just in case it already has Stacks_ in the name, remove it
@@ -25,7 +25,7 @@ for area in areas:
     logDir = os.path.join(outdir_base, 'logs')
 
     # set mainDb = '' if you want to use the default -- 11/27 use separate for now
-    mainDb = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/Stacks_{0}/{0}_Stacks__zonalStats_15m.csv'.format(area)
+    mainDb = os.path.join(outdir_base, 'Stacks_{}__zonalStats_15m.csv'.format(area))
 
     for d in [outDir, shpDir, logDir]:
         os.system('mkdir -p {}'.format(d))
