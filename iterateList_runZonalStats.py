@@ -37,6 +37,13 @@ print "\nProcessing {} stacks...".format(len(inStacks))
 c = 0
 for stack in inStacks:
     c+=1
+    bname = os.path.basename(stack)
+    if overwrite:
+    # skip files whose .shx file (last file to be created) already exists
+        if os.path.isfile(os.path.join(outDir, '{}__stats.shx'.format(bname))):
+            print "Outputs for {} already exist".format(bname)
+        sys.exit()
+
     comm = 'python {} {} -shpDir {} -outDir {} -logDir {}'.format(runScript, stack, shpDir, outDir, logDir)
     if mainDb:
         comm += ' -mainDatabasePrefix {}'.format(mainDb)
