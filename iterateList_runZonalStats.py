@@ -8,6 +8,8 @@
 
 import os, sys
 
+overwrite = False
+
 lineS = sys.argv[1] # line start
 lineE = sys.argv[2] # enter like 1 20   21 30, etc
 
@@ -38,7 +40,7 @@ c = 0
 for stack in inStacks:
     c+=1
     bname = os.path.basename(stack)
-    if overwrite:
+    if not overwrite:
     # skip files whose .shx file (last file to be created) already exists
         if os.path.isfile(os.path.join(outDir, '{}__stats.shx'.format(bname))):
             print "Outputs for {} already exist".format(bname)
