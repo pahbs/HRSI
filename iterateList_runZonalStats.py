@@ -40,6 +40,7 @@ c = 0
 for stack in inStacks:
     c+=1
     bname = os.path.basename(stack)
+    import pdb; pdb.set_trace()
     if not overwrite:
     # skip files whose .shx file (last file to be created) already exists
         if os.path.isfile(os.path.join(outDir, '{}__stats.shx'.format(bname))):
