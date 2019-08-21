@@ -13,7 +13,7 @@ lineE = sys.argv[2] # enter like 1 20   21 30, etc
 
 # set up some parameters
 runScript = '/att/home/mwooten3/code/HRSI/run_GLAS_zonal_database.py'
-outdir_base = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/Stacks_20190328'
+outdir_base = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/Stacks_20190815'
 outDir = os.path.join(outdir_base, 'outputs')
 shpDir = os.path.join(outdir_base, 'shp')
 logDir = os.path.join(outdir_base, 'logs')
@@ -21,7 +21,7 @@ for d in [outDir, shpDir, logDir]: # for extra measure
     os.system('mkdir -p {}'.format(d))
 
 # where all outputs for the run will go
-mainDb = os.path.join(outDir, '20190328_Stacks__zonalStats_15m.csv')
+mainDb = os.path.join(outdir_base, 'Stacks_20190815__zonalStats_15m.csv')
 
 # get list of stacks to run based on input
 #inList = '/att/gpfsfs/briskfs01/ppl/wcwagne1/_share/completed_for_maggie.txt'
