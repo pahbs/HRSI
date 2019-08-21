@@ -42,12 +42,11 @@ for stack in inStacks:
 
     bname = os.path.basename(stack).strip(os.path.splitext(stack)[1]).strip('_stack')
 
-    import pdb; pdb.set_trace()
-    if not overwrite:
     # skip files whose .shx file (last file to be created) already exists
+    if not overwrite:
         if os.path.isfile(os.path.join(outDir, '{}__stats.shx'.format(bname))):
-            print "Outputs for {} already exist".format(bname)
-            sys.exit()
+            print "\nOutputs for {} already exist\n".format(bname)
+            continue
 
     comm = 'python {} {} -shpDir {} -outDir {} -logDir {}'.format(runScript, stack, shpDir, outDir, logDir)
     if mainDb:
