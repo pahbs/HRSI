@@ -25,7 +25,8 @@ mainDb = os.path.join(outdir_base, 'Stacks_20190815__zonalStats_15m.csv')
 
 # get list of stacks to run based on input
 #inList = '/att/gpfsfs/briskfs01/ppl/wcwagne1/_share/completed_for_maggie.txt'
-inList = '/att/gpfsfs/briskfs01/ppl/wcwagne1/_share/maggie_stacks'
+#inList = '/att/gpfsfs/briskfs01/ppl/wcwagne1/_share/maggie_stacks'
+inList = os.path.join(outdir_base, 'inputList.txt')
 with open (inList, 'r') as il:
     inStacks_all = [x.strip('\r\n') for x in il.readlines()] # _all stacks in list
 
