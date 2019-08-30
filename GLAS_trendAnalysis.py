@@ -14,6 +14,7 @@ import time
 import GLAS_zonalStats_to_database as zs # for csv to db function
 from scipy import stats
 
+batch = sys.argv[1] # i.e. Stacks_20190815
 ##def regression(X, Y, order=1): # doing linear
 ##
 ##    coeffs = np.polyfit(X, Y, order) # returns [ m  b ]
@@ -41,22 +42,26 @@ from scipy import stats
 
 # Set some variables
 # The main zonal stats database/csv where all data is kept
-#databaseCsv = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/Stacks_20190328/outputs/WV01_20120817_102001001CD26500_102001001C4C8800__stats.csv' # temp
-databaseCsv = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/GLAS_Stacks_zonalStats_15m-2m.csv'
+databaseCsv = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/{0}/{0}__zonalStats_15m.csv'
+
 # Create variables for representative columns - this may change between runs
-heightMetric = sys.argv[1]#'GLAS' # metric being used for height, which column(s) are used for height will depend on the metric. 1) GLAS; 2) DSM; 3) Combined
+heightMetric = sys.argv[2]#'GLAS' # metric being used for height, which column(s) are used for height will depend on the metric. 1) GLAS; 2) DSM; 3) Combined
 # FOR NOW, these are the column names to get the heights:
 # GLAS: 'MedH' (for now)
 # DSM: '2__median' (sr05_4m-sr05-min_1m-sr05-max_dz_eul_type_warp.tif median)
 # Combined: '3__median' (DSM median) - 'elev_groun' (ground height from GLAS)
 
 swapDir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/spaceForTimeSwap'
+batchDir = os.path.join(swapDir, batch)
+os.system('mkdir {}'.format(batchDir))
+
 
 # PAY ATTENTION!!!
 tccCol = '6__median' # median of LS7_CC_type_warp.tif; aka Tree Canopy Cover
-inClassCol = '10__max' # input class val from PCA class tiff. Use max for now
-classCol = 'class' # simplified class row which will be calculated below
-distYrCol = '7__max' # disturbance year; use max for now
+inClassCol = '11__majority' # input class val from new PCA class tiff
+# class layer is now accepted as is. create new col for this value anyways to write to output
+classCol = 'class' # output class row (same as input now, 8/29/19)
+distYrCol = '7__majority' # disturbance year; majority of C2C_change_year_type_warp
 timeSinceDistCol = 'timeSinceDist' # in years; aka. data date - disturbance date
 
 # Filter thresholds, etc.
@@ -84,10 +89,12 @@ else:
     dataDateCol = db_df['stackName'].str.slice(start=5, stop=9) # get year from stack name i.e WV01_yyyymm_etc...
     if heightMetric == 'DSM':
         # there may be 'None' in the 2__median column. Filter those out first
+        # 2 = sr05_4m-sr05-min_1m-sr05-max_dz_eul_type_warp
         db_df = db_df[db_df['2__median'] != 'None']
         db_df['height'] = pd.to_numeric(db_df['2__median'])
     elif heightMetric == 'Combined':
         # there may be 'None' in the 3__median column. Filter those out first
+        # 3 = out-DEM_1m_align_glas_type_warp
         db_df = db_df[db_df['3__median'] != 'None']
         db_df['height'] = pd.to_numeric(db_df['3__median']) - pd.to_numeric(db_df['elev_groun'])
 
@@ -101,9 +108,9 @@ db_df = db_df[db_df[timeSinceDistCol] > 0] # only want rows with time since dist
 db_df = db_df[(db_df['height'] >= (1.37 + minHeightFilter*db_df['timeSinceDist'])) & (db_df['height'] <= (2.0 + maxHeightFilter*db_df['timeSinceDist']))]
 
 # Get the unique PCA classes to iterate through; add extra columm to simplify
-# *Check math here
-#db_df[classCol] = (db_df[inClassCol]/100000000).round().astype('int8') -- had to convert to float before rounding (below)
-db_df[classCol] = (db_df[inClassCol]/100000000).astype('float32').round().astype('int8')
+# 8/29/19: NOW PCA is as is in boreal_clust_30_30_warp layer. no longer need to do math like below
+#db_df[classCol] = (db_df[inClassCol]/100000000).astype('float32').round().astype('int8')
+db_df[classCol] = (db_df[inClassCol]).astype('int8') # now just get majority val --> int
 uClasses = db_df[classCol].unique()
 
 # temporary, create csv of overview --> class, year, nSamples, median Height
@@ -114,17 +121,17 @@ uClasses = db_df[classCol].unique()
 # At this point, we have filtered down the points and we want to visualize this spatially
 # So write the filtered points to csv, then use csv to make a shp
 # original purpose was never used iirc. now paul wants his own csv of points that have been filtered
-filteredCsv = os.path.join(swapDir, 'filteredPointCsvs/{}__filteredPoints.csv'.format(heightMetric))
+filteredCsv = os.path.join(swapDir, 'filteredPointCsvs/{}_{}__filteredPoints.csv'.format(batch, heightMetric))
 # write filtered data frame to csv **
 db_df.to_csv(filteredCsv, index=False)
 
 # csv for all heights and time since disturbance. One per height metric
-valueCsv = os.path.join(swapDir, 'valueCsvs', '{}__heights.csv'.format(heightMetric))
+valueCsv = os.path.join(swapDir, 'valueCsvs', '{}_{}__heights.csv'.format(batch, heightMetric))
 with open(valueCsv, 'w') as vc:
     vc.write('Ecoregion,Age,Height\n')
 
 # last csv, we will be joining to the PCA shp
-rateCsv = os.path.join(swapDir, '{}__growthRates.csv'.format(heightMetric))
+rateCsv = os.path.join(swapDir, '{}_{}__growthRates.csv'.format(batch, heightMetric))
 with open(rateCsv, 'w') as rc:
     rc.write('Ecoregion,slope,intercept,p-val\n')
 
