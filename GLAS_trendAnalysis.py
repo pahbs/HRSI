@@ -15,6 +15,12 @@ import GLAS_zonalStats_to_database as zs # for csv to db function
 from scipy import stats
 
 batch = sys.argv[1] # i.e. Stacks_20190815
+heightMetric = sys.argv[2]#'GLAS' # metric being used for height, which column(s) are used for height will depend on the metric. 1) GLAS; 2) DSM; 3) Combined
+# FOR NOW, these are the column names to get the heights:
+# GLAS: 'MedH' (for now)
+# DSM: '2__median' (sr05_4m-sr05-min_1m-sr05-max_dz_eul_type_warp.tif median)
+# Combined: '3__median' (DSM median) - 'elev_groun' (ground height from GLAS)
+
 ##def regression(X, Y, order=1): # doing linear
 ##
 ##    coeffs = np.polyfit(X, Y, order) # returns [ m  b ]
@@ -42,15 +48,9 @@ batch = sys.argv[1] # i.e. Stacks_20190815
 
 # Set some variables
 # The main zonal stats database/csv where all data is kept
-databaseCsv = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/{0}/{0}__zonalStats_15m.csv'
+databaseCsv = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/{0}/{0}__zonalStats_15m.csv'.format(batch)
 
 # Create variables for representative columns - this may change between runs
-heightMetric = sys.argv[2]#'GLAS' # metric being used for height, which column(s) are used for height will depend on the metric. 1) GLAS; 2) DSM; 3) Combined
-# FOR NOW, these are the column names to get the heights:
-# GLAS: 'MedH' (for now)
-# DSM: '2__median' (sr05_4m-sr05-min_1m-sr05-max_dz_eul_type_warp.tif median)
-# Combined: '3__median' (DSM median) - 'elev_groun' (ground height from GLAS)
-
 swapDir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/spaceForTimeSwap'
 batchDir = os.path.join(swapDir, batch)
 os.system('mkdir {}'.format(batchDir))
@@ -335,7 +335,7 @@ ECOREGIONS_DICT = {
 
 
 PERMAFROST_DICT = {
-    # new dict: 'permaName': [permaNumCodeList] ... permaCode = permaName[0]
+    # new dict: 'permabatch': [permaNumCodeList] ... permaCode = permaName[0]
     'Discontinuous': [3],
     'Isolated': [2, 5],
     'Sporadic': [1, 4, 9],
