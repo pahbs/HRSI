@@ -52,8 +52,8 @@ databaseCsv = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/{0}/{0}__zonal
 
 # Create variables for representative columns - this may change between runs
 swapDir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/spaceForTimeSwap'
-batchDir = os.path.join(swapDir, batch)
-os.system('mkdir {}'.format(batchDir))
+##batchDir = os.path.join(swapDir, batch)
+##os.system('mkdir -p {}'.format(batchDir))
 
 
 # PAY ATTENTION!!!
@@ -122,8 +122,7 @@ uClasses = db_df[classCol].unique()
 # So write the filtered points to csv, then use csv to make a shp
 # original purpose was never used iirc. now paul wants his own csv of points that have been filtered
 filteredCsv = os.path.join(swapDir, 'filteredPointCsvs/{}_{}__filteredPoints.csv'.format(batch, heightMetric))
-# write filtered data frame to csv **
-db_df.to_csv(filteredCsv, index=False)
+db_df.to_csv(filteredCsv, index=False) # write filtered data frame to csv **
 
 # csv for all heights and time since disturbance. One per height metric
 valueCsv = os.path.join(swapDir, 'valueCsvs', '{}_{}__heights.csv'.format(batch, heightMetric))
