@@ -110,7 +110,7 @@ db_df = db_df[(db_df['height'] >= (1.37 + minHeightFilter*db_df['timeSinceDist']
 # Get the unique PCA classes to iterate through; add extra columm to simplify
 # 8/29/19: NOW PCA is as is in boreal_clust_30_30_warp layer. no longer need to do math like below
 #db_df[classCol] = (db_df[inClassCol]/100000000).astype('float32').round().astype('int8')
-db_df[classCol] = (db_df[inClassCol]).astype('int8') # now just get majority val --> int
+db_df[classCol] = (db_df[inClassCol]).astype('uint16') # now just get majority val --> int. uint16 in case range of eco values is > 255 at any point
 uClasses = db_df[classCol].unique()
 
 # temporary, create csv of overview --> class, year, nSamples, median Height
@@ -121,7 +121,7 @@ uClasses = db_df[classCol].unique()
 # At this point, we have filtered down the points and we want to visualize this spatially
 # So write the filtered points to csv, then use csv to make a shp
 # original purpose was never used iirc. now paul wants his own csv of points that have been filtered
-filteredCsv = os.path.join(swapDir, 'filteredPointCsvs/{}_{}__filteredPoints.csv'.format(batch, heightMetric))
+filteredCsv = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/filteredPointCsvs/{}_{}__filteredPoints.csv'.format(batch, heightMetric)
 db_df.to_csv(filteredCsv, index=False) # write filtered data frame to csv **
 
 # csv for all heights and time since disturbance. One per height metric
