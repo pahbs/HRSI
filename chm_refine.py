@@ -26,6 +26,9 @@ matplotlib.use('Agg')
 import matplotlib.pyplot, matplotlib.mlab, math
 import scipy.stats
 
+# NOTE: let's use the term 'mask' to refer to areas of interest for which valid pixels are returned. 
+# eg., hi_slope_mask will return valid '1' values for high slopes (above max_slope), and NaN elsewhere
+
 #TOA reflectance mask (formerly get_toa_mask)
 def get_dark_mask(toa_ds, min_toa):
     print("\nApplying TOA filter to remove dark areas (water and shadows) using pan TOA (masking values < %0.4f)" % min_toa)
@@ -67,38 +70,47 @@ def get_lo_tri_mask(dem_ds, min_tri):
     lo_tri_mask = ~(np.ma.getmaskarray(lo_tri_mask))
     return lo_tri_mask
 
+# inputs: 
+#	sr05*tif (chm)
+#	ortho_toa.tif
+#	out-DEM_1m.tif
+
 def main():
     pass
 
 """
-First, merge 2 versions of dem_control
 
-Then, write a chm_filt.py
-
-import dem_control
-
+# chm_refine.py
+# Main goals: 
+# (1)fix non-forest "heights"
+# (2)fix dense interior forest height estimates
+# (3)remove water
 # Basic logic
-Divide HRSI CHM into forest and non-forest;
-to estimate max canopy height, within the forest mask run a 'max'filter (filtlib)
-to remove spurious 'heights' in the non-forest using a 'min' filter (filtlib)
+#Divide HRSI CHM into forest and non-forest;
+#to estimate max canopy height, within the forest mask run a 'max'filter (filtlib)
+#to remove spurious 'heights' in the non-forest using a 'min' filter (filtlib)
+#
+#(1) invert roughmask to get 'forest'
+#    -run a 'max' filter,
+#(2) use roughmask (get_lo_rough_mask) to get 'non-forest' pixels
+#    -run a 'min' filter,
+#    -maybe a small (3 pix) window filter
+#(3) then mask the result with the toamask (this removes water and other dark (shadow) areas
+#    -remove dark and smooth (water)
+#    -smooth is non-veg land
+#    -dark and rough is woody veg land
+#
+#(4) for later: then mask with the slopemask, toatrimask
 
+# step 1
+#  get_dark_mask from ortho_toa --> remove the areas that are TOA dark (water,shadow) from the chm
+# step 2
+#	get_hi_slope_mask from DEM --> remove areas of high slopes from chm
+# step 3
+#	get_lo_rough_mask from DEM --> remove areas that are NOT rough (aka remove non-forest)
+#	run a max filter on remaining pixels
 
-(1) use roughmask (as is now in dem_control) to get 'non-forest' valid pixels
-    -run a 'min' filter,
-    -maybe a small (3 pix) window filter
-
-(2) invert roughmask to get 'forest'
-    -run a 'max' filter,
-
-(3) then mask the result with the toamask (this removes water and other dark (shadow) areas
-    -remove dark and smooth (water)
-    -smooth is non-veg land
-    -dark and rough is woody veg land
-
-(4) for later: then mask with the slopemask, toatrimask
-
-
-* mask outputs should all consistently show the 'masked out' area as NaN (eg, the slopemask)
+* mask outputs should all consistently show the 'masked' area as valid
 """
 if __name__ == '__main__':
     main()
