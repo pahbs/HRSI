@@ -3,7 +3,8 @@
 import os, sys
 import glob
 
-# 11/27/2018: Adding loop to run stacks for multiple areas. write to separate csv for each area
+# CURRENT (1/21/2020):
+# Running for SGM stacks, iterating over dir and saving to 3DSI/SGM
 
 areas_str = raw_input("Enter stack names (i.e. 'name1,name2,name3'): ")
 areas = areas_str.split(",")
@@ -11,7 +12,7 @@ areas = areas_str.split(",")
 for area in areas:
 
     runScript = '/att/home/mwooten3/code/HRSI/run_GLAS_zonal_database.py'
-    indir = '/att/gpfsfs/briskfs01/ppl/pmontesa/userfs02/projects/3dsi/stacks/Out_Stacks/' #* 8/15/2019
+    indir = '/att/gpfsfs/briskfs01/ppl/pmontesa/userfs02/projects/3dsi/stacks/Out_SGM/' #* 1/21/20
 
     # indir is set up like this: indir/<pairname>/stack.tif'
     area = area.strip('Stacks_') # 11/27 just in case it already has Stacks_ in the name, remove it
