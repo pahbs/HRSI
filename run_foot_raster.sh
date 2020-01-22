@@ -11,16 +11,24 @@ now="$(date +'%Y%m%d')"
 # CHM, ARCTICDEM and other types will be done with just path and filename attributes
 
 TYPE=$1
+NB_OUT=${4:-'false'}
+NB_OUT_DIR='/att/gpfsfs/briskfs01/ppl/pmontesa/userfs02/arc'
+
 
 if [ "$TYPE" = HRSIDSM ] ; then
     RAS_DIR=$2 #/att/pubrepo/DEM/hrsi_dsm #/att/gpfsfs/briskfs01/ppl/pmontesa/userfs02/outASP #/att/gpfsfs/briskfs01/ppl/pmontesa/outASP/3DSI_pairset_01 #
     RAS_EXT=${3:-'out-DEM_1m.tif'}
 
     COARSEN_PCT=0.25 # 1pct at 1m will be a 100m res ; 0.25 is good value for speed and accuracy
-    OUT_SHP=HRSI_DSM_footprints_$(basename $RAS_DIR)        #HRSI_DSM_footprints_pct${COARSEN_PCT}
+    OUT_SHP=HRSI_DSM_footprints_$(basename $RAS_DIR) #_${RAS_EXT%.*}        #HRSI_DSM_footprints_pct${COARSEN_PCT}
 
     #OUT_DIR=/att/gpfsfs/atrepo01/data/hma_data/ASTER/_footprints
     OUT_DIR=${RAS_DIR}/_footprints
+
+    if [ "$NB_OUT" = true ] ; then
+        OUT_DIR=${NB_OUT_DIR}/_footprints
+    fi
+
     TMP_DIR=${OUT_DIR}/tmp_${RAS_EXT%.*}
     mkdir -p $OUT_DIR
     mkdir -p $TMP_DIR
@@ -30,11 +38,11 @@ if [ "$TYPE" = CHM ] ; then
     RAS_DIR=$2  #/att/gpfsfs/briskfs01/ppl/pmontesa/hrsi_chm_work/hrsi_chm_multres
     RAS_EXT=${3:-'chm.tif'}
 
-    COARSEN_PCT=0.5 # 0.5 pct at 2m will be a 100m res
-    OUT_SHP=HRSI_CHM_footprints_${RAS_EXT}
+    COARSEN_PCT=${5:-'0.25'} # 0.5 pct at 2m will be a 100m res
+    OUT_SHP=HRSI_CHM_footprints_${RAS_EXT%.*}
 
     TMP_DIR=$NOBACKUP/tmp/tmp_${RAS_EXT%.*}
-    OUT_DIR=${RAS_DIR}/_footprints
+    OUT_DIR=${RAS_DIR}_footprints
 fi
 
 if [ "$TYPE" = ARCTICDEM ] ; then
@@ -75,10 +83,10 @@ if [ "$TYPE" = OTHER ] ; then
     RAS_DIR=$2
     RAS_EXT=$3
     
-    COARSEN_PCT=${4:-'0.25'}
+    COARSEN_PCT=${5:-'0.25'}
     OUT_SHP=footprints_$(basename ${RAS_DIR})_${RAS_EXT%.*}
-
-    OUT_DIR=${RAS_DIR}/_footprints
+    # Get RAS_DIR, append '_footprints' to it so you dont have to open up massive RAS_DIR to get to footprints 
+    OUT_DIR=`basename ${RAS_DIR}`/_footprints
     TMP_DIR=${OUT_DIR}/tmp_${RAS_EXT%.*}
     mkdir -p $OUT_DIR
     mkdir -p $TMP_DIR
