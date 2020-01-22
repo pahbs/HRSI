@@ -200,7 +200,7 @@ def main(input_raster, input_polygon, bufferSize, outDir, zstats = params.defaul
 
         print "\nLayer {}: {}".format(l+1, layerName)
 
-        if layerName in majority_bnames:
+        if layerName in majority_bnames or layerName.endswith('standage_warp'):
             print "using majority", layerName
             zonalStatsDict = zonal_stats(input_polygon, input_raster, stats="majority", geojson_out=True, band=l+1)
         else: # in any other case, run like normal
