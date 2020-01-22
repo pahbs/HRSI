@@ -16,9 +16,14 @@ overwrite = False
 lineS = sys.argv[1] # line start
 lineE = sys.argv[2] # enter like 1 20   21 30, etc
 
+# CHANGE:
+name = 'LVIS' # for naming output dir and db/csv
+outdir_base = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/Stacks_{}'.format(name)
+inList = os.path.join(outdir_base, 'inputList.txt') # get list of stacks to run based on input
+#inList = '/att/gpfsfs/briskfs01/ppl/pmontesa/userfs02/projects/3dsi/stacks/Out_SGM/completed_stack_files.txt'
+
 # set up some parameters
 runScript = '/att/home/mwooten3/code/HRSI/run_GLAS_zonal_database.py'
-outdir_base = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/Stacks_SGM'
 outDir = os.path.join(outdir_base, 'outputs')
 shpDir = os.path.join(outdir_base, 'shp')
 logDir = os.path.join(outdir_base, 'logs')
@@ -26,13 +31,9 @@ for d in [outDir, shpDir, logDir]: # for extra measure
     os.system('mkdir -p {}'.format(d))
 
 # where all outputs for the run will go
-mainDb = os.path.join(outdir_base, 'Stacks_SGM__zonalStats_15m.csv')
+mainDb = os.path.join(outdir_base, 'Stacks_{}__zonalStats_15m.csv'.format(name))
 
-# get list of stacks to run based on input
-#inList = '/att/gpfsfs/briskfs01/ppl/wcwagne1/_share/completed_for_maggie.txt'
-#inList = '/att/gpfsfs/briskfs01/ppl/wcwagne1/_share/maggie_stacks'
-inList = os.path.join(outdir_base, 'inputList.txt')
-inList = '/att/gpfsfs/briskfs01/ppl/pmontesa/userfs02/projects/3dsi/stacks/Out_SGM/completed_stack_files.txt'
+
 with open (inList, 'r') as il:
     inStacks_all = [x.strip('\r\n') for x in il.readlines()] # _all stacks in list
 
