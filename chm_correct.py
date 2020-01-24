@@ -61,14 +61,14 @@ def fit_gaus(masked_array, ras_fn, ncomp, sampleStep):
 
     # Delete out_peaksCSV if exists
     out_dir = os.path.split(ras_fn)[0]
-    out_peaksCSV = os.path.join(out_dir,fig_name.strip('.png') +'.csv')
+    out_peaks_csv = os.path.join(out_dir,fig_name.strip('.png') +'.csv')
 
-    if os.path.isfile(out_peaksCSV):
-        os.remove(out_peaksCSV)
+    if os.path.isfile(out_peaks_csv):
+        os.remove(out_peaks_csv)
 
-    print"\tOutput gaussian peaks csv: %s" %(out_peaksCSV)
+    print"\tOutput gaussian peaks csv: %s" %(out_peaks_csv)
 
-    with open(out_peaksCSV,'w') as outpk:
+    with open(out_peaks_csv,'w') as outpk:
 
         # Write hdr if new
         outpk.write('ras_fn,gaus1_mean,gaus1_sd,gaus2_mean,gaus2_sd,gaus3_mean,gaus3_sd\n')
@@ -90,7 +90,7 @@ def fit_gaus(masked_array, ras_fn, ncomp, sampleStep):
         matplotlib.pyplot.savefig(os.path.join(out_dir,fig_name))
         matplotlib.pyplot.clf()
 
-        return(out_peaksCSV)
+        return(out_peaks_csv)
 
 
 def get_hist_n(array, ras_fn, ncomp, sampleStep):
@@ -98,7 +98,7 @@ def get_hist_n(array, ras_fn, ncomp, sampleStep):
     Get a histogram of image by regularly sampling a 'pct' of the input image's pixels
         Provides an even sample from across the entire image without having to analyze the entire array
     Call 'fit_gaus' Fit 3 gaussian peaks to the histogram
-    Return and Write out data to out_peaksCSV
+    Return and Write out data to out_peaks_csv
     """
 
     ### Creating data range
@@ -124,9 +124,9 @@ def get_hist_n(array, ras_fn, ncomp, sampleStep):
 
         print '\n\tFitting gaussian peaks...'
         ## https://stackoverflow.com/questions/10143905/python-two-curve-gaussian-fitting-with-non-linear-least-squares
-        outpeaksCSV = fit_gaus(masked_array, ras_fn, ncomp, sampleStep)
+        out_peaks_csv = fit_gaus(masked_array, ras_fn, ncomp, sampleStep)
 
-        return(outpeaksCSV)
+        return(out_peaks_csv)
 
 def run_os(cmdStr):
     """

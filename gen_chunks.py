@@ -16,7 +16,7 @@ import argparse
 """
 
 def process_chunk(hdr,chunk,input_list,vm):
-    out_list = input_list.rstrip(".csv") + "_" + vm
+    out_list = input_list.split(".csv")[0] + "_" + vm
     #print " VM %s get %s items" %(vm, chunk)
     # Writes chunks to output
     with open(out_list,'wb') as writer:

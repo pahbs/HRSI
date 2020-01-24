@@ -22,22 +22,19 @@ function footprints_adapt () {
     lat_max=$4
     lon_min=$5
     lon_max=$6
-    STEREO=$7    
+    STEREO=$7
+    SUNELEV=${8:-''}  #'lo' or 'hi'   
     cc_thresh=0.5
     echo; echo "Type of data (stereo/mono): ${STEREO}"; echo 
 
     # SELECTION CRITERIA (SELECT from GDB)
     if [[ $in_file == *"nga_inventory"* ]] || [[ $in_file == *"redux"* ]] ; then
 
-        if [[ $in_file == *"12_13_2017"* ]]; then
-            dissolve_field1=CATALOG_ID
-        else
-            dissolve_field1=catalog_id
-        fi
+        dissolve_field1=catalog_id
 
         to_dir=$main_dir
 
-        pair_info_field=pairname
+        pairname_field=pairname
         sunelev_field=SUN_ELEV
         cloud_field=CLOUDCOVER
         sensor_field=SENSOR
@@ -50,17 +47,17 @@ function footprints_adapt () {
         date_added=ADDED_DATE
         acqdate_field=ACQ_DATE
 
-        sql_sel="SELECT $dissolve_field1, $pair_info_field, $sunelev_field, $cloud_field, $date_added, "
-        sql_sel+="$acqdate_field, "
-        sql_sel+="$sensor_field, $prodcode_field, $offnadir_field, $centerY_field, $centerX_field "
+        field_list="$pairname_field, $sensor_field, $cloud_field, $acqdate_field, $sunelev_field, $offnadir_field, $centerY_field, $centerX_field, $prodcode_field"
+
+        sql_sel="SELECT $dissolve_field1, $field_list "
         sql_sel+="FROM ${in_file%.*} "
         sql_sel+="WHERE "
 
         if [ "$STEREO" = stereo ] ; then
-            sql_sel+="($pair_info_field IS NOT NULL OR $pair_info_field LIKE '') AND "
+            sql_sel+="($pairname_field IS NOT NULL OR $pairname_field LIKE '') AND "
         else
             STEREO=mono
-            sql_sel+="($pair_info_field IS NULL OR $pair_info_field LIKE '') AND "
+            sql_sel+="($pairname_field IS NULL OR $pairname_field LIKE '') AND "
         fi
         sql_sel+="($centerY_field > $lat_min AND $centerY_field < $lat_max) AND "
         sql_sel+="($centerX_field > $lon_min AND $centerX_field < $lon_max) AND "
@@ -72,9 +69,12 @@ function footprints_adapt () {
         # https://www.sqltutorial.org/sql-date-functions/extract-month-from-date-sql/
         # syntax problem
         #sql_sel+=" AND ( strftime('%m', $acqdate_field) > 5 AND strftime('%m', $acqdate_field) < 10 )"
-        
-        sql_sel_lo=" AND $sql_sel AND $sunelev_field =< 25"
-        sql_sel_hi=" AND $sql_sel AND $sunelev_field >= 30"
+
+        if [ "$SUNELEV" = lo ] ; then
+            sql_sel+=" AND $sunelev_field =< 25"
+        elif [ "$SUNELEV" = hi ] ; then
+            sql_sel+=" AND $sunelev_field >= 30"
+        fi
 
     fi
 
@@ -89,7 +89,6 @@ function footprints_adapt () {
 
   	    echo; echo "[1] Selecting from $in_file ..."; echo
         echo "SQL Selection:";
-        #echo $sql_sel; echo
         echo $sql_sel | awk -F"WHERE" '{print $1}'
         echo "WHERE"
         echo $sql_sel | awk -F"WHERE" '{print $2}'
@@ -111,26 +110,25 @@ function footprints_adapt () {
         bbox_str=$(echo $bbox_str | tr '-' 'n')
     fi
 
-    dis_file=${in_file%.*}_${STEREO}_catid_${bbox_str}.shp
-    dis_file_pair=${in_file%.*}_${STEREO}_pairname_${bbox_str}.shp
-    #rm -v ${in_file%.*}_catid_dis.*
+    tail=''
+    if [ ! -z "$SUNELEV" ] ; then
+        tail='_'$SUNELEV
+    fi
+    dis_file=${in_file%.*}_${STEREO}_catid_${bbox_str}${tail}.shp
+    dis_file_pair=${in_file%.*}_${STEREO}_pairname_${bbox_str}${tail}.shp
 
     if [ -e $in_file ]; then
 
         echo; echo "[2] Running ogr2ogr to dissolve..."; echo
 
-        sql_sel_catid_dis="SELECT GUnion(geometry), Count(*), $dissolve_field1, $pair_info_field, $sunelev_field, $cloud_field, $date_added, "
-        sql_sel_catid_dis+="$acqdate_field, "
-        sql_sel_catid_dis+="$sensor_field, $prodcode_field, $offnadir_field
-                FROM ${in_file%.*}
-                GROUP BY $dissolve_field1"
+        sql_sel_catid_dis="SELECT GUnion(geometry), Count(*), $dissolve_field1, $field_list "
+        sql_sel_catid_dis+="FROM ${in_file%.*} GROUP BY $dissolve_field1"
 
-        sql_sel_pairname_dis="SELECT GUnion(geometry), Count(*), $dissolve_field1, $pair_info_field, $sunelev_field, $cloud_field, $date_added, "
-        sql_sel_pairname_dis+="$acqdate_field, "
-        sql_sel_pairname_dis+="$sensor_field, $prodcode_field, $offnadir_field "
+        sql_sel_pairname_dis="SELECT GUnion(geometry), Count(*), $field_list "
         sql_sel_pairname_dis+="FROM ${dis_file%.*} "
         ##sql_sel_pairname_dis+="WHERE (MONTH($acqdate_field) > 5 AND MONTH($acqdate_field) < 10) "
-        sql_sel_pairname_dis+="GROUP BY $pair_info_field"
+        ##sql_sel_pairname_dis+="WHERE strftime('%m', $acqdate_field) > 5 AND strftime('%m', $acqdate_field) < 10 "
+        sql_sel_pairname_dis+="GROUP BY $pairname_field"
 
         echo "Current dir:"; echo "$PWD" ; echo
 
@@ -153,6 +151,9 @@ function footprints_adapt () {
             echo; echo "Creating: $dis_file_pair ..."
             cmd="ogr2ogr -overwrite $dis_file_pair $dis_file -f 'ESRI Shapefile' -dialect sqlite -sql \"$sql_sel_pairname_dis\""
             echo $cmd ; eval $cmd ; echo
+
+            cmd="ogr2ogr -overwrite -f 'CSV' ${dis_file_pair%.*}.csv $dis_file_pair"
+            echo $cmd ; eval $cmd ; echo
         fi
 
         UPDATE_FIELDS=false
@@ -165,7 +166,7 @@ function footprints_adapt () {
                 echo $cmd ; eval $cmd
             done
         fi
-        rm -v ${in_file%.*}.*
+        rm ${in_file%.*}.*
     else
         echo; echo "[2] Dissolve failed. Selection did not return a subset shapefile to dissolve. You're done."
     fi
@@ -204,12 +205,14 @@ now="$(date +'%Y%m%d%H%M%S')"
 
 s_n_w_e=$2    # "60 73 5 179"
 STEREO=$3     # stereo or mono
+SUNELEV=${4:-''}
 
 logfile=$main_dir/logs/${scriptN}_${hostN}_${now}_nga_inventory_canon${gdb_date}.log
 from_dir=${NGA_foot_dir}/${gdb_date}/geodatabase
 
 # Copy the zip of the gdb to $NOBACKUP
 if [ ! -d ${main_dir}/${gdb_file%.*}/${gdb_file} ] ; then
+
     echo; echo "Running rsync..."; echo
     mkdir -p ${main_dir}/${gdb_file%.*}
     rsync -avs ${from_dir}/${zip_file} ${main_dir}/${gdb_file%.*}  #_${gdb_date}
@@ -219,7 +222,6 @@ if [ ! -d ${main_dir}/${gdb_file%.*}/${gdb_file} ] ; then
 fi
 
 echo; echo "Running ogr2ogr to query GDB and get ADAPT footprints..." ; echo
-cmd="footprints_adapt ${main_dir}/${gdb_file%.*} $gdb_file ${2} ${3}"
-echo $cmd
-eval $cmd | tee -a $logfile
+cmd="footprints_adapt ${main_dir}/${gdb_file%.*} $gdb_file ${2} $STEREO $SUNELEV"
+echo $cmd ; eval $cmd | tee -a $logfile
 

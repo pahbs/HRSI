@@ -93,14 +93,14 @@ if [ "$TYPE" = OTHER ] ; then
 fi
 
 if [ "$TYPE" = ASTER ] ; then
-    RAS_DIR=/att/gpfsfs/atrepo01/data/hma_data/ASTER/L1A_out/cr/dsm
-    RAS_EXT=DEM_cr.tif
+    RAS_DIR=${2:-'/att/gpfsfs/atrepo01/data/hma_data/ASTER/L1A_out/cr/dsm'}
+    RAS_EXT=${3:-'DEM_cr.tif'}
     
-    COARSEN_PCT=10
+    COARSEN_PCT=${5:-'100'}
     OUT_SHP=${TYPE}_footprints_${RAS_EXT%.*}_pct${COARSEN_PCT}
 
     TMP_DIR=$NOBACKUP/tmp/tmp_${RAS_EXT%.*}
-    OUT_DIR=/att/gpfsfs/atrepo01/data/hma_data/ASTER/L1A_out
+    OUT_DIR=${RAS_DIR}_footprints
 fi
 
 # -tmp_dir is optional. If None, python sets it to out_dir
@@ -122,7 +122,7 @@ opts+=" -c_pct $COARSEN_PCT"
 opts+=" -tmp_dir $TMP_DIR"
 args="$RAS_DIR $OUT_DIR"
 
-rm ${OUT_DIR}/${OUT_SHP%.*}.csv
+rm -f ${OUT_DIR}/${OUT_SHP%.*}.csv
 
 cmd="footprint_rasters.py $opts $args -dir_exc_list _ v d c l o"
 echo $cmd ; eval $cmd
