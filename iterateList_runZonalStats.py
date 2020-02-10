@@ -17,7 +17,7 @@ lineS = sys.argv[1] # line start
 lineE = sys.argv[2] # enter like 1 20   21 30, etc
 
 # CHANGE:
-name = 'LVIS' # for naming output dir and db/csv
+name = 'SGM' # for naming output dir and db/csv
 outdir_base = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/Stacks_{}'.format(name)
 inList = os.path.join(outdir_base, 'inputList.txt') # get list of stacks to run based on input
 #inList = '/att/gpfsfs/briskfs01/ppl/pmontesa/userfs02/projects/3dsi/stacks/Out_SGM/completed_stack_files.txt'
