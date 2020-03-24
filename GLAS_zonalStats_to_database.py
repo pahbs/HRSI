@@ -5,6 +5,7 @@ from osgeo import gdal, ogr
 import GLAS_functions as functions
 from GLAS_functions import Parameters as params
 import shutil
+import tempfile
 
 """
 This script takes as input a zone polygon (buffered GLAS shots) and raster stack from which statistics will be retrived and writes them + attributes to an ouput csv
@@ -13,6 +14,32 @@ Could work standalone if you provide the following command line inputs:
     outputShapefile is set to True. can turn it off by explictly calling outputShapefile = False.
     * = Required parameter
 """
+
+# Added 3/24 for temp ATL08 processing
+def clipZonalToExtent(zonalFc, extent):
+    
+    # extent should be (xmin, ymin, xmax, ymax)
+    
+    # Unpack extent
+    #() = extent # or will ' '.join(extent) work in format?
+    clip = tempfile.mkdtemp()
+    
+    cmd = 'ogr2ogr -clipsrc {} -f "ESRI Shapefile" {} {}'.format(' '.join(map(str,extent)), clip, zonalFc)
+    os.system(cmd)
+
+    """
+    cmd = 'ogr2ogr'                        + \
+      ' -clipsrc'                      + \
+#      ' ' + str(ulx)                   + \
+#      ' ' + str(lry)                   + \
+#      ' ' + str(lrx)                   + \
+#      ' ' + str(uly)                   + \
+      ' -f "ESRI Shapefile"'           + \
+      ' "' + clipFile   + '"'          + \
+      ' "' + zonalFc + '"'
+    """
+    
+    return clip
 
 def get_pathrows(lat, lon):
     import get_wrs
@@ -124,6 +151,11 @@ def add_to_db(outDbCsv, outDbShp, inCsv): # given an input csv we wanna add, add
 def main(input_raster, input_polygon, bufferSize, outDir, zstats = params.default_zstats, logFile = None, mainDatabasePrefix = params.default_mainDatabase, addWrs2 = True, outputShapefile = True):
 
     print "Begin running zonal stats: {}\n".format(datetime.datetime.now().strftime("%m%d%Y-%H%M"))
+
+    # Added 3/24 - clip ATL08 gdb to shp using extent of raster stack
+    (xmin, ymin, xmax, ymax) = functions.get_gcs_extent(input_raster)
+    input_polygon = clipZonalToExtent(input_polygon, (xmin, ymin, xmax, ymax))  
+    print "Using {} as zonal fc\n".format(input_polygon)
 
     # set up the output csv/shp
     if not mainDatabasePrefix.endswith('.csv') and not mainDatabasePrefix.endswith('.shp'):
