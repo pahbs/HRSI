@@ -16,14 +16,14 @@ Could work standalone if you provide the following command line inputs:
 """
 
 # Added 3/24 for temp ATL08 processing
-def clipZonalToExtent(zonalFc, inRast, outdir):
+def clipZonalToExtent(zonalFc, inRast, outdir, rastname):
     
     # extent should be (xmin, ymin, xmax, ymax)
     extent = ' '.join(map(str,functions.get_gcs_extent(inRast)))
     
     # Unpack extent
     #() = extent # or will ' '.join(extent) work in format?
-    clip = os.path.join(outdir, 'ATL08_{}.shp'.format(os.path.basename(inRast).strip('.vrt')))
+    clip = os.path.join(outdir, 'ATL08_{}.shp'.format(rastname)
     
     cmd = 'ogr2ogr -spat {} -clipsrc {} '.format(extent, extent) + \
                     '-f "ESRI Shapefile" {} {}'.format(clip, zonalFc)
@@ -181,12 +181,12 @@ def main(input_raster, input_polygon, bufferSize, outDir, zstats = params.defaul
     # Added 3/24 - clip ATL08 gdb to shp using extent of raster stack
     # will be doing this for GLAS as well moving forward
     if os.path.basename(input_polygon).startswith('ATL'):
-        
+        rastName = os.path.basename(input_raster).strip('_stack.vrt')
         outDirBase = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/oldCode_zonalStats/'
-        outDir = os.path.join(outDirBase, 'ATL08', os.path.basename(input_raster).strip('.vrt'))
+        outDir = os.path.join(outDirBase, 'ATL08', rastName)
         print outDir
     
-        input_polygon = clipZonalToExtent(input_polygon, input_raster, outDir)  
+        input_polygon = clipZonalToExtent(input_polygon, input_raster, outDir, rastName)  
         print "Using {} as zonal fc\n".format(input_polygon)
     
         # Added 3/25
