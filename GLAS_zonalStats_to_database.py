@@ -16,19 +16,20 @@ Could work standalone if you provide the following command line inputs:
 """
 
 # Added 3/24 for temp ATL08 processing
-def clipZonalToExtent(zonalFc, extent):
+def clipZonalToExtent(zonalFc, inRast):
     
     # extent should be (xmin, ymin, xmax, ymax)
+    extent = ' '.join(map(str,functions.get_gcs_extent(inRast)))
     
     # Unpack extent
     #() = extent # or will ' '.join(extent) work in format?
-    clip = zonalFc.replace('ATL08.gdb', 'temp-ATL08.shp')
-    #import pdb; pdb.set_trace()
-    print clip
+    clip = zonalFc.replace('ATL08.gdb', 'ATL08.shp')
     
-    cmd = 'ogr2ogr -clipsrc {} -f "ESRI Shapefile" {} {}'.format(' '.join(map(str,extent)), clip, zonalFc)
+    cmd = 'ogr2ogr -spat {} -clipsrc {} '.format(extent, extent) + \
+                    '-f "ESRI Shapefile" {} {}'.format(clip, zonalFc)
+                    
     print cmd
-    sys.exit()
+
     os.system(cmd)
 
     """
@@ -44,6 +45,20 @@ def clipZonalToExtent(zonalFc, extent):
     """
     
     return clip#os.path.join(clip, 'ATL08.shp')
+
+# Added 3/24 for temp ATL08 processing
+def getNumberFeatures(inShp):
+    
+    driver = ogr.GetDriverByName('ESRI Shapefile')
+    ds = driver.Open(inShp, 0)
+    
+    layer = ds.GetLayer()
+    featureCount = layer.GetFeatureCount()
+
+    print featureCount
+    print type(featureCount)
+
+    return featureCount
 
 def get_pathrows(lat, lon):
     import get_wrs
@@ -157,9 +172,13 @@ def main(input_raster, input_polygon, bufferSize, outDir, zstats = params.defaul
     print "Begin running zonal stats: {}\n".format(datetime.datetime.now().strftime("%m%d%Y-%H%M"))
 
     # Added 3/24 - clip ATL08 gdb to shp using extent of raster stack
-    (xmin, ymin, xmax, ymax) = functions.get_gcs_extent(input_raster)
-    input_polygon = clipZonalToExtent(input_polygon, (xmin, ymin, xmax, ymax))  
+    input_polygon = clipZonalToExtent(input_polygon, input_raster)  
     print "Using {} as zonal fc\n".format(input_polygon)
+    
+    if getNumberFeatures(input_polygon) == 0:
+        print "There are no features in ATL08 for {}".format(input_polygon)
+
+    sys.exit()
 
     # set up the output csv/shp
     if not mainDatabasePrefix.endswith('.csv') and not mainDatabasePrefix.endswith('.shp'):
