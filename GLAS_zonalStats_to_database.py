@@ -16,14 +16,14 @@ Could work standalone if you provide the following command line inputs:
 """
 
 # Added 3/24 for temp ATL08 processing
-def clipZonalToExtent(zonalFc, inRast):
+def clipZonalToExtent(zonalFc, inRast, outdir):
     
     # extent should be (xmin, ymin, xmax, ymax)
     extent = ' '.join(map(str,functions.get_gcs_extent(inRast)))
     
     # Unpack extent
     #() = extent # or will ' '.join(extent) work in format?
-    clip = zonalFc.replace('ATL08.gdb', 'ATL08.shp')
+    clip = os.path.join(outdir, 'ATL08_{}.shp'.format(os.path.basename(inRast).strip('.vrt')))
     
     cmd = 'ogr2ogr -spat {} -clipsrc {} '.format(extent, extent) + \
                     '-f "ESRI Shapefile" {} {}'.format(clip, zonalFc)
@@ -169,16 +169,30 @@ def add_to_db(outDbCsv, outDbShp, inCsv): # given an input csv we wanna add, add
 
 def main(input_raster, input_polygon, bufferSize, outDir, zstats = params.default_zstats, logFile = None, mainDatabasePrefix = params.default_mainDatabase, addWrs2 = True, outputShapefile = True):
 
+    if logFile:
+        print "See {} for log".format(logFile)
+        so = se = open(logFile, 'a', 0) # open our log file
+        sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0) # re-open stdout without buffering
+        os.dup2(so.fileno(), sys.stdout.fileno()) # redirect stdout and stderr to the log file opened above
+        os.dup2(se.fileno(), sys.stderr.fileno())
+        
     print "Begin running zonal stats: {}\n".format(datetime.datetime.now().strftime("%m%d%Y-%H%M"))
-
-    # Added 3/24 - clip ATL08 gdb to shp using extent of raster stack
-    input_polygon = clipZonalToExtent(input_polygon, input_raster)  
-    print "Using {} as zonal fc\n".format(input_polygon)
     
-    if getNumberFeatures(input_polygon) == 0:
-        print "There are no features in ATL08 for {}".format(input_polygon)
-
-    sys.exit()
+    # Added 3/24 - clip ATL08 gdb to shp using extent of raster stack
+    # will be doing this for GLAS as well moving forward
+    if os.path.basename(input_polygon).startswith('ATL'):
+        
+        outDirBase = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/oldCode_zonalStats/'
+        outDir = os.path.join(outDirBase, 'ATL08', os.path.basename(input_raster).strip('.vrt'))
+        print outDir
+    
+        input_polygon = clipZonalToExtent(input_polygon, input_raster, outDir)  
+        print "Using {} as zonal fc\n".format(input_polygon)
+    
+        # Added 3/25
+        if getNumberFeatures(input_polygon) == 0:
+            print "There are no features in ATL08 for {}".format(input_polygon)
+            return None
 
     # set up the output csv/shp
     if not mainDatabasePrefix.endswith('.csv') and not mainDatabasePrefix.endswith('.shp'):
@@ -217,13 +231,6 @@ def main(input_raster, input_polygon, bufferSize, outDir, zstats = params.defaul
         # if ecoregionLayer is in stack list:
             #addEcoregion = True
             #store ecoregion layer number
-
-    if logFile:
-        print "See {} for log".format(logFile)
-        so = se = open(logFile, 'a', 0) # open our log file
-        sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0) # re-open stdout without buffering
-        os.dup2(so.fileno(), sys.stdout.fileno()) # redirect stdout and stderr to the log file opened above
-        os.dup2(se.fileno(), sys.stderr.fileno())
 
     outCsvFile = os.path.join(outDir, '{}__stats.csv'.format(stackName))
     if os.path.isfile(outCsvFile): os.remove(outCsvFile)
