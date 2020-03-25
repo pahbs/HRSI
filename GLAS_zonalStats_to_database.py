@@ -23,6 +23,7 @@ def clipZonalToExtent(zonalFc, extent):
     # Unpack extent
     #() = extent # or will ' '.join(extent) work in format?
     clip = tempfile.mkdtemp()
+    import pdb; pdb.set_trace()
     print os.path.join(clip, 'ATL08.shp')
     cmd = 'ogr2ogr -clipsrc {} -f "ESRI Shapefile" {} {}'.format(' '.join(map(str,extent)), clip, zonalFc)
     os.system(cmd)
