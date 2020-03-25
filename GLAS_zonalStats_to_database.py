@@ -27,6 +27,8 @@ def clipZonalToExtent(zonalFc, extent):
     print clip
     
     cmd = 'ogr2ogr -clipsrc {} -f "ESRI Shapefile" {} {}'.format(' '.join(map(str,extent)), clip, zonalFc)
+    print cmd
+    sys.exit()
     os.system(cmd)
 
     """
