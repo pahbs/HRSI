@@ -23,7 +23,7 @@ def clipZonalToExtent(zonalFc, inRast, outdir, rastname):
     
     # Unpack extent
     #() = extent # or will ' '.join(extent) work in format?
-    clip = os.path.join(outdir, 'ATL08_{}.shp'.format(rastname))
+    clip = os.path.join(outdir, 'ATL08__{}.shp'.format(rastname))
     
     cmd = 'ogr2ogr -spat {} -clipsrc {} '.format(extent, extent) + \
                     '-f "ESRI Shapefile" {} {}'.format(clip, zonalFc)

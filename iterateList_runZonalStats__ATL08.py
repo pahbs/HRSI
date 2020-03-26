@@ -25,7 +25,7 @@ runScript = '/att/home/mwooten3/code/HRSI/GLAS_zonalStats_to_database.py'
 #shpDir = os.path.join(outdir_base, 'shp')
 logDir = os.path.join(outdir_base, '_logs')
 #for d in [outDir, shpDir, logDir]: # for extra measure
-#    os.system('mkdir -p {}'.format(d))
+os.system('mkdir -p {}'.format(logDir))
 
 # where all outputs for the run will go
 mainDb = os.path.join(outdir_base, 'ATL08-{}__zonalStats_15m.csv'.format(name))
