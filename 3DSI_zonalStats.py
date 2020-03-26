@@ -183,6 +183,7 @@ def main(args):
 
     return None
 
+"""
 def parse_arguments():
     
     # maybe keep this, maybe put it in below if
@@ -191,12 +192,13 @@ def parse_arguments():
     parser.add_argument("-stack", "--rasterStack", type=str, help="Input stack")
     
     return arguments
+"""
 
 if __name__ == "__main__":
     
     parser = argparse.ArgumentParser()
-    parser.add_argument("-stack", "--rasterStack", type=str, help="Input stack")
+    parser.add_argument("-r", "--rasterStack", type=str, help="Input raster stack")
     args = parser.parse_args()
     
-    main(*args)
+    main(args)
     
