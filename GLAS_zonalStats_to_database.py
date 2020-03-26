@@ -182,9 +182,9 @@ def main(input_raster, input_polygon, bufferSize, outDir, zstats = params.defaul
     # will be doing this for GLAS as well moving forward
     if os.path.basename(input_polygon).startswith('ATL'):
         rastName = os.path.basename(input_raster).strip('_stack.vrt')
-        outDirBase = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/oldCode_zonalStats/'
-        outDir = os.path.join(outDirBase, 'ATL08', rastName)
-        print outDir
+        
+#        outDir = os.path.join(outDirBase, 'ATL08', rastName)
+#        print outDir
     
         input_polygon = clipZonalToExtent(input_polygon, input_raster, outDir, rastName)  
         print "Using {} as zonal fc\n".format(input_polygon)
