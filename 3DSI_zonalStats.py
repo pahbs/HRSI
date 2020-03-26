@@ -194,6 +194,9 @@ def parse_arguments():
 
 if __name__ == "__main__":
     
-    arguments = parse_arguments()
-    main(*arguments)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-stack", "--rasterStack", type=str, help="Input stack")
+    args = parser.parse_args()
+    
+    main(*args)
     
