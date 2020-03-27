@@ -23,6 +23,8 @@ Inputs:
 """
 # Set global variables:
 
+"""
+prob dont need - in RS
 # Convert a lat, lon point to a different projection (i.e. UTM --> WGS84 geog.)
 def convertCoordinates(inLon, inLat, sourceEpsg, targetEpsg):
 
@@ -36,7 +38,8 @@ def convertCoordinates(inLon, inLat, sourceEpsg, targetEpsg):
     lon, lat = coordTrans.TransformPoint(inLon, inLat)[0:2]
     
     return lon, lat
-    
+ """
+   
 def clipZonalToExtent(zonalFc, extent):
     
     # Expect extent to be tuple = (xmin, ymin, xmax, ymax)
@@ -119,11 +122,25 @@ def getPathRows(lat, lon):
     return ';'.join(pr_list)
 
 def main(args):
-    print args
+
     # Unpack arguments
     # input raster stack, input zonal shapefile, output directory, log directory, 
     import pdb; pdb.set_trace()
+    
     inRaster = args['rasterStack']
+    
+    stack = RasterStack(inRaster)
+    
+    """
+    stack.stackName
+    stack.zonalDir
+    stack.outDir('LVIS')
+    stack.epsg()
+    stack.extent()
+    stack.nLayers()
+    stack.stackKey()
+    """
+    
     
     # Testing:
     inShp = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/flight_shps/ATL08_boreal.shp'
