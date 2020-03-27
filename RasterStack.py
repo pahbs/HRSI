@@ -37,6 +37,25 @@ class RasterStack(object):
         self.stackName = stackName
 
     #--------------------------------------------------------------------------
+    # convertExtent()
+    #--------------------------------------------------------------------------
+    def convertExtent(self, targetEpsg):
+                
+        sourceSrs = osr.SpatialReference()
+        sourceSrs.ImportFromEPSG(int(self.epsg())) 
+    
+        targetSrs = osr.SpatialReference()
+        targetSrs.ImportFromEPSG(int(targetEpsg))
+        
+        (ulx, lry, lrx, uly) = self.extent()
+    
+        coordTrans = osr.CoordinateTransformation(sourceSrs, targetSrs)
+        ulxOut, ulyOut = coordTrans.TransformPoint(ulx, uly)[0:2]
+        lrxOut, lryOut = coordTrans.TransformPoint(lrx, lry)[0:2]
+    
+        return (ulxOut, lryOut, lrxOut, ulyOut)
+
+    #--------------------------------------------------------------------------
     # epsg() [projection]
     #--------------------------------------------------------------------------
     def epsg(self):            
@@ -72,7 +91,11 @@ class RasterStack(object):
     #--------------------------------------------------------------------------
     # outDir()
     #--------------------------------------------------------------------------
-    def outDir(self, stackType):    
+    def outDir(self, stackType):
+        
+        if stackType not in ['LVIS', 'GLiHT', 'SGM']:
+            print "Stack type must be LVIS, GLiHT, or SGM"
+            return None
         
         # zonalStatsDir --> DSM/LVIS/GLiHT --> stackIdentifier
         outDir = os.path.join(self.zonalDir, stackType, self.stackName)
