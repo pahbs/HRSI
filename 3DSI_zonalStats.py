@@ -123,7 +123,7 @@ def main(args):
     # Unpack arguments
     # input raster stack, input zonal shapefile, output directory, log directory, 
     import pdb; pdb.set_trace()
-    inRaster = args.r
+    inRaster = args['rasterStack']
     
     # Testing:
     inShp = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/flight_shps/ATL08_boreal.shp'
@@ -199,6 +199,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-r", "--rasterStack", type=str, help="Input raster stack")
     args = vars(parser.parse_args())
-    import pdb; pdb.set_trace()
-    main(**args)
+
+    main(args)
     
