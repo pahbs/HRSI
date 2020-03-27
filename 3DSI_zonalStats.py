@@ -119,11 +119,11 @@ def getPathRows(lat, lon):
     return ';'.join(pr_list)
 
 def main(args):
-  
+    print args
     # Unpack arguments
     # input raster stack, input zonal shapefile, output directory, log directory, 
     import pdb; pdb.set_trace()
-    inRaster = args.rasterStack
+    inRaster = args.r
     
     # Testing:
     inShp = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/flight_shps/ATL08_boreal.shp'
