@@ -28,11 +28,12 @@ class RasterStack(object):
         if extension != '.vrt' and extension != '.tif':
             raise RuntimeError('{} is not a VRT or TIF file'.format(filePath))
 
+        self.filePath = filePath
         self.extension = extension
             
         self.dataset = gdal.Open(self.filePath, gdal.GA_ReadOnly)    
                   
-        stackName = os.path.basename(filePath).strip(extension).strip('_stack')
+        stackName = os.path.basename(self.filePath).strip(extension).strip('_stack')
         self.stackName = stackName
 
     #--------------------------------------------------------------------------
