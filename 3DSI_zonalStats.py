@@ -199,6 +199,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-r", "--rasterStack", type=str, help="Input raster stack")
     args = vars(parser.parse_args())
-    
+    import pdb; pdb.set_trace()
     main(**args)
     
