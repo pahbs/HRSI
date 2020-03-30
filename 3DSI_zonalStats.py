@@ -9,6 +9,8 @@ import argparse
 import pandas as pd
 
 from RasterStack import RasterStack
+from ZonalFeatureClass import ZonalFeatureClass
+
 
 """
 3/20/2020:
@@ -23,30 +25,31 @@ Inputs:
 """
 # Set global variables:
 
-"""
-prob dont need - in RS
-# Convert a lat, lon point to a different projection (i.e. UTM --> WGS84 geog.)
-def convertCoordinates(inLon, inLat, sourceEpsg, targetEpsg):
 
-    sourceSrs = osr.SpatialReference()
-    sourceSrs.ImportFromEPSG(int(sourceEpsg)) # or 4326 for WGS84 lat/lon  
+def buildLayerDict(stackObject): 
+    import pdb; pdb.set_trace()
+
+    stackKey = stackObject.stackKey() # could be None if No log
+    defaultZonalStats = ['median', 'mean', 'std', 'nmad', 'min', 'max']
     
-    targetSrs = osr.SpatialReference()
-    targetSrs.ImportFromEPSG(int(targetEpsg))
-    
-    coordTrans = osr.CoordinateTransformation(sourceSrs, targetSrs)
-    lon, lat = coordTrans.TransformPoint(inLon, inLat)[0:2]
-    
-    return lon, lat
- """
-   
+    # no log means 0: ['0', [min, max, etc]]
+    # return {layerNumber: [layerName, [statistics]]}
+    with open(stackKey, 'r') as sil:
+        stackIn = sil.readlines()
+ 
+    stackList = [s.strip('\n') for i, s in enumerate(stackIn, start=1)] 
+
+
+    return layerDict
+
 def clipZonalToExtent(zonalFc, extent):
     
     # Expect extent to be tuple = (xmin, ymin, xmax, ymax)
     
     clip = '{}.shp'.format(tempfile.mkdtemp())
     
-    cmd = 'ogr2ogr -clipsrc {} -f "ESRI Shapefile" {} {}'.format(' '.join(map(str,extent)), clip, zonalFc)
+    cmd = 'ogr2ogr -clipsrc {} -f '.format(' '.join(map(str,extent))) + \
+                        '"ESRI Shapefile" {} {}'.format(clip, zonalFc)  
     os.system(cmd)
 
     """
@@ -125,11 +128,13 @@ def main(args):
 
     # Unpack arguments
     # input raster stack, input zonal shapefile, output directory, log directory, 
-    import pdb; pdb.set_trace()
+    #import pdb; pdb.set_trace()
     
     inRaster = args['rasterStack']
+    #inZonalFc = args['zonalFc']
     
     stack = RasterStack(inRaster)
+    #zones = ZonalFeatureClass(inZonalFc)
     
     """
     stack.stackName
@@ -140,11 +145,12 @@ def main(args):
     stack.nLayers()
     stack.stackKey()
     """
-    
-    
+
+    """
     # Testing:
     inShp = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/flight_shps/ATL08_boreal.shp'
     inStack = '/att/gpfsfs/briskfs01/ppl/pmontesa/userfs02/projects/3dsi/stacks/Out_SGM/WV01_20160708_10200100516C7900_102001005082D500/WV01_20160708_10200100516C7900_102001005082D500_stack.vrt'    
+    """
     
     # Start log if True
     
@@ -154,14 +160,15 @@ def main(args):
     # Output directories
      
     # Get stack key dictionary
-    stackKey = inStack.replace('.vrt', '_Log.txt')
-    # layerDict = buildLayerDict(stack) # if no stack log, return default dict w/ default stats
+    
+    
+    layerDict = buildLayerDict(stack) # if no stack log, return default dict w/ default stats
     # combine with setZonalStatistics to get big dict of:
-    # no log means 0: [0, [min, max, etc]]
+    # no log means 0: ['0', [min, max, etc]]
     # return {layerNumber: [layerName, [statistics]]}
     # maybe add something to indicate an xml file for sun angle and no datalayer
   
-    # Get raster extent from input (in lat/lon?)
+    # Get raster extent from input (in lat/lon?) --> stack.convertExtent(4326)
     # do i even need extent outside of clipping the input shp?
     # extent = getRasterExtent(inputRaster/Stack)
     # epsg = getRasterEpsg(inputRaster/Stack)
@@ -201,7 +208,7 @@ def main(args):
     return None
 
 """
-def parse_arguments():
+def parseArguments():
     
     # maybe keep this, maybe put it in below if
     #argument_parse_code
@@ -215,6 +222,8 @@ if __name__ == "__main__":
     
     parser = argparse.ArgumentParser()
     parser.add_argument("-r", "--rasterStack", type=str, help="Input raster stack")
+    parser.add_argument("-z", "--zonalFc", type=str, help="Input zonal shp/gdb")
+
     args = vars(parser.parse_args())
 
     main(args)

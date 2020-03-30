@@ -1,9 +1,14 @@
 # -*- coding: utf-8 -*-
 """
 Created on Tue Mar 24 02:03:17 2020
-
 @author: mwooten3
+
+RasterStack describes a raster geoTIFF or VRT with mutliple layers
+With methods designed specifically for Zonal Stats process
+
+EVENTUALLY: Build a general FeatureClass class and RasterStack can inherit from it
 """
+
 import os
 
 from osgeo import gdal, osr
