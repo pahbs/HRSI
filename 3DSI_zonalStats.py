@@ -37,7 +37,7 @@ def buildLayerDict(stackObject):
     with open(stackKey, 'r') as sil:
         stackIn = sil.readlines()
  
-    stackList = [s.strip('\n') for i, s in enumerate(stackIn, start=1)] 
+    stackList = [s.strip('\n') for i, s in enumerate(stackIn) if i>0] 
 
 
     return layerDict
