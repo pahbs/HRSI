@@ -55,8 +55,8 @@ def getNumberFeatures(inShp):
     layer = ds.GetLayer()
     featureCount = layer.GetFeatureCount()
 
-    print featureCount
-    print type(featureCount)
+#    print featureCount
+#    print type(featureCount)
 
     return featureCount
 

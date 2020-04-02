@@ -55,11 +55,13 @@ class ZonalFeatureClass(object):
     def clipToExtent(self, clipExtent):
         
         # Expect extent to be tuple = (xmin, ymin, xmax, ymax)
+        extent = ' '.join(map(str,clipExtent))
         
         clipFile = '{}.shp'.format(tempfile.mkdtemp())
         
-        cmd = 'ogr2ogr -clipsrc {} -f'.format(' '.join(map(str,clipExtent))) + \
-                        ' "ESRI Shapefile" {} {}'.format(clipFile, self.fileName)
+    
+        cmd = 'ogr2ogr -clipsrc {} -spat {} -f '.format(extent, extent) + \
+                        '"ESRI Shapefile" {} {}'.format(clipFile, self.fileName)
         os.system(cmd)
     
         """

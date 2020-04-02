@@ -25,6 +25,9 @@ class RasterStack(object):
     def __init__(self, filePath):
         
         # Probably doesn't make sense to keep this here but whatever
+        #* MIGHT SHOULD BE IN ZonalStats.py and combined with 'stackType' then
+        #   sent to self.outDir below like
+        #   def outDir(self, baseDir): outDir = join(baseDir, self.stackName)
         self.zonalDir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ZonalStats/'
         
         # Check that the file is TIF or VRT
@@ -92,7 +95,20 @@ class RasterStack(object):
             nLayers = None
             
         return nLayers
-    
+
+    #--------------------------------------------------------------------------
+    # noDataLayer()
+    #--------------------------------------------------------------------------
+    def noDataLayer(self):
+        
+        noDataLayer = self.filePath.replace('stack.vrt', 'mask_proj.tif')
+        
+        if os.path.isfile(noDataLayer):
+            return noDataLayer
+        
+        else:
+            return None
+        
     #--------------------------------------------------------------------------
     # outDir()
     #--------------------------------------------------------------------------

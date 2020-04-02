@@ -25,20 +25,55 @@ Inputs:
 """
 # Set global variables:
 
-
+"""
+This is not very stable because these stack_log.txt files might not be 
+exactly in line with the .vrt/stack. This function is meant to keep all of the
+variables/messiness together in one place
+    # return {layerNumber: [layerName, [statistics]]}
+"""
 def buildLayerDict(stackObject): 
     import pdb; pdb.set_trace()
 
     stackKey = stackObject.stackKey() # could be None if No log
-    defaultZonalStats = ['median', 'mean', 'std', 'nmad', 'min', 'max']
+    layerDict = {}
     
-    # no log means 0: ['0', [min, max, etc]]
-    # return {layerNumber: [layerName, [statistics]]}
+    # Some things are hardcoded for Stacks
+    defaultZonalStats = ['median', 'mean', 'std', 'nmad', 'min', 'max']
+    majorityNames = ['C2C_change_year_warp', 'C2C_change_type_warp', 
+                     'AK_NWCanada_Fire1965_2013_ras_warp', 
+                     'MCD12Q1_A2017001_LC_Type1_warp',
+                     'boreal_clust_25_100_2019_10_8_warp', 
+                     'PCA_NaN_1_093019_warp', 
+                     'PCA_NaN_2_093019_warp', 'PCA_NaN_3_093019_warp']
+    
+    # If there is no Log, build layerDict like --> {0: ['0', [defaultStats]]}
+    if not stackKey:
+        
+        nLayers = stackObject.nLayers()
+        
+        for i in range(nLayers):
+            layerDict[int(i+1)] = [str(i+1), defaultZonalStats]
+    
+        return layerDict
+    
+    # If there is a Log, read stackKey into list
     with open(stackKey, 'r') as sil:
         stackIn = sil.readlines()
- 
     stackList = [s.strip('\n') for i, s in enumerate(stackIn) if i>0] 
 
+    # layerDict --> key = layerN, value = [layerName, [statsList]]
+    for l in stackList: 
+        
+        layerN = int(l.split(',')[0])
+        layerName = l.split(',')[1].replace('.tif', '')
+        
+        # Determine which stats to use
+        if layerName in majorityNames or layerName.endswith('standage_warp'):
+            zonalStats = ["majority"]
+        else:
+            zonalStats = defaultZonalStats
+            
+        layerDict[layerN] = [layerName, zonalStats]
 
     return layerDict
 
@@ -131,10 +166,10 @@ def main(args):
     #import pdb; pdb.set_trace()
     
     inRaster = args['rasterStack']
-    #inZonalFc = args['zonalFc']
+    inZonalFc = args['zonalFc']
     
     stack = RasterStack(inRaster)
-    #zones = ZonalFeatureClass(inZonalFc)
+    zones = ZonalFeatureClass(inZonalFc)
     
     """
     stack.stackName
@@ -162,27 +197,39 @@ def main(args):
     # Get stack key dictionary
     
     
-    layerDict = buildLayerDict(stack) # if no stack log, return default dict w/ default stats
-    # combine with setZonalStatistics to get big dict of:
-    # no log means 0: ['0', [min, max, etc]]
-    # return {layerNumber: [layerName, [statistics]]}
-    # maybe add something to indicate an xml file for sun angle and no datalayer
+    layerDict = buildLayerDict(stack) # {layerNumber: [layerName, [statistics]]}
+    # **maybe add something to indicate an xml file for sun angle and no datalayer
   
     # Get raster extent from input (in lat/lon?) --> stack.convertExtent(4326)
     # do i even need extent outside of clipping the input shp?
     # extent = getRasterExtent(inputRaster/Stack)
     # epsg = getRasterEpsg(inputRaster/Stack)
     
+    extent = stack.extent()
+    
     # Clip large zonal shp to raster extent (with buffer)
     # clipZonalShpToExtent()
-        # return updated shp
+        # return updated shp   
+    zones.clipToExtent(extent)
  
+    # Apply NoData mask to Shp, remove points that are outside of it
+    #* SHOULD THIS BE IN ZFC.py?
+    # applyNoDataMask(zonalShp, noDataMask)
+        # iterate through points in zones and remove or keep points
+        
+        #* if i have to iterate through points to filter below, then 
+        #   should combine these steps
+        #* in ZFC: def filterData(self, noData, filterAttributesKey/Dict 
+        #                                                   or hardcoded in ZFC)
+        
+        # return final updated shp
+    
+    
+    
+    
     # filterData(shp, zonalName) # filter dataframe based on GLAS or ATL08 using OGR - faster?
         # and return filtered shp OR (later...)
-        
-    # Apply NoData mask to Shp, remove points that are outside of it
-    # applyNoDataMask(zonalShp, noDataMask)
-        # return final updated shp
+    
     
     # callZonalStats(raster, vector, layerDict, addPathRows) # will set up 3DSI specific stuff and call zonal stats for each layer
         # will return a pandas dataframe 
