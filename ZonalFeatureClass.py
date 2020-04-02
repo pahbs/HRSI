@@ -52,12 +52,15 @@ class ZonalFeatureClass(object):
     #--------------------------------------------------------------------------
     # clipToExtent() **CHECK**
     #--------------------------------------------------------------------------    
-    def clipToExtent(self, clipExtent):
+    def clipToExtent(self, clipExtent, outClip = None):
         
         # Expect extent to be tuple = (xmin, ymin, xmax, ymax)
         extent = ' '.join(map(str,clipExtent))
         
-        clipFile = '{}.shp'.format(tempfile.mkdtemp())
+        if not outClip:
+            clipFile = '{}.shp'.format(tempfile.mkdtemp())
+        else:
+            clipFile = outClip
         
     
         cmd = 'ogr2ogr -clipsrc {} -spat {} -f '.format(extent, extent) + \
