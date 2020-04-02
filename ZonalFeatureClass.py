@@ -40,7 +40,7 @@ class ZonalFeatureClass(object):
         self.extension = extension
         
         if self.extension == '.gdb':
-            self.driver = ogr.GetDriverByName("FileGdb") # ???
+            self.driver = ogr.GetDriverByName("FileGDB") # ???
         else:
             self.driver = ogr.GetDriverByName("ESRI Shapefile")     
         
