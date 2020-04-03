@@ -132,7 +132,7 @@ class RasterStack(object):
     # outDir()
     #--------------------------------------------------------------------------
     def outDir(self, baseDir):
-        
+        import pdb; pdb.set_trace()        
 #        if stackType not in ['LVIS', 'GLiHT', 'SGM']:
 #            print "Stack type must be LVIS, GLiHT, or SGM"
 #            return None
