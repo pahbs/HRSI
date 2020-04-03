@@ -14,6 +14,8 @@ import os
 from osgeo import gdal, osr
 #from osgeo.osr import CoordinateTransformation
 
+from SpatialHelper import SpatialHelper
+
 #------------------------------------------------------------------------------
 # class RasterStack
 #------------------------------------------------------------------------------
@@ -43,10 +45,11 @@ class RasterStack(object):
         stackName = os.path.basename(self.filePath).strip(extension).strip('_stack')
         self.stackName = stackName
         
-        self.stackIndir = os.path.dirname(self.filePath)
+        self.inDir = os.path.dirname(self.filePath)
         
         self.dataset = gdal.Open(self.filePath, gdal.GA_ReadOnly)          
 
+    """
     #--------------------------------------------------------------------------
     # convertExtent()
     #--------------------------------------------------------------------------
@@ -65,7 +68,20 @@ class RasterStack(object):
         lrxOut, lryOut = coordTrans.TransformPoint(lrx, lry)[0:2]
     
         return (ulxOut, lryOut, lrxOut, ulyOut)
+    """
 
+    #--------------------------------------------------------------------------
+    # convertExtent()
+    #--------------------------------------------------------------------------
+    def convertExtent(self, targetEpsg):
+        
+        (ulx, lry, lrx, uly) = self.extent()
+
+        ulxOut, ulyOut = SpatialHelper().convertCoords((ulx, uly), self.epsg(), targetEpsg)
+        lrxOut, lryOut = SpatialHelper().convertCoords((lrx, lry), self.epsg(), targetEpsg)
+    
+        return (ulxOut, lryOut, lrxOut, ulyOut)
+    
     #--------------------------------------------------------------------------
     # epsg() [projection]
     #--------------------------------------------------------------------------
@@ -121,7 +137,7 @@ class RasterStack(object):
 #            print "Stack type must be LVIS, GLiHT, or SGM"
 #            return None
         
-        # zonalStatsDir --> DSM/LVIS/GLiHT --> stackIdentifier
+        # zonalStatsDir --> zonalType --> DSM/LVIS/GLiHT --> stackIdentifier
         outDir = os.path.join(baseDir, self.stackType, self.stackName)
         
         os.system('mkdir -p {}'.format(outDir))
@@ -146,13 +162,13 @@ class RasterStack(object):
     #--------------------------------------------------------------------------
     def stackType(self):
         
-        if 'Out_SGM' in self.stackIndir:
+        if 'Out_SGM' in self.inDir:
             return 'SGM'
         
-        elif 'out_lvis' in self.stackIndir:
+        elif 'out_lvis' in self.inDir:
             return 'LVIS'
         
-        elif 'out_gliht' in self.stackIndir:
+        elif 'out_gliht' in self.inDir:
             return 'GLiHT'
         
         else:

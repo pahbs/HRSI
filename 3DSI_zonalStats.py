@@ -20,10 +20,12 @@ Redo of zonal Stats code, which was a mess
 Process:
     main --> 
 Inputs:
-    Raster Stack
+    RasterStack
+    ZonalFeatureClass (will be clipped to extent)
     
 """
 # Set global variables:
+baseDir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ZonalStats/'
 
 """
 This is not very stable because these stack_log.txt files might not be 
@@ -32,7 +34,6 @@ variables/messiness together in one place
     # return {layerNumber: [layerName, [statistics]]}
 """
 def buildLayerDict(stackObject): 
-    import pdb; pdb.set_trace()
 
     stackKey = stackObject.stackKey() # could be None if No log
     layerDict = {}
@@ -126,14 +127,6 @@ def callZonalStats(raster, vector, layerDict, addPathRows = False):
     
     return zonalDf
 
-def getStatsList(layerName):
-
-    # define majority dictionary
-    # define zonal stats list
-    # if statements
-    # get nmad
-    
-    return statsList
 """
   
 def getNmad(a, c=1.4826): # this gives the same results as the dshean's method but does not need all the other functions
@@ -169,48 +162,38 @@ def main(args):
     inZonalFc = args['zonalFc']
     
     stack = RasterStack(inRaster)
-    zones = ZonalFeatureClass(inZonalFc)
+    inZones = ZonalFeatureClass(inZonalFc) # This will be clipped
+    # *NOTE: cannot do ZFC on .gdb at this point. Temporarily call clip command
+    #   in here and then zones = ZFC(clippedResult)
+    #   Later, inZones is ZFC for input big gdb and zones is ZFC for clipped result
     
-    """
-    stack.stackName
-    stack.zonalDir
-    stack.outDir('LVIS')
-    stack.epsg()
-    stack.extent()
-    stack.nLayers()
-    stack.stackKey()
-    """
 
-    """
-    # Testing:
-    inShp = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/flight_shps/ATL08_boreal.shp'
-    inStack = '/att/gpfsfs/briskfs01/ppl/pmontesa/userfs02/projects/3dsi/stacks/Out_SGM/WV01_20160708_10200100516C7900_102001005082D500/WV01_20160708_10200100516C7900_102001005082D500_stack.vrt'    
-    """
-    
-    # Start log if True
-    
-    # Set some variables, sanitize inputs
-    # Input shapefile
-    # Input raster stack
-    # Output directories
-     
-    # Get stack key dictionary
+    # Set the output directory
+    # baseDir / zonalType (ATL08 or GLAS) --> stackType / stackName
+    zonalType = inZones.zonalName
+    outDir = stack.outDir(os.path.join(baseDir, zonalType))
+
+    # 1. Start log if doing so
     
     
-    layerDict = buildLayerDict(stack) # {layerNumber: [layerName, [statistics]]}
-    # **maybe add something to indicate an xml file for sun angle and no datalayer
-  
-    # Get raster extent from input (in lat/lon?) --> stack.convertExtent(4326)
-    # do i even need extent outside of clipping the input shp?
-    # extent = getRasterExtent(inputRaster/Stack)
-    # epsg = getRasterEpsg(inputRaster/Stack)
-    
-    extent = stack.extent()
-    
-    # Clip large zonal shp to raster extent (with buffer)
+    # 2. Clip large input zonal shp to raster extent (with buffer?)
     # clipZonalShpToExtent()
-        # return updated shp   
-    zones.clipToExtent(extent)
+        # return updated shp
+    #* THIS WILL BE how it looks when we get FileGDB installed
+    stackExtent = stack.extent()
+    stackEpsg   = stack.epsg()
+    stackName   = stack.stackName
+    clipZonal = os.path.join(outDir, '{}__{}.shp'.format(zonalType, stackName)) # outDir/zonalType__stackName.shp
+    inZones.clipToExtent(stackExtent, stackEpsg, clipZonal) 
+    
+    
+    # 3. Get stack key dictionary    
+    layerDict = buildLayerDict(stack) # {layerNumber: [layerName, [statistics]]}
+    #** maybe add something to indicate an xml file for sun angle and no datalayer
+  
+
+
+    
  
     # Apply NoData mask to Shp, remove points that are outside of it
     #* SHOULD THIS BE IN ZFC.py?

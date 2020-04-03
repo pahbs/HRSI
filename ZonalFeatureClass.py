@@ -9,11 +9,12 @@ With methods designed specifically for Zonal Stats process
 EVENTUALLY: Build a general Raster class and ZFC can inherit from it
 """
 import os
+import tempfile
 
 from osgeo import ogr, osr
 #from osgeo.osr import CoordinateTransformation
 
-import tempfile
+from SpatialHelper import SpatialHelper
 
 #------------------------------------------------------------------------------
 # class ZonalFeatureClass
@@ -38,6 +39,11 @@ class ZonalFeatureClass(object):
 
         self.filePath = filePath
         self.extension = extension
+
+        zonalName = os.path.basename(self.filePath).strip(extension)
+        self.zonalName = zonalName
+        
+        self.inDir = os.path.dirname(self.filePath)
         
         if self.extension == '.gdb':
             self.driver = ogr.GetDriverByName("FileGDB") # ???
@@ -49,19 +55,45 @@ class ZonalFeatureClass(object):
 
         self.nFeatures = self.layer.GetFeatureCount()
         
+   """
+    # Apply search terms to shapefile --> feature layer
+    # but with ogr
+    def applySearchTerms(shp, searchTerms):
+        
+        whereClause = ''
+        for st in searchTerms:
+            whereClause += '("{}"{}\'{}\') AND'.format(*st.split(':'))
+        whereClause = whereClause.strip(' AND')
+    
+        inFeatLayer = arcpy.MakeFeatureLayer_management(shp, "features", whereClause)    
+        
+        return inFeatLayer
+    """
+
+     
     #--------------------------------------------------------------------------
     # clipToExtent() **CHECK**
     #--------------------------------------------------------------------------    
-    def clipToExtent(self, clipExtent, outClip = None):
+    def clipToExtent(self, clipExtent, extentEpsg, outClip = None):
         
         # Expect extent to be tuple = (xmin, ymin, xmax, ymax)
-        extent = ' '.join(map(str,clipExtent))
-        
+               
         if not outClip:
             clipFile = '{}.shp'.format(tempfile.mkdtemp())
         else:
             clipFile = outClip
+
+        # If EPSG of given coords is different from the EPSG of the feature class
+        if str(extentEpsg) != str(self.epsg()):
+            
+            # Then transform coords to correct epsg
+            (ulx1, lry1, lrx1, uly1) = clipExtent
+            ulx, uly = SpatialHelper().convertCoords((ulx1, uly1), extentEpsg, self.epsg())
+            lrx, lry = SpatialHelper().convertCoords((lrx1, lry1), extentEpsg, self.epsg())
+            
+            clipExtent = (ulx, lry, lrx, uly)
         
+        extent = ' '.join(map(str,clipExtent))
     
         cmd = 'ogr2ogr -clipsrc {} -spat {} -f '.format(extent, extent) + \
                         '"ESRI Shapefile" {} {}'.format(clipFile, self.fileName)
@@ -110,6 +142,17 @@ class ZonalFeatureClass(object):
         (ulx, lrx, lry, uly) = self.layer.GetExtent()
         
         return (ulx, lry, lrx, uly)    
+
+    """ just use zonalName for now   
+    #--------------------------------------------------------------------------
+    # zonalType() # ATL08 or GLAS
+    #--------------------------------------------------------------------------
+    def extent(self):
+        
+        if 
+    
+    """
+    
     
     """  ###################################################################
     Stuff from RasterStack, might not be applicable here:
