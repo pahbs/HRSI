@@ -54,30 +54,14 @@ class ZonalFeatureClass(object):
         self.layer = self.dataset.GetLayer() # **CHECK this might not work. may have to do this every time
 
         self.nFeatures = self.layer.GetFeatureCount()
-        
-   """
-    # Apply search terms to shapefile --> feature layer
-    # but with ogr
-    def applySearchTerms(shp, searchTerms):
-        
-        whereClause = ''
-        for st in searchTerms:
-            whereClause += '("{}"{}\'{}\') AND'.format(*st.split(':'))
-        whereClause = whereClause.strip(' AND')
-    
-        inFeatLayer = arcpy.MakeFeatureLayer_management(shp, "features", whereClause)    
-        
-        return inFeatLayer
-    """
 
-     
     #--------------------------------------------------------------------------
     # clipToExtent() **CHECK**
     #--------------------------------------------------------------------------    
     def clipToExtent(self, clipExtent, extentEpsg, outClip = None):
         
         # Expect extent to be tuple = (xmin, ymin, xmax, ymax)
-               
+        import pdb; pdb.set_trace()
         if not outClip:
             clipFile = '{}.shp'.format(tempfile.mkdtemp())
         else:
