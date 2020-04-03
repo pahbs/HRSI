@@ -167,7 +167,7 @@ def main(args):
     #   in here and then zones = ZFC(clippedResult)
     #   Later, inZones is ZFC for input big gdb and zones is ZFC for clipped result
     
-
+    import pdb; pdb.set_trace()
     # Set the output directory
     # baseDir / zonalType (ATL08 or GLAS) --> stackType / stackName
     zonalType = inZones.zonalName
@@ -186,7 +186,6 @@ def main(args):
     clipZonal = os.path.join(outDir, '{}__{}.shp'.format(zonalType, stackName)) # outDir/zonalType__stackName.shp
     print clipZonal
     inZones.clipToExtent(stackExtent, stackEpsg, clipZonal) 
-    import pdb; pdb.set_trace()
     
     # 3. Get stack key dictionary    
     layerDict = buildLayerDict(stack) # {layerNumber: [layerName, [statistics]]}
