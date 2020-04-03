@@ -80,7 +80,7 @@ class ZonalFeatureClass(object):
         extent = ' '.join(map(str,clipExtent))
     
         cmd = 'ogr2ogr -clipsrc {} -spat {} -f '.format(extent, extent) + \
-                        '"ESRI Shapefile" {} {}'.format(clipFile, self.fileName)
+                        '"ESRI Shapefile" {} {}'.format(clipFile, self.filePath)
         os.system(cmd)
     
         """
