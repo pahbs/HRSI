@@ -28,7 +28,8 @@ class RasterStack(object):
         #* MIGHT SHOULD BE IN ZonalStats.py and combined with 'stackType' then
         #   sent to self.outDir below like
         #   def outDir(self, baseDir): outDir = join(baseDir, self.stackName)
-        self.zonalDir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ZonalStats/'
+        # stackType could be a method in here as well
+        #self.zonalDir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ZonalStats/'
         
         # Check that the file is TIF or VRT
         extension = os.path.splitext(filePath)[1]       
@@ -38,11 +39,13 @@ class RasterStack(object):
 
         self.filePath = filePath
         self.extension = extension
-            
-        self.dataset = gdal.Open(self.filePath, gdal.GA_ReadOnly)    
-                  
+         
         stackName = os.path.basename(self.filePath).strip(extension).strip('_stack')
         self.stackName = stackName
+        
+        self.stackIndir = os.path.dirname(self.filePath)
+        
+        self.dataset = gdal.Open(self.filePath, gdal.GA_ReadOnly)          
 
     #--------------------------------------------------------------------------
     # convertExtent()
@@ -112,14 +115,14 @@ class RasterStack(object):
     #--------------------------------------------------------------------------
     # outDir()
     #--------------------------------------------------------------------------
-    def outDir(self, stackType):
+    def outDir(self, baseDir):
         
-        if stackType not in ['LVIS', 'GLiHT', 'SGM']:
-            print "Stack type must be LVIS, GLiHT, or SGM"
-            return None
+#        if stackType not in ['LVIS', 'GLiHT', 'SGM']:
+#            print "Stack type must be LVIS, GLiHT, or SGM"
+#            return None
         
         # zonalStatsDir --> DSM/LVIS/GLiHT --> stackIdentifier
-        outDir = os.path.join(self.zonalDir, stackType, self.stackName)
+        outDir = os.path.join(baseDir, self.stackType, self.stackName)
         
         os.system('mkdir -p {}'.format(outDir))
         
@@ -138,3 +141,19 @@ class RasterStack(object):
         else:
             return None
         
+    #--------------------------------------------------------------------------
+    # stackType() # SGM, LVIS, or GLiHT
+    #--------------------------------------------------------------------------
+    def stackType(self):
+        
+        if 'Out_SGM' in self.stackIndir:
+            return 'SGM'
+        
+        elif 'out_lvis' in self.stackIndir:
+            return 'LVIS'
+        
+        elif 'out_gliht' in self.stackIndir:
+            return 'GLiHT'
+        
+        else:
+            return None
