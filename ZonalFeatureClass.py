@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 """
 Created on Tue Mar 24 02:03:17 2020
 @author: mwooten3
@@ -11,7 +11,7 @@ EVENTUALLY: Build a general Raster class and ZFC can inherit from it
 import os
 import tempfile
 
-from osgeo import ogr, osr
+from osgeo import ogr
 #from osgeo.osr import CoordinateTransformation
 
 from SpatialHelper import SpatialHelper
