@@ -45,6 +45,8 @@ class ZonalFeatureClass(object):
         
         self.inDir = os.path.dirname(self.filePath)
         
+        """
+        For now, ignore driver stuff so we can test with gdb
         if self.extension == '.gdb':
             self.driver = ogr.GetDriverByName("FileGDB") # ???
         else:
@@ -52,16 +54,16 @@ class ZonalFeatureClass(object):
         
         self.dataset = self.driver.Open(self.filePath)
         self.layer = self.dataset.GetLayer() # **CHECK this might not work. may have to do this every time
-
+        
         self.nFeatures = self.layer.GetFeatureCount()
-
+        """
     #--------------------------------------------------------------------------
-    # clipToExtent() **CHECK**
+    # clipToExtent()
     #--------------------------------------------------------------------------    
     def clipToExtent(self, clipExtent, extentEpsg, outClip = None):
         
         # Expect extent to be tuple = (xmin, ymin, xmax, ymax)
-        import pdb; pdb.set_trace()
+
         if not outClip:
             clipFile = '{}.shp'.format(tempfile.mkdtemp())
         else:
@@ -80,20 +82,8 @@ class ZonalFeatureClass(object):
         extent = ' '.join(map(str,clipExtent))
     
         cmd = 'ogr2ogr -clipsrc {} -spat {} -f '.format(extent, extent) + \
-                        '"ESRI Shapefile" {} {}'.format(clipFile, self.filePath)
+                    '"ESRI Shapefile" {} {}'.format(clipFile, self.filePath)
         os.system(cmd)
-    
-        """
-        cmd = 'ogr2ogr'                        + \
-          ' -clipsrc'                      + \
-    #      ' ' + str(ulx)                   + \
-    #      ' ' + str(lry)                   + \
-    #      ' ' + str(lrx)                   + \
-    #      ' ' + str(uly)                   + \
-          ' -f "ESRI Shapefile"'           + \
-          ' "' + clipFile   + '"'          + \
-          ' "' + zonalFc + '"'
-        """
         
         return clipFile
  

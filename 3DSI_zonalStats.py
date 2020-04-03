@@ -184,8 +184,9 @@ def main(args):
     stackEpsg   = stack.epsg()
     stackName   = stack.stackName
     clipZonal = os.path.join(outDir, '{}__{}.shp'.format(zonalType, stackName)) # outDir/zonalType__stackName.shp
+    print clipZonal
     inZones.clipToExtent(stackExtent, stackEpsg, clipZonal) 
-    
+    import pdb; pdb.set_trace()
     
     # 3. Get stack key dictionary    
     layerDict = buildLayerDict(stack) # {layerNumber: [layerName, [statistics]]}
