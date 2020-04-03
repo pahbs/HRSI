@@ -173,7 +173,7 @@ def main(args):
     outDir = stack.outDir(os.path.join(baseDir, zonalType))
 
     # 1. Start log if doing so
-    
+    import pdb; pdb.set_trace()
     
     # 2. Clip large input zonal shp to raster extent (with buffer?)
     # clipZonalShpToExtent()

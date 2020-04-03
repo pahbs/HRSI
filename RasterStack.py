@@ -132,13 +132,13 @@ class RasterStack(object):
     # outDir()
     #--------------------------------------------------------------------------
     def outDir(self, baseDir):
-        import pdb; pdb.set_trace()        
+        
 #        if stackType not in ['LVIS', 'GLiHT', 'SGM']:
 #            print "Stack type must be LVIS, GLiHT, or SGM"
 #            return None
         
         # zonalStatsDir --> zonalType --> DSM/LVIS/GLiHT --> stackIdentifier
-        outDir = os.path.join(baseDir, self.stackType, self.stackName)
+        outDir = os.path.join(baseDir, self.stackType(), self.stackName)
         
         os.system('mkdir -p {}'.format(outDir))
         
