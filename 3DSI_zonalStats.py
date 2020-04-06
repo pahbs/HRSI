@@ -66,7 +66,8 @@ def buildLayerDict(stackObject):
     for l in stackList: 
         
         layerN = int(l.split(',')[0])
-        layerName = l.split(',')[1].replace('.tif', '')
+        layerName = os.path.basename(l.split(',')[1]).replace('.tif', '')
+        layerName = layerName.replace(stackObject.stackName, '')  # Remove any stack-related name (ie pairname) from layerName
         
         # Determine which stats to use
         if layerName in majorityNames or layerName.endswith('standage_warp'):
