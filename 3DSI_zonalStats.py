@@ -80,7 +80,7 @@ def buildLayerDict(stackObject):
 
     #return layerDict
     # subset for testing
-    return {key: layerDict[key] for key in range(1,3)}
+    return {key: layerDict[key] for key in range(1,4)}
 
 def clipZonalToExtent(zonalFc, extent):
     
