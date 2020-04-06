@@ -45,7 +45,8 @@ def buildLayerDict(stackObject):
                      'MCD12Q1_A2017001_LC_Type1_warp',
                      'boreal_clust_25_100_2019_10_8_warp', 
                      'PCA_NaN_1_093019_warp', 
-                     'PCA_NaN_2_093019_warp', 'PCA_NaN_3_093019_warp']
+                     'PCA_NaN_2_093019_warp', 'PCA_NaN_3_093019_warp',
+                     'NA_standage_v2_warp']
     
     # If there is no Log, build layerDict like --> {0: ['0', [defaultStats]]}
     if not stackKey:
@@ -67,10 +68,10 @@ def buildLayerDict(stackObject):
         
         layerN = int(l.split(',')[0])
         layerName = os.path.basename(l.split(',')[1]).replace('.tif', '')
-        layerName = layerName.replace(stackObject.stackName, '')  # Remove any stack-related name (ie pairname) from layerName
+        layerName = layerName.replace('{}_'.format(stackObject.stackName), '')  # Remove any stack-related name (ie pairname) from layerName
         
         # Determine which stats to use
-        if layerName in majorityNames or layerName.endswith('standage_warp'):
+        if layerName in majorityNames: #or layerName.endswith('standage_warp'):
             zonalStats = ["majority"]
         else:
             zonalStats = defaultZonalStats
