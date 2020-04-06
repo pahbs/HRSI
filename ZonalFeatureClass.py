@@ -90,7 +90,7 @@ class ZonalFeatureClass(object):
                 
             layer.SetFeature(feature)
             
-        ds = None # Close the dataset
+        ds = layer = feature = None # Close the dataset
         
         return tempCopy
 
