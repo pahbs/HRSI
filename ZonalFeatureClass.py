@@ -47,7 +47,7 @@ class ZonalFeatureClass(object):
         self.zonalName = zonalName
         
         self.inDir = os.path.dirname(self.filePath)
-        import pdb; pdb.set_trace()
+
         #For now, ignore driver stuff so we can test with gdb
         if self.extension == '.gdb':
             self.driver = ogr.GetDriverByName("FileGDB") # ???

@@ -166,7 +166,7 @@ def main(args):
     # *NOTE: cannot do ZFC on .gdb at this point. Temporarily call clip command
     #   in here and then zones = ZFC(clippedResult)
     #   Later, inZones is ZFC for input big gdb and zones is ZFC for clipped result
-    
+    import pdb; pdb.set_trace()
     # Set the output directory
     # baseDir / zonalType (ATL08 or GLAS) --> stackType / stackName
     zonalType = inZones.zonalName
