@@ -203,16 +203,14 @@ def main(args):
     zones.createCopy(tempCopy)
     
 
-    #zones.applyNoDataMask(noDataMask)
+    zones.applyNoDataMask(noDataMask)
     # applyNoDataMask(zonalShp, noDataMask)
         # iterate through points in zones and remove or keep points
      
     # 3. Get stack key dictionary 
-    import pdb; pdb.set_trace()
     layerDict = buildLayerDict(stack) # {layerNumber: [layerName, [statistics]]}
     #** maybe add something to indicate an xml file for sun angle and no datalayer
 
-        
         # return final updated shp  
     
     

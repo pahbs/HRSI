@@ -64,22 +64,21 @@ class ZonalFeatureClass(object):
     # applyNoDataMask()
     #--------------------------------------------------------------------------    
     def applyNoDataMask(self, mask):
-        
+        import pdb; pdb.set_trace()
         # Expecting mask to be 0s and 1s where we want to remove data
         
-        """
         for feature in self.layer:
-            get lat/lon
+            # get lat/lon
             ptGeom = Point(lon, lat)
             ptVal = point_query([ptGeom], mask)[0]
 
             if ptVal >= 0.99 or ptVal == None: # 0 = Data. 1 and None = NoData. some results might be float if within 2m of data. .99 cause some no data points were returning that
                 # Point not under NoData should be removed
                 layer.DeleteFeature(feature.GetFID())
-                #continue # skip, don't include point              
-        
-        """
-        
+                continue # Do nothing else
+                
+            layer.SetFeature(feature)
+               
 
         return None # will be same shp
 
