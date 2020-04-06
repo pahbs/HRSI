@@ -16,6 +16,9 @@ from osgeo import ogr
 
 from SpatialHelper import SpatialHelper
 
+from rasterstats import point_query
+from shapely.geometry import Point
+
 #------------------------------------------------------------------------------
 # class ZonalFeatureClass
 #------------------------------------------------------------------------------
@@ -45,8 +48,7 @@ class ZonalFeatureClass(object):
         
         self.inDir = os.path.dirname(self.filePath)
         
-        """
-        For now, ignore driver stuff so we can test with gdb
+        #For now, ignore driver stuff so we can test with gdb
         if self.extension == '.gdb':
             self.driver = ogr.GetDriverByName("FileGDB") # ???
         else:
@@ -56,7 +58,32 @@ class ZonalFeatureClass(object):
         self.layer = self.dataset.GetLayer() # **CHECK this might not work. may have to do this every time
         
         self.nFeatures = self.layer.GetFeatureCount()
+
+        
+    #--------------------------------------------------------------------------
+    # applyNoDataMask()
+    #--------------------------------------------------------------------------    
+    def applyNoDataMask(self, mask):
+        
+        # Expecting mask to be 0s and 1s where we want to remove data
+        
         """
+        for feature in self.layer:
+            get lat/lon
+            ptGeom = Point(lon, lat)
+            ptVal = point_query([ptGeom], mask)[0]
+
+            if ptVal >= 0.99 or ptVal == None: # 0 = Data. 1 and None = NoData. some results might be float if within 2m of data. .99 cause some no data points were returning that
+                # Point not under NoData should be removed
+                layer.DeleteFeature(feature.GetFID())
+                #continue # skip, don't include point              
+        
+        """
+        
+
+        return None # will be same shp
+
+
     #--------------------------------------------------------------------------
     # clipToExtent()
     #--------------------------------------------------------------------------    
@@ -86,7 +113,17 @@ class ZonalFeatureClass(object):
         os.system(cmd)
         
         return clipFile
- 
+
+    #--------------------------------------------------------------------------
+    # createCopy()
+    #--------------------------------------------------------------------------    
+    def createCopy(self, copyName):
+        
+        cmd = 'ogr2ogr {} {}'.format(copyName, self.filePath)
+        os.system(cmd)
+        
+        return copyName  
+        
     #--------------------------------------------------------------------------
     # epsg() [projection] **CHECK THIS!!!**
     #--------------------------------------------------------------------------

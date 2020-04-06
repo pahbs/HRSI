@@ -173,7 +173,7 @@ def main(args):
     outDir = stack.outDir(os.path.join(baseDir, zonalType))
 
     # 1. Start log if doing so
-    import pdb; pdb.set_trace()
+    #import pdb; pdb.set_trace()
     
     # 2. Clip large input zonal shp to raster extent (with buffer?)
     # clipZonalShpToExtent()
@@ -184,33 +184,41 @@ def main(args):
     stackName   = stack.stackName
     clipZonal = os.path.join(outDir, '{}__{}.shp'.format(zonalType, stackName)) # outDir/zonalType__stackName.shp
     print clipZonal
+    
     inZones.clipToExtent(stackExtent, stackEpsg, clipZonal) 
     
-    # 3. Get stack key dictionary    
-    layerDict = buildLayerDict(stack) # {layerNumber: [layerName, [statistics]]}
-    #** maybe add something to indicate an xml file for sun angle and no datalayer
-  
-
-
+    # now zones is the clipped input ZFC object:
+    clipZones = ZonalFeatureClass(clipZonal)
     
- 
-    # Apply NoData mask to Shp, remove points that are outside of it
-    #* SHOULD THIS BE IN ZFC.py?
-    # applyNoDataMask(zonalShp, noDataMask)
-        # iterate through points in zones and remove or keep points
-        
-        #* if i have to iterate through points to filter below, then 
-        #   should combine these steps
-        #* in ZFC: def filterData(self, noData, filterAttributesKey/Dict 
-        #                                                   or hardcoded in ZFC)
-        
-        # return final updated shp
+   
     
-    
-    
+    #* if i have to iterate through points to filter below, then combine with applyNoDataMask:
+    #* in ZFC: def filterData(self, noData, filterAttributesKey/Dict or hardcoded in ZFC)
     
     # filterData(shp, zonalName) # filter dataframe based on GLAS or ATL08 using OGR - faster?
         # and return filtered shp OR (later...)
+    
+    # Apply NoData mask to Shp, remove points that are outside of it
+    noDataMask = stack.noDataLayer()
+    
+    #* HERE MONDAY
+    # Before masking out NoData, make a temp copy of the shp to check output
+    #* COMMENT OUT when running real thing probably
+    tempCopy = clipZones.filePath.replace(clipZones.extension, '__beforeFilter.shp')
+    clipZones.createCopy(tempCopy)
+    
+    #* SHOULD THIS BE IN ZFC.py? PROBABLY -->
+    clipZones.applyNoDataMask(noDataMask)
+    # applyNoDataMask(zonalShp, noDataMask)
+        # iterate through points in zones and remove or keep points
+     
+    # 3. Get stack key dictionary    
+    layerDict = buildLayerDict(stack) # {layerNumber: [layerName, [statistics]]}
+    #** maybe add something to indicate an xml file for sun angle and no datalayer
+
+        
+        # return final updated shp  
+    
     
     
     # callZonalStats(raster, vector, layerDict, addPathRows) # will set up 3DSI specific stuff and call zonal stats for each layer
