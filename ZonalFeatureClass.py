@@ -74,7 +74,7 @@ class ZonalFeatureClass(object):
         drv = ogr.GetDriverByName("ESRI Shapefile")
         ds = drv.Open(tempCopy)
         layer = ds.GetLayer()
-
+        cnt=0
         for feature in layer:
             
             lon = feature.GetGeometryRef().Centroid().GetX()
@@ -86,12 +86,16 @@ class ZonalFeatureClass(object):
             if ptVal >= 0.99 or ptVal == None: # 0 = Data. 1 and None = NoData. some results might be float if within 2m of data. .99 cause some no data points were returning that
                 # Point not under NoData should be removed
                 layer.DeleteFeature(feature.GetFID())
+                cnt+=1
                 continue # Do nothing else
                 
             layer.SetFeature(feature)
             
-        ds = layer = feature = None # Close the dataset
+        del ds # Close the dataset
+        del layer
+        del feature
         
+        print "{} features should have been removed".format(cnt)
         return tempCopy
 
 
