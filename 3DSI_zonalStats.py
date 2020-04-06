@@ -203,6 +203,11 @@ def main(args):
     zones.createCopy(tempCopy)
     
     import pdb; pdb.set_trace()
+    # Check first that noDataMask is in same projection as zonal fc:
+    if int(RasterStack(noDataMask).epsg()) != int(zones.epsg()):
+        # Eventually reproject mask to same epsg, but for now just raise error
+        raise RuntimeError("In order to apply noDataMask, mask and zonal fc must be in same projection")
+        
     zones.applyNoDataMask(noDataMask)
     # applyNoDataMask(zonalShp, noDataMask)
         # iterate through points in zones and remove or keep points

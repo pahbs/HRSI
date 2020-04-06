@@ -66,8 +66,9 @@ class ZonalFeatureClass(object):
     def applyNoDataMask(self, mask):
 
         # Expecting mask to be 0s and 1s where we want to remove data
-        
-        for feature in self.layer:
+        layer = self.layer
+        for feature in layer:
+            
             lon = feature.GetGeometryRef().Centroid().GetX()
             lat = feature.GetGeometryRef().Centroid().GetY()
             
@@ -80,7 +81,6 @@ class ZonalFeatureClass(object):
                 continue # Do nothing else
                 
             layer.SetFeature(feature)
-               
 
         return None # will be same shp
 
