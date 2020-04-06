@@ -48,14 +48,14 @@ class ZonalFeatureClass(object):
         
         self.inDir = os.path.dirname(self.filePath)
 
-        #For now, ignore driver stuff so we can test with gdb
+        # Set self.driver depending on the extention
         if self.extension == '.gdb':
-            self.driver = ogr.GetDriverByName("FileGDB") # ???
+            self.driver = ogr.GetDriverByName("FileGDB")
         else:
             self.driver = ogr.GetDriverByName("ESRI Shapefile")     
         
         self.dataset = self.driver.Open(self.filePath)
-        self.layer = self.dataset.GetLayer() # **CHECK this might not work. may have to do this every time
+        self.layer = self.dataset.GetLayer()
         
         self.nFeatures = self.layer.GetFeatureCount()
 
@@ -128,12 +128,6 @@ class ZonalFeatureClass(object):
     # epsg() [projection] **CHECK THIS!!!**
     #--------------------------------------------------------------------------
     def epsg(self):         
-        
-        """ 
-        if below block doesnt work
-        layer = self.dataset.GetLayer()
-        srs = layer.GetSpatialRef()
-        """
 
         srs = self.layer.GetSpatialRef()
         
@@ -143,12 +137,6 @@ class ZonalFeatureClass(object):
     # extent()
     #--------------------------------------------------------------------------
     def extent(self):
-        
-        """ 
-        if below block doesnt work
-        layer = self.dataset.GetLayer()
-        (xmin, xmax, ymin, ymax) = layer.GetExtent()
-        """
         
         (ulx, lrx, lry, uly) = self.layer.GetExtent()
         

@@ -155,20 +155,15 @@ def getPathRows(lat, lon):
 def main(args):
 
     # Unpack arguments
-    # input raster stack, input zonal shapefile, output directory, log directory, 
-    #import pdb; pdb.set_trace()
-    
+    # input raster stack, input zonal shapefile, output directory, log directory,    
     inRaster = args['rasterStack']
     inZonalFc = args['zonalFc']
     
     stack = RasterStack(inRaster)
     inZones = ZonalFeatureClass(inZonalFc) # This will be clipped
-    # *NOTE: cannot do ZFC on .gdb at this point. Temporarily call clip command
-    #   in here and then zones = ZFC(clippedResult)
-    #   Later, inZones is ZFC for input big gdb and zones is ZFC for clipped result
-    import pdb; pdb.set_trace()
+
     # Set the output directory
-    # baseDir / zonalType (ATL08 or GLAS) --> stackType / stackName
+    # outDir = baseDir / zonalType (ATL08_na or GLAS_buff30m) --> stackType / stackName
     zonalType = inZones.zonalName
     outDir = stack.outDir(os.path.join(baseDir, zonalType))
 
@@ -176,21 +171,19 @@ def main(args):
     #import pdb; pdb.set_trace()
     
     # 2. Clip large input zonal shp to raster extent (with buffer?)
-    # clipZonalShpToExtent()
-        # return updated shp
-    #* THIS WILL BE how it looks when we get FileGDB installed
     stackExtent = stack.extent()
     stackEpsg   = stack.epsg()
     stackName   = stack.stackName
-    clipZonal = os.path.join(outDir, '{}__{}.shp'.format(zonalType, stackName)) # outDir/zonalType__stackName.shp
-    print clipZonal
     
+    # outDir/zonalType__stackName.shp
+    clipZonal = os.path.join(outDir, '{}__{}.shp'.format(zonalType, stackName))
     inZones.clipToExtent(stackExtent, stackEpsg, clipZonal) 
     
-    # now zones is the clipped input ZFC object:
-    clipZones = ZonalFeatureClass(clipZonal)
+    if not os.path.isfile(clipZonal):
+        raise RuntimeError('Could not perform clip of input zonal feature class')
     
-   
+    # now zones is the clipped input ZFC object:
+    zones = ZonalFeatureClass(clipZonal)   
     
     #* if i have to iterate through points to filter below, then combine with applyNoDataMask:
     #* in ZFC: def filterData(self, noData, filterAttributesKey/Dict or hardcoded in ZFC)
@@ -201,18 +194,19 @@ def main(args):
     # Apply NoData mask to Shp, remove points that are outside of it
     noDataMask = stack.noDataLayer()
     
-    #* HERE MONDAY
+    # 3-4. Remove footprints under noData mask
     # Before masking out NoData, make a temp copy of the shp to check output
     #* COMMENT OUT when running real thing probably
-    tempCopy = clipZones.filePath.replace(clipZones.extension, '__beforeFilter.shp')
-    clipZones.createCopy(tempCopy)
+    tempCopy = zones.filePath.replace(zones.extension, '__beforeFilter.shp')
+    zones.createCopy(tempCopy)
     
-    #* SHOULD THIS BE IN ZFC.py? PROBABLY -->
-    clipZones.applyNoDataMask(noDataMask)
+
+    #zones.applyNoDataMask(noDataMask)
     # applyNoDataMask(zonalShp, noDataMask)
         # iterate through points in zones and remove or keep points
      
-    # 3. Get stack key dictionary    
+    # 3. Get stack key dictionary 
+    import pdb; pdb.set_trace()
     layerDict = buildLayerDict(stack) # {layerNumber: [layerName, [statistics]]}
     #** maybe add something to indicate an xml file for sun angle and no datalayer
 
