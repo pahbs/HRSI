@@ -78,7 +78,9 @@ def buildLayerDict(stackObject):
             
         layerDict[layerN] = [layerName, zonalStats]
 
-    return layerDict
+    #return layerDict
+    # subset for testing
+    return {key: layerDict[key] for key in range(1,3)}
 
 def clipZonalToExtent(zonalFc, extent):
     
@@ -103,11 +105,26 @@ def clipZonalToExtent(zonalFc, extent):
     """
     
     return clip
-"""
+
 def callZonalStats(raster, vector, layerDict, addPathRows = False):
     
     # Iterate through layers, run zonal stats
-    # run/call dict to pandas
+    for layerN in layerDict:
+        
+        layerName = layerDict[layerN][0]
+        statsList = layerDict[layerN][1]
+
+        # Run/call dict to pandas    
+        if "nmad" in statsList:
+            statsList.remove("nmad")
+            zonalStatsDict = zonal_stats(vector, raster, 
+                        stats=' '.join(statsList), add_stats={'nmad':getNmad}, 
+                        geojson_out=True, band=layerN)
+        else:
+            zonalStatsDict = zonal_stats(vector, raster, 
+                        stats=' '.join(statsList), geojson_out=True, band=layerN)
+    
+
     
     # get column names from vector layer to use below
     
@@ -128,8 +145,6 @@ def callZonalStats(raster, vector, layerDict, addPathRows = False):
     
     
     return zonalDf
-
-"""
   
 def getNmad(a, c=1.4826): # this gives the same results as the dshean's method but does not need all the other functions
 
@@ -144,6 +159,7 @@ def getNmad(a, c=1.4826): # this gives the same results as the dshean's method b
 
     return nmad
 
+"""
 def getPathRows(lat, lon):
     
     import get_wrs
@@ -153,7 +169,7 @@ def getPathRows(lat, lon):
 
     #return '"{}"'.format(','.join(pr_list))
     return ';'.join(pr_list)
-
+"""
 def main(args):
 
     # Unpack arguments
@@ -179,7 +195,7 @@ def main(args):
     
     # outDir/zonalType__stackName.shp
     clipZonal = os.path.join(outDir, '{}__{}.shp'.format(zonalType, stackName))
-    #inZones.clipToExtent(stackExtent, stackEpsg, clipZonal) 
+    inZones.clipToExtent(stackExtent, stackEpsg, clipZonal) 
     
     if not os.path.isfile(clipZonal):
         raise RuntimeError('Could not perform clip of input zonal feature class')
@@ -203,7 +219,7 @@ def main(args):
     #tempCopy = zones.filePath.replace(zones.extension, '__beforeFilter.shp')
     #zones.createCopy(tempCopy)
     
-    import pdb; pdb.set_trace()
+
     # Check first that noDataMask is in same projection as zonal fc:
     if int(RasterStack(noDataMask).epsg()) != int(zones.epsg()):
         # Eventually reproject mask to same epsg, but for now just raise error
@@ -214,7 +230,7 @@ def main(args):
         # iterate through points in zones and remove or keep points
     #* yeah?
     #zones = ZonalFeatureClass(outFilteredShp)
-    
+    import pdb; pdb.set_trace()    
     # 3. Get stack key dictionary 
     layerDict = buildLayerDict(stack) # {layerNumber: [layerName, [statistics]]}
     #** maybe add something to indicate an xml file for sun angle and no datalayer
