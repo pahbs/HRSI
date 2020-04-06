@@ -199,8 +199,9 @@ def main(args):
     # 3-4. Remove footprints under noData mask
     # Before masking out NoData, make a temp copy of the shp to check output
     #* COMMENT OUT when running real thing probably
-    tempCopy = zones.filePath.replace(zones.extension, '__beforeFilter.shp')
-    zones.createCopy(tempCopy)
+    # Doing this in ZFC.applyNoDataMask now
+    #tempCopy = zones.filePath.replace(zones.extension, '__beforeFilter.shp')
+    #zones.createCopy(tempCopy)
     
     import pdb; pdb.set_trace()
     # Check first that noDataMask is in same projection as zonal fc:
@@ -208,10 +209,12 @@ def main(args):
         # Eventually reproject mask to same epsg, but for now just raise error
         raise RuntimeError("In order to apply noDataMask, mask and zonal fc must be in same projection")
         
-    zones.applyNoDataMask(noDataMask)
+    outFilteredShp = zones.applyNoDataMask(noDataMask)
     # applyNoDataMask(zonalShp, noDataMask)
         # iterate through points in zones and remove or keep points
-     
+    #* yeah?
+    #zones = ZonalFeatureClass(outFilteredShp)
+    
     # 3. Get stack key dictionary 
     layerDict = buildLayerDict(stack) # {layerNumber: [layerName, [statistics]]}
     #** maybe add something to indicate an xml file for sun angle and no datalayer

@@ -66,7 +66,15 @@ class ZonalFeatureClass(object):
     def applyNoDataMask(self, mask):
 
         # Expecting mask to be 0s and 1s where we want to remove data
-        layer = self.layer
+        
+        # Create a copy for output featured shp:
+        tempCopy = self.filePath.replace(self.extension, '__filtered-ND.shp')
+        self.createCopy(tempCopy)
+        
+        drv = ogr.GetDriverByName("ESRI Shapefile")
+        ds = drv.Open(tempCopy)
+        layer = ds.GetLayer()
+
         for feature in layer:
             
             lon = feature.GetGeometryRef().Centroid().GetX()
@@ -81,8 +89,10 @@ class ZonalFeatureClass(object):
                 continue # Do nothing else
                 
             layer.SetFeature(feature)
-
-        return None # will be same shp
+            
+        ds = None # Close the dataset
+        
+        return tempCopy
 
 
     #--------------------------------------------------------------------------
