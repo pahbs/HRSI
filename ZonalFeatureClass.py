@@ -64,11 +64,13 @@ class ZonalFeatureClass(object):
     # applyNoDataMask()
     #--------------------------------------------------------------------------    
     def applyNoDataMask(self, mask):
-        import pdb; pdb.set_trace()
+
         # Expecting mask to be 0s and 1s where we want to remove data
         
         for feature in self.layer:
-            # get lat/lon
+            lon = feature.GetGeometryRef().Centroid().GetX()
+            lat = feature.GetGeometryRef().Centroid().GetY()
+            
             ptGeom = Point(lon, lat)
             ptVal = point_query([ptGeom], mask)[0]
 

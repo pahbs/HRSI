@@ -202,7 +202,7 @@ def main(args):
     tempCopy = zones.filePath.replace(zones.extension, '__beforeFilter.shp')
     zones.createCopy(tempCopy)
     
-
+    import pdb; pdb.set_trace()
     zones.applyNoDataMask(noDataMask)
     # applyNoDataMask(zonalShp, noDataMask)
         # iterate through points in zones and remove or keep points
