@@ -90,6 +90,7 @@ class ZonalFeatureClass(object):
                 continue # Do nothing else
                 
             layer.SetFeature(feature)
+            ds.ExecuteSQL('REPACK ' + layer.GetName())
             
         del ds # Close the dataset
         del layer
