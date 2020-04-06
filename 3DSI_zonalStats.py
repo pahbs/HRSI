@@ -179,7 +179,7 @@ def main(args):
     
     # outDir/zonalType__stackName.shp
     clipZonal = os.path.join(outDir, '{}__{}.shp'.format(zonalType, stackName))
-    inZones.clipToExtent(stackExtent, stackEpsg, clipZonal) 
+    #inZones.clipToExtent(stackExtent, stackEpsg, clipZonal) 
     
     if not os.path.isfile(clipZonal):
         raise RuntimeError('Could not perform clip of input zonal feature class')
