@@ -79,7 +79,7 @@ class ZonalFeatureClass(object):
         cnt=0
         
         # As suggested by gdal bug tracker (https://github.com/OSGeo/gdal/issues/2387), do this in two loops
-        toDelete = []
+        keepFIDs = []
         for feature in layer:
             
             lon = feature.GetGeometryRef().Centroid().GetX()
@@ -90,13 +90,12 @@ class ZonalFeatureClass(object):
 
             if ptVal >= 0.99 or ptVal == None: # 0 = Data. 1 and None = NoData. some results might be float if within 2m of data. .99 cause some no data points were returning that
                 
-                # Point under NoData should be removed
-                toDelete.append(feature.GetFID())
-
+                # Do nothing for point under NoData
                 cnt+=1
-                continue # Do nothing else
-                
-            #layer.SetFeature(feature)
+                continue
+            
+            # Add to list to keep
+            keepFIDs.append(feature.GetFID())
 
         """ Did not work            
         for FID in toDelete:
@@ -105,16 +104,21 @@ class ZonalFeatureClass(object):
         
         ds.ExecuteSQL('REPACK ' + layer.GetName())
         """
-        import pdb; pdb.set_trace()
+
         # Try writing to new output ds instead:
         ## Pass ID's to a SQL query as a tuple, i.e. "(1, 2, 3, ...)"
-        layer.SetAttributeFilter("FID IN {}".format(tuple(toDelete)))
+        layer.SetAttributeFilter("FID IN {}".format(tuple(keepFIDs)))
+        print layer.GetFeatureCount()
+        print len(keepFIDs)
+        print cnt
         
         # Now write to filtered output
         #dsOut = drv.Open(tempCopy)
         #layerOut = dsOut.GetLayer()
         dsOut = drv.CreateDataSource(tempCopy)
-        layerOut = dsOut.CopyLayer(layer, dsOut.GetLayer().GetName())
+        layerOutName = os.path.basename(tempCopy).replace('.shp', '')
+        layerOut = dsOut.CopyLayer(layer, layerOutName)
+        print layerOut.GetFeatureCount()
             
 #        del ds # Close the dataset
 #        del layer
