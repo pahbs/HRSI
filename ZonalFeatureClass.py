@@ -71,7 +71,7 @@ class ZonalFeatureClass(object):
         tempCopy = self.filePath.replace(self.extension, '__filtered-ND.shp')
         """ tempCopy is now the output filtered shp that we are writing to not editing
         self.createCopy(tempCopy)
-        """"
+        """
         
         drv = ogr.GetDriverByName("ESRI Shapefile")
         ds = drv.Open(self.filePath)#(tempCopy)
