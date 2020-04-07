@@ -173,3 +173,19 @@ class RasterStack(object):
         
         else:
             return None
+        
+    #--------------------------------------------------------------------------
+    # xmlLayer()
+    #--------------------------------------------------------------------------
+    def xmlLayer(self):
+        
+        xmlLayer = self.filePath.replace('_stack.vrt', '.xml')
+        
+        if os.path.isfile(xmlLayer):
+            return xmlLayer
+        
+        else:
+            return None    
+        
+        
+        

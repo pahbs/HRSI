@@ -10,7 +10,18 @@ Functions associated with Gdal/OGR
 
 from osgeo import osr
 
+# NOTES (for GDAL classes later):
+# from rasterstats import point_query, zonal_stats
+# from shapely.geometry import Point, Polygon
+# for feature in layer:
+#   lon = feature.GetGeometryRef().Centroid().GetX()
+#   lat = feature.GetGeometryRef().Centroid().GetY()
+#   ptGeom = Point(lon, lat)
+#   ptVal = point_query([ptGeom], mask)[0]
 
+# import time
+# start = time.time()
+# round((time.time()-start)/60, 4)
 #------------------------------------------------------------------------------
 # class SpatialHelper
 #------------------------------------------------------------------------------

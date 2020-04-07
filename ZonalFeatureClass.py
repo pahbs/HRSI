@@ -16,9 +16,7 @@ from osgeo import ogr
 
 from SpatialHelper import SpatialHelper
 
-from rasterstats import point_query, zonal_stats
-from shapely.geometry import Point, Polygon
-
+from rasterstats import zonal_stats
 
 #------------------------------------------------------------------------------
 # class ZonalFeatureClass
@@ -65,95 +63,47 @@ class ZonalFeatureClass(object):
     # applyNoDataMask()
     #--------------------------------------------------------------------------    
     def applyNoDataMask(self, mask):
-        import time
-        start = time.time()
-        # Expecting mask to be 0s and 1s where we want to remove data
+
+        # Expecting mask to be 0 and 1, with 1 where we want to remove data
         
-        # Create a copy for output featured shp:
-        tempCopy = self.filePath.replace(self.extension, '__filtered-ND-2.shp')
-        """ tempCopy is now the output filtered shp that we are writing to not editing
-        self.createCopy(tempCopy)
-        """
+        # Get name for output filtered shp:
+        outShp = self.filePath.replace(self.extension, '__filtered-ND.shp')
         
         drv = ogr.GetDriverByName("ESRI Shapefile")
-        ds = drv.Open(self.filePath)#(tempCopy)
+        ds = drv.Open(self.filePath)
         layer = ds.GetLayer()
-        cnt=0
         
-        # As suggested by gdal bug tracker (https://github.com/OSGeo/gdal/issues/2387), do this in two loops
+        # Collect list of FIDs to keep
         keepFIDs = []
         for feature in layer:
-            
-#            lon = feature.GetGeometryRef().Centroid().GetX()
-#            lat = feature.GetGeometryRef().Centroid().GetY()
-#            
-#            ptGeom = Point(lon, lat)
-#            ptVal = point_query([ptGeom], mask)[0]
-                
-            # New 
+
+            # Get polygon geometry and export to WKT for ZS 
             wktPoly = feature.GetGeometryRef().ExportToIsoWkt()
             
-#            # Test 1
-#            z = zonal_stats(wktPoly, mask, stats="mean")
-#            out = z[0]['mean']            
-#            if out >= 0.5 or out == None: # out is majority 1 or None, don't keep
-#                continue
-            
-            # Test 2
-            z = zonal_stats(wktPoly, mask, stats="majority")
-            out = z[0]['majority']            
-            if out == 1 or out == None: # out is majority 1 or None, don't keep
-                continue            
-            
-            
-#            if str(feature.GetFID()) == '927':
-#                
-#                print z
-#                print z2
-#                
-#            if str(feature.GetFID()) == '4744':
-#                import pdb; pdb.set_trace() 
-                
-#            if ptVal >= 0.99 or ptVal == None: # 0 = Data. 1 and None = NoData. some results might be float if within 2m of data. .99 cause some no data points were returning that
-#                
-#                # Do nothing for point under NoData
-#                cnt+=1
-#                continue
+            # Get info from mask underneath feature
+            z = zonal_stats(wktPoly, mask, stats="mean")
+            out = z[0]['mean']            
+            if out >= 0.6 or out == None: # If 60% of pixels or more are NoData, skip
+                continue
             
             # Else, add FID to list to keep
             keepFIDs.append(feature.GetFID())
 
-        """ Did not work            
-        for FID in toDelete:
-            
-            layer.DeleteFeature(FID)
-        
-        ds.ExecuteSQL('REPACK ' + layer.GetName())
-        """
-
-        # Try writing to new output ds instead:
+        # Filter and write the features we want to keep to new output DS:
         ## Pass ID's to a SQL query as a tuple, i.e. "(1, 2, 3, ...)"
         layer.SetAttributeFilter("FID IN {}".format(tuple(keepFIDs)))
-        print layer.GetFeatureCount()
-        print len(keepFIDs)
-        #print cnt
-        print round((time.time()-start)/60, 4)        
-        # Now write to filtered output
-        #dsOut = drv.Open(tempCopy)
-        #layerOut = dsOut.GetLayer()
-        dsOut = drv.CreateDataSource(tempCopy)
-        layerOutName = os.path.basename(tempCopy).replace('.shp', '')
+
+        dsOut = drv.CreateDataSource(outShp)
+        layerOutName = os.path.basename(outShp).replace('.shp', '')
         layerOut = dsOut.CopyLayer(layer, layerOutName)
-        print layerOut.GetFeatureCount()
-            
-#        del ds # Close the dataset
-#        del layer
-#        del feature
+        
+        if not layerOut: # If CopyLayer failed for whatever reason
+            print "Could not remove NoData polygons"
+            return self.filePath
+        
         ds = layer = dsOut = layerOut = feature = None
         
-        print "{} features should have been removed".format(cnt)
-        return tempCopy
-
+        return outShp
 
     #--------------------------------------------------------------------------
     # clipToExtent()

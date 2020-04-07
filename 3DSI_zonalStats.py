@@ -24,8 +24,10 @@ Inputs:
     ZonalFeatureClass (will be clipped to extent)
     
 """
+
 # Set global variables:
 baseDir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ZonalStats/'
+
 
 """
 This is not very stable because these stack_log.txt files might not be 
@@ -82,33 +84,9 @@ def buildLayerDict(stackObject):
     # subset for testing
     return {key: layerDict[key] for key in range(1,4)}
 
-def clipZonalToExtent(zonalFc, extent):
-    
-    # Expect extent to be tuple = (xmin, ymin, xmax, ymax)
-    
-    clip = '{}.shp'.format(tempfile.mkdtemp())
-    
-    cmd = 'ogr2ogr -clipsrc {} -f '.format(' '.join(map(str,extent))) + \
-                        '"ESRI Shapefile" {} {}'.format(clip, zonalFc)  
-    os.system(cmd)
-
-    """
-    cmd = 'ogr2ogr'                        + \
-      ' -clipsrc'                      + \
-#      ' ' + str(ulx)                   + \
-#      ' ' + str(lry)                   + \
-#      ' ' + str(lrx)                   + \
-#      ' ' + str(uly)                   + \
-      ' -f "ESRI Shapefile"'           + \
-      ' "' + clipFile   + '"'          + \
-      ' "' + zonalFc + '"'
-    """
-    
-    return clip
-
 def callZonalStats(raster, vector, layerDict, addPathRows = False):
     
-    # Iterate through layers, run zonal stats
+    # Iterate through layers, run zonal stats and build dataframe
     for layerN in layerDict:
         
         layerName = layerDict[layerN][0]
@@ -144,7 +122,7 @@ def callZonalStats(raster, vector, layerDict, addPathRows = False):
     
     
     
-    return zonalDf
+#    return zonalDf
   
 def getNmad(a, c=1.4826): # this gives the same results as the dshean's method but does not need all the other functions
 
@@ -160,9 +138,12 @@ def getNmad(a, c=1.4826): # this gives the same results as the dshean's method b
     return nmad
 
 """
+# Add Landsat pathrows to dataframe with lat/lon columns (decimal degrees)
 def getPathRows(lat, lon):
     
     import get_wrs
+    
+    # Iterate through dataframe, extract lat/lon, get pathrows and add to new column
 
     result = get_wrs.ConvertToWRS().get_wrs(lat, lon)
     pr_list = ['{}{}'.format(str(i["path"]).zfill(3), str(i["row"]).zfill(3)) for i in result]
@@ -170,6 +151,7 @@ def getPathRows(lat, lon):
     #return '"{}"'.format(','.join(pr_list))
     return ';'.join(pr_list)
 """
+
 def main(args):
 
     # Unpack arguments
@@ -209,33 +191,25 @@ def main(args):
     
     # filterData(shp, zonalName) # filter dataframe based on GLAS or ATL08 using OGR - faster?
         # and return filtered shp OR (later...)
-    
-    # Apply NoData mask to Shp, remove points that are outside of it
+     
+    # 3-4. Remove footprints under noData mask 
     noDataMask = stack.noDataLayer()
     
-    # 3-4. Remove footprints under noData mask
-    # Before masking out NoData, make a temp copy of the shp to check output
-    #* COMMENT OUT when running real thing probably
-    # Doing this in ZFC.applyNoDataMask now
-    #tempCopy = zones.filePath.replace(zones.extension, '__beforeFilter.shp')
-    #zones.createCopy(tempCopy)
-    
-
     # Check first that noDataMask is in same projection as zonal fc:
     if int(RasterStack(noDataMask).epsg()) != int(zones.epsg()):
         # Eventually reproject mask to same epsg, but for now just raise error
         raise RuntimeError("In order to apply noDataMask, mask and zonal fc must be in same projection")
     
     outFilteredShp = zones.applyNoDataMask(noDataMask)
-    """ Will do this when bug is solved    
     zones = ZonalFeatureClass(outFilteredShp) # Now zones is the filtered fc obj
-    """ 
-      
+    
     # 4-5. Get stack key dictionary 
     layerDict = buildLayerDict(stack) # {layerNumber: [layerName, [statistics]]}
     #** maybe add something to indicate an xml file for sun angle and no datalayer
 
-        # return final updated shp  
+    import pdb; pdb.set_trace()
+    callZonalStats(stack.filePath, zones.filePath, layerDict)
+ 
     
     # 5-6. Call zonal stats and return a pandas dataframe ready to go    
     
