@@ -75,6 +75,9 @@ class ZonalFeatureClass(object):
         ds = drv.Open(tempCopy)
         layer = ds.GetLayer()
         cnt=0
+        
+        # As suggested by gdal bug tracker https://github.com/OSGeo/gdal/issues/2387
+        toDelete = []
         for feature in layer:
             
             lon = feature.GetGeometryRef().Centroid().GetX()
@@ -84,13 +87,20 @@ class ZonalFeatureClass(object):
             ptVal = point_query([ptGeom], mask)[0]
 
             if ptVal >= 0.99 or ptVal == None: # 0 = Data. 1 and None = NoData. some results might be float if within 2m of data. .99 cause some no data points were returning that
-                # Point not under NoData should be removed
-                layer.DeleteFeature(feature.GetFID())
-                ds.ExecuteSQL('REPACK ' + layer.GetName())
+                
+                # Point under NoData should be removed
+                toDelete.append(feature.GetFID())
+
                 cnt+=1
                 continue # Do nothing else
                 
             layer.SetFeature(feature)
+            
+        for FID in toDelete:
+            
+            layer.DeleteFeature(FID)
+        
+        ds.ExecuteSQL('REPACK ' + layer.GetName())
             
             
 #        del ds # Close the dataset

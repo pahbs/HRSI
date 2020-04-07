@@ -203,6 +203,7 @@ def main(args):
     # now zones is the clipped input ZFC object:
     zones = ZonalFeatureClass(clipZonal)   
     
+    # 3. Filter NoData points and points based on attributes
     #* if i have to iterate through points to filter below, then combine with applyNoDataMask:
     #* in ZFC: def filterData(self, noData, filterAttributesKey/Dict or hardcoded in ZFC)
     
@@ -224,20 +225,20 @@ def main(args):
     if int(RasterStack(noDataMask).epsg()) != int(zones.epsg()):
         # Eventually reproject mask to same epsg, but for now just raise error
         raise RuntimeError("In order to apply noDataMask, mask and zonal fc must be in same projection")
-        
+    
+    import pdb; pdb.set_trace()
     outFilteredShp = zones.applyNoDataMask(noDataMask)
-    # applyNoDataMask(zonalShp, noDataMask)
-        # iterate through points in zones and remove or keep points
-    #* yeah?
-    #zones = ZonalFeatureClass(outFilteredShp)
-    import pdb; pdb.set_trace()    
-    # 3. Get stack key dictionary 
+    """ Will do this when bug is solved    
+    zones = ZonalFeatureClass(outFilteredShp) # Now zones is the filtered fc obj
+    """ 
+      
+    # 4-5. Get stack key dictionary 
     layerDict = buildLayerDict(stack) # {layerNumber: [layerName, [statistics]]}
     #** maybe add something to indicate an xml file for sun angle and no datalayer
 
         # return final updated shp  
     
-    
+    # 5-6. Call zonal stats and return a pandas dataframe ready to go    
     
     # callZonalStats(raster, vector, layerDict, addPathRows) # will set up 3DSI specific stuff and call zonal stats for each layer
         # will return a pandas dataframe 
@@ -247,9 +248,6 @@ def main(args):
     # addExtraAttributes()
         # will return updated pandas dataframe
       
-    #* prefer to do this earlier
-    # filterData(df, zonalName) # OR filter dataframe based on GLAS or ATL08 using pandas - easier?
-    
     #* once df is ready to write to csv, can we reorganize/clean up column order?
     # do we need to if we do stuff before?
     
