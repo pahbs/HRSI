@@ -69,14 +69,16 @@ class ZonalFeatureClass(object):
         
         # Create a copy for output featured shp:
         tempCopy = self.filePath.replace(self.extension, '__filtered-ND.shp')
+        """ tempCopy is now the output filtered shp that we are writing to not editing
         self.createCopy(tempCopy)
+        """"
         
         drv = ogr.GetDriverByName("ESRI Shapefile")
-        ds = drv.Open(tempCopy)
+        ds = drv.Open(self.filePath)#(tempCopy)
         layer = ds.GetLayer()
         cnt=0
         
-        # As suggested by gdal bug tracker https://github.com/OSGeo/gdal/issues/2387
+        # As suggested by gdal bug tracker (https://github.com/OSGeo/gdal/issues/2387), do this in two loops
         toDelete = []
         for feature in layer:
             
@@ -94,19 +96,30 @@ class ZonalFeatureClass(object):
                 cnt+=1
                 continue # Do nothing else
                 
-            layer.SetFeature(feature)
-            
+            #layer.SetFeature(feature)
+
+        """ Did not work            
         for FID in toDelete:
             
             layer.DeleteFeature(FID)
         
         ds.ExecuteSQL('REPACK ' + layer.GetName())
-            
+        """
+
+        # Try writing to new output ds instead:
+        ## Pass ID's to a SQL query as a tuple, i.e. "(1, 2, 3, ...)"
+        layer.SetAttributeFilter("FID IN {}".format(tuple(toDelete)))
+        
+        # Now write to filtered output
+        #dsOut = drv.Open(tempCopy)
+        #layerOut = dsOut.GetLayer()
+        dsOut = drv.CreateDataSource(tempCopy)
+        layerOut = dsOut.CopyLayer(layer, dsOut.GetLayer().GetName())
             
 #        del ds # Close the dataset
 #        del layer
 #        del feature
-        ds = layer = feature = None
+        ds = layer = dsOut = layerOut = feature = None
         
         print "{} features should have been removed".format(cnt)
         return tempCopy
