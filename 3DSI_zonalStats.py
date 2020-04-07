@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 import os, sys
 import numpy as np
-from osgeo import gdal, osr#, ogr
+#from osgeo import gdal, osr#, ogr
 #from osgeo.osr import SpatialReference
 #from osgeo.osr import CoordinateTransformation
-import tempfile
+#import tempfile
 import argparse
 import pandas as pd
+
+from rasterstats import zonal_stats
 
 from RasterStack import RasterStack
 from ZonalFeatureClass import ZonalFeatureClass
@@ -28,7 +30,19 @@ Inputs:
 # Set global variables:
 baseDir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ZonalStats/'
 
-
+def addSunAngleColumn(dataframe, stackXml):
+    
+    sunAngle = getSunAngle(stackXml)
+    
+    if not sunAngle: # if sunAngle could not be retrieved
+        return None # do nothing
+    
+    # If it was retrieved
+    # add to df
+    #dataframe['sunAngle'] = [float(sunAngle) for x in range(0, len(df))]
+    
+    return None
+    
 """
 This is not very stable because these stack_log.txt files might not be 
 exactly in line with the .vrt/stack. This function is meant to keep all of the
@@ -70,7 +84,7 @@ def buildLayerDict(stackObject):
         
         layerN = int(l.split(',')[0])
         layerName = os.path.basename(l.split(',')[1]).replace('.tif', '')
-        layerName = layerName.replace('{}_'.format(stackObject.stackName), '')  # Remove any stack-related name (ie pairname) from layerName
+        layerName = layerName.replace('{}_'.format(stackObject.stackName), '')  # Remove any stack-related name (ie pairname_) from layerName
         
         # Determine which stats to use
         if layerName in majorityNames: #or layerName.endswith('standage_warp'):
@@ -137,6 +151,18 @@ def getNmad(a, c=1.4826): # this gives the same results as the dshean's method b
 
     return nmad
 
+def getSunAngle(useXml):
+
+    import xml.etree.ElementTree as ET
+    
+    tree = ET.parse(useXml)
+    IMD = tree.getroot().find('IMD')
+
+    try:
+        return str(float(IMD.find('IMAGE').find('MEANSUNEL').text))
+    except:
+        return None 
+    
 """
 # Add Landsat pathrows to dataframe with lat/lon columns (decimal degrees)
 def getPathRows(lat, lon):
@@ -206,12 +232,20 @@ def main(args):
     # 4-5. Get stack key dictionary    
     layerDict = buildLayerDict(stack) # {layerNumber: [layerName, [statistics]]}
     #** maybe add something to indicate an xml file for sun angle and no datalayer
-    
+
+    # 5-6. Call zonal stats and return a pandas dataframe    
     import pdb; pdb.set_trace()
-    callZonalStats(stack.filePath, zones.filePath, layerDict)
+    zonalStatsDf = callZonalStats(stack.filePath, zones.filePath, layerDict)
+    
+    # If there is an xml layer for stack, get sun angle and add as column to df
+    stackXml = stack.xmlLayer()
+    if stackXml:
+        addSunAngleColumn(zonalStatsDf, stackXml)
+    
+    # If addPathRows is True, get pathrows for each point & add as column to df
  
     
-    # 5-6. Call zonal stats and return a pandas dataframe ready to go    
+   
     
     # callZonalStats(raster, vector, layerDict, addPathRows) # will set up 3DSI specific stuff and call zonal stats for each layer
         # will return a pandas dataframe 
