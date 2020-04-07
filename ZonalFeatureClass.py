@@ -105,7 +105,7 @@ class ZonalFeatureClass(object):
         
         ds.ExecuteSQL('REPACK ' + layer.GetName())
         """
-
+        import pdb; pdb.set_trace()
         # Try writing to new output ds instead:
         ## Pass ID's to a SQL query as a tuple, i.e. "(1, 2, 3, ...)"
         layer.SetAttributeFilter("FID IN {}".format(tuple(toDelete)))

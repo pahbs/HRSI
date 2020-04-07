@@ -226,7 +226,6 @@ def main(args):
         # Eventually reproject mask to same epsg, but for now just raise error
         raise RuntimeError("In order to apply noDataMask, mask and zonal fc must be in same projection")
     
-    import pdb; pdb.set_trace()
     outFilteredShp = zones.applyNoDataMask(noDataMask)
     """ Will do this when bug is solved    
     zones = ZonalFeatureClass(outFilteredShp) # Now zones is the filtered fc obj
