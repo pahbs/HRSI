@@ -93,11 +93,19 @@ class ZonalFeatureClass(object):
             # New 
             wktPoly = feature.GetGeometryRef().ExportToIsoWkt()
             
-            # Test 1
-            z = zonal_stats(wktPoly, mask, stats="mean")
-            out = z[0]['mean']            
-            if out >= 0.5 or out == None: # out is majority 1 or None, don't keep
-                continue
+#            # Test 1
+#            z = zonal_stats(wktPoly, mask, stats="mean")
+#            out = z[0]['mean']            
+#            if out >= 0.5 or out == None: # out is majority 1 or None, don't keep
+#                continue
+            
+            # Test 2
+            z = zonal_stats(wktPoly, mask, stats="majority")
+            out = z[0]['majority']            
+            if out == 1 or out == None: # out is majority 1 or None, don't keep
+                continue            
+            
+            
 #            if str(feature.GetFID()) == '927':
 #                
 #                print z
