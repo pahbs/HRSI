@@ -101,9 +101,11 @@ def buildLayerDict(stackObject):
 def callZonalStats(raster, vector, layerDict, addPathRows = False):
     
     # Iterate through layers, run zonal stats and build dataframe
+    firstLayer = True
+    
     for layerN in layerDict:
         
-        layerName = layerDict[layerN][0]
+        #layerName = layerDict[layerN][0]
         statsList = layerDict[layerN][1]
 
         # Run/call dict to pandas    
@@ -112,12 +114,35 @@ def callZonalStats(raster, vector, layerDict, addPathRows = False):
             zonalStatsDict = zonal_stats(vector, raster, 
                         stats=' '.join(statsList), add_stats={'nmad':getNmad}, 
                         geojson_out=True, band=layerN)
+            statsList.append("nmad")
         else:
             zonalStatsDict = zonal_stats(vector, raster, 
                         stats=' '.join(statsList), geojson_out=True, band=layerN)
-    
 
+        if firstLayer: # build the dataframe with just the attributes
+
+            firstLayer = False
+                  
+            columns = [str(s) for s in zonalStatsDict[0]['properties'].keys()]
+            attrCols = [i for i in columns if i not in statsList]
+                        
+            zonalStatsDf = pd.DataFrame(columns = columns)
+            
+            # Add feature attributes to df
+            for col in attrCols:
+                
+                zonalStatsDf[col] = [zonalStatsDict[i]['properties'][col] \
+                                        for i in range(0, len(zonalStatsDict))]
+            
+        # Now for every layer, add the statistic outputs to df:
+        for col in statsList:
+            outCol = '{}_{}'.format(layerN, col)
+            
+            zonalStatsDf[outCol] = [zonalStatsDict[i]['properties'][col] \
+                                        for i in range(0, len(zonalStatsDict))]          
     
+        import pdb; pdb.set_trace()
+        
     # get column names from vector layer to use below
     
     # On initial layer:
