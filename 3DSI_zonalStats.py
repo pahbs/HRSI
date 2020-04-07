@@ -140,8 +140,9 @@ def callZonalStats(raster, vector, layerDict, addPathRows = False):
             
             zonalStatsDf[outCol] = [zonalStatsDict[i]['properties'][col] \
                                         for i in range(0, len(zonalStatsDict))]          
-    
-        import pdb; pdb.set_trace()
+        
+        #if str(layerN) == '6':
+        #import pdb; pdb.set_trace()
         
     # get column names from vector layer to use below
     
@@ -259,8 +260,8 @@ def main(args):
     #** maybe add something to indicate an xml file for sun angle and no datalayer
 
     # 5-6. Call zonal stats and return a pandas dataframe    
-    import pdb; pdb.set_trace()
     zonalStatsDf = callZonalStats(stack.filePath, zones.filePath, layerDict)
+    import pdb; pdb.set_trace()
     
     # If there is an xml layer for stack, get sun angle and add as column to df
     stackXml = stack.xmlLayer()
