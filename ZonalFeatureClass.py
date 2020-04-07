@@ -65,7 +65,8 @@ class ZonalFeatureClass(object):
     # applyNoDataMask()
     #--------------------------------------------------------------------------    
     def applyNoDataMask(self, mask):
-
+        import time
+        start = time.time()
         # Expecting mask to be 0s and 1s where we want to remove data
         
         # Create a copy for output featured shp:
@@ -83,32 +84,35 @@ class ZonalFeatureClass(object):
         keepFIDs = []
         for feature in layer:
             
-            lon = feature.GetGeometryRef().Centroid().GetX()
-            lat = feature.GetGeometryRef().Centroid().GetY()
-            
-            ptGeom = Point(lon, lat)
-            ptVal = point_query([ptGeom], mask)[0]
+#            lon = feature.GetGeometryRef().Centroid().GetX()
+#            lat = feature.GetGeometryRef().Centroid().GetY()
+#            
+#            ptGeom = Point(lon, lat)
+#            ptVal = point_query([ptGeom], mask)[0]
                 
             # New 
             wktPoly = feature.GetGeometryRef().ExportToIsoWkt()
-            z = zonal_stats(wktPoly, mask, stats="mean")
-            z2 = zonal_stats(wktPoly, mask, stats="mean")
-
-            if str(feature.GetFID()) == '927':
-                
-                print z
-                print z2
-                
-            if str(feature.GetFID()) == '4744':
-                import pdb; pdb.set_trace() 
-                
-            if ptVal >= 0.99 or ptVal == None: # 0 = Data. 1 and None = NoData. some results might be float if within 2m of data. .99 cause some no data points were returning that
-                
-                # Do nothing for point under NoData
-                cnt+=1
-                continue
             
-            # Add to list to keep
+            # Test 1
+            z = zonal_stats(wktPoly, mask, stats="mean")
+            out = z[0]['mean']            
+            if out >= 0.5 or out == None: # out is majority 1 or None, don't keep
+                continue
+#            if str(feature.GetFID()) == '927':
+#                
+#                print z
+#                print z2
+#                
+#            if str(feature.GetFID()) == '4744':
+#                import pdb; pdb.set_trace() 
+                
+#            if ptVal >= 0.99 or ptVal == None: # 0 = Data. 1 and None = NoData. some results might be float if within 2m of data. .99 cause some no data points were returning that
+#                
+#                # Do nothing for point under NoData
+#                cnt+=1
+#                continue
+            
+            # Else, add FID to list to keep
             keepFIDs.append(feature.GetFID())
 
         """ Did not work            
@@ -124,8 +128,8 @@ class ZonalFeatureClass(object):
         layer.SetAttributeFilter("FID IN {}".format(tuple(keepFIDs)))
         print layer.GetFeatureCount()
         print len(keepFIDs)
-        print cnt
-        
+        #print cnt
+        print round((time.time()-start)/60, 4)        
         # Now write to filtered output
         #dsOut = drv.Open(tempCopy)
         #layerOut = dsOut.GetLayer()
