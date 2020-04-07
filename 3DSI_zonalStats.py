@@ -79,10 +79,10 @@ def buildLayerDict(stackObject):
             zonalStats = defaultZonalStats
             
         layerDict[layerN] = [layerName, zonalStats]
-    import pdb; pdb.set_trace() 
+
     #return layerDict
     # subset for testing
-    return {key: layerDict[key] for key in range(1,4)}
+    return {key: layerDict[key] for key in range(5,8)}
 
 def callZonalStats(raster, vector, layerDict, addPathRows = False):
     
@@ -206,7 +206,8 @@ def main(args):
     # 4-5. Get stack key dictionary    
     layerDict = buildLayerDict(stack) # {layerNumber: [layerName, [statistics]]}
     #** maybe add something to indicate an xml file for sun angle and no datalayer
-
+    
+    import pdb; pdb.set_trace()
     callZonalStats(stack.filePath, zones.filePath, layerDict)
  
     
