@@ -68,7 +68,7 @@ class ZonalFeatureClass(object):
         # Expecting mask to be 0s and 1s where we want to remove data
         
         # Create a copy for output featured shp:
-        tempCopy = self.filePath.replace(self.extension, '__filtered-ND.shp')
+        tempCopy = self.filePath.replace(self.extension, '__filtered-ND-2.shp')
         """ tempCopy is now the output filtered shp that we are writing to not editing
         self.createCopy(tempCopy)
         """
@@ -87,7 +87,10 @@ class ZonalFeatureClass(object):
             
             ptGeom = Point(lon, lat)
             ptVal = point_query([ptGeom], mask)[0]
-
+            if str(feature.GetFID()) == '927':
+                from rasterstats import zonal_stats
+                from shapely.geometry import Polygon
+                import pdb; pdb.set_trace()
             if ptVal >= 0.99 or ptVal == None: # 0 = Data. 1 and None = NoData. some results might be float if within 2m of data. .99 cause some no data points were returning that
                 
                 # Do nothing for point under NoData
