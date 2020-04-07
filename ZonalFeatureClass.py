@@ -16,8 +16,9 @@ from osgeo import ogr
 
 from SpatialHelper import SpatialHelper
 
-from rasterstats import point_query
-from shapely.geometry import Point
+from rasterstats import point_query, zonal_stats
+from shapely.geometry import Point, Polygon
+
 
 #------------------------------------------------------------------------------
 # class ZonalFeatureClass
@@ -87,10 +88,20 @@ class ZonalFeatureClass(object):
             
             ptGeom = Point(lon, lat)
             ptVal = point_query([ptGeom], mask)[0]
+                
+            # New 
+            wktPoly = feature.GetGeometryRef().ExportToIsoWkt()
+            z = zonal_stats(wktPoly, mask, stats="mean")
+            z2 = zonal_stats(wktPoly, mask, stats="mean")
+
             if str(feature.GetFID()) == '927':
-                from rasterstats import zonal_stats
-                from shapely.geometry import Polygon
-                import pdb; pdb.set_trace()
+                
+                print z
+                print z2
+                
+            if str(feature.GetFID()) == '4744':
+                import pdb; pdb.set_trace() 
+                
             if ptVal >= 0.99 or ptVal == None: # 0 = Data. 1 and None = NoData. some results might be float if within 2m of data. .99 cause some no data points were returning that
                 
                 # Do nothing for point under NoData
