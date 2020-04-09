@@ -30,7 +30,7 @@ Inputs:
 # Set global variables:
 baseDir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ZonalStats/'
 
-def addSunAngleColumn(dataframe, stackXml):
+def addSunAngleColumn(df, stackXml):
     
     sunAngle = getSunAngle(stackXml)
     
@@ -39,7 +39,7 @@ def addSunAngleColumn(dataframe, stackXml):
     
     # If it was retrieved
     # add to df
-    #dataframe['sunAngle'] = [float(sunAngle) for x in range(0, len(df))]
+    #df['sunAngle'] = [float(sunAngle) for x in range(0, len(df))]
     
     return None
     
@@ -126,7 +126,7 @@ def callZonalStats(raster, vector, layerDict, addPathRows = False):
             columns = [str(s) for s in zonalStatsDict[0]['properties'].keys()]
             attrCols = [i for i in columns if i not in statsList]
                         
-            zonalStatsDf = pd.DataFrame(columns = columns)
+            zonalStatsDf = pd.DataFrame(columns = attrCols)
             
             # Add feature attributes to df
             for col in attrCols:
@@ -262,7 +262,7 @@ def main(args):
 
     # 5-6. Call zonal stats and return a pandas dataframe    
     zonalStatsDf = callZonalStats(stack.filePath, zones.filePath, layerDict)
-    import pdb; pdb.set_trace()
+
   
     #* WEDNESDAY:
     #* add sunAngle
@@ -271,15 +271,16 @@ def main(args):
     # If there is an xml layer for stack, get sun angle and add as column to df
     stackXml = stack.xmlLayer()
     if stackXml:
-        addSunAngleColumn(zonalStatsDf, stackXml)
+        zonalStatsDf = addSunAngleColumn(zonalStatsDf, stackXml)
     
     # If addPathRows is True, get pathrows for each point & add as column to df
  
-    #* Pandas to stack specific CSV
-    #* Stack-specific CSV to stack-specific SHP
+    #* Pandas to stack specific CSV to stack-specific SHP
     stackCsv = os.path.join(outDir, '{}__zonalStats.csv'.format(stackName))
     stackShp = stackCsv.replace('.csv', '.shp')
     
+    zonalStatsDf.to_csv(stackCsv, sep=',', index=False, header=True)
+    import pdb; pdb.set_trace()    
     #* Update big CSV
     #* CSV to SHP
     #* Functions: dfToCsv (built into pandas?); csvToShp; updateBigCsv (pandas append to csv option?); call csvToShp for big SHP
