@@ -37,11 +37,10 @@ def addSunAngleColumn(df, stackXml):
     if not sunAngle: # if sunAngle could not be retrieved
         return None # do nothing
     
-    # If it was retrieved
-    # add to df
-    #df['sunAngle'] = [float(sunAngle) for x in range(0, len(df))]
+    # If it was retrieved, add as column to the df
+    df['sunAngle'] = [float(sunAngle) for x in range(0, len(df))]
     
-    return None
+    return df
     
 """
 This is not very stable because these stack_log.txt files might not be 
