@@ -4,20 +4,9 @@ Created on Tue Mar 24 02:03:17 2020
 @author: mwooten3
 
 RasterStack describes a raster geoTIFF or VRT with mutliple layers
-With methods designed specifically for Zonal Stats process
+Inherits from Raster,
+With methods designed specifically for 3DSI Zonal Stats process
 
-EVENTUALLY: Build a general FeatureClass class and RasterStack can inherit from it
-"""
-
-import os
-
-#from osgeo import gdal, osr
-#from osgeo.osr import CoordinateTransformation
-
-from Raster import Raster
-#from SpatialHelper import SpatialHelper
-
-"""
 RasterStack inherits the following from Raster:
     self.filePath; self.extension; self.baseName; self.baseDir; self.dataset
     self.noDataValue; self.ogrDataType; self.ogrGeotransform; self.ogrProjection
@@ -27,9 +16,12 @@ RasterStack inherits the following from Raster:
     epsg(self)
     extent(self)
     extractBand(self, bandN, outTif = None)
-    toArray(self):   
+    toArray(self) 
 """
 
+import os
+
+from Raster import Raster
 
 #------------------------------------------------------------------------------
 # class RasterStack

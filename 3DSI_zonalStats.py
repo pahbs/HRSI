@@ -189,7 +189,7 @@ def main(args):
     # input raster stack, input zonal shapefile, output directory, log directory,    
     inRaster = args['rasterStack']
     inZonalFc = args['zonalFc']
-    import pdb; pdb.set_trace()     
+  
     stack = RasterStack(inRaster)
     inZones = ZonalFeatureClass(inZonalFc) # This will be clipped
 
@@ -253,13 +253,14 @@ def main(args):
     stackShp = stackCsv.replace('.csv', '.shp')
     
     zonalStatsDf.to_csv(stackCsv, sep=',', index=False, header=True, na_rep="None")
+    import pdb; pdb.set_trace()       
+    #dfToCsv(zonalStatsDf, stackShp, )
     
-    dfToCsv(zonalStatsDf, stackShp, )
-   
-    #* Update big CSV
-    #* CSV to SHP
-    #* Functions: dfToCsv (built into pandas?); csvToShp; updateBigCsv (pandas append to csv option?); call csvToShp for big SHP
-    #* Other inputs: big CSV/SHP
+    # FRIDAY:
+    # - dfToCsv()
+    # - updateMainCsv (which will call dfToCsv)
+    
+    #* Other inputs: big CSV/SHP or GDB; log file
     
     
     #* once df is ready to write to csv, can we reorganize/clean up column order?
