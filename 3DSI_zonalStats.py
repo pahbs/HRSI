@@ -139,30 +139,9 @@ def callZonalStats(raster, vector, layerDict, addPathRows = False):
             outCol = '{}_{}'.format(layerN, col)
             
             zonalStatsDf[outCol] = [zonalStatsDict[i]['properties'][col] \
-                                        for i in range(0, len(zonalStatsDict))]          
-        
-        #if str(layerN) == '6':
-        #import pdb; pdb.set_trace()
-        
-    # get column names from vector layer to use below
-    
-    # On initial layer:
-        # set df = pandas result, try to ONLY do for attributes so we can add stats after
-        # do other stuff
-    
-        # if addPathRows: add pathrows for each point since this varies for lat/lon
-        # go ahead and call addOtherAttributes() here
-        
-    # for all layers:
-        # or go ahead and do zonal stats stuff here?
-        # add stat columns to pandas, rename
-        # majority --> 1_majority, i.e.
+                                        for i in range(0, len(zonalStatsDict))]
     
     return zonalStatsDf
-    
-    
-    
-#    return zonalDf
   
 def getNmad(a, c=1.4826): # this gives the same results as the dshean's method but does not need all the other functions
 
@@ -210,7 +189,7 @@ def main(args):
     # input raster stack, input zonal shapefile, output directory, log directory,    
     inRaster = args['rasterStack']
     inZonalFc = args['zonalFc']
-    
+    import pdb; pdb.set_trace()     
     stack = RasterStack(inRaster)
     inZones = ZonalFeatureClass(inZonalFc) # This will be clipped
 
@@ -257,15 +236,9 @@ def main(args):
     
     # 4-5. Get stack key dictionary    
     layerDict = buildLayerDict(stack) # {layerNumber: [layerName, [statistics]]}
-    #** maybe add something to indicate an xml file for sun angle and no datalayer
 
     # 5-6. Call zonal stats and return a pandas dataframe    
     zonalStatsDf = callZonalStats(stack.filePath, zones.filePath, layerDict)
-
-  
-    #* WEDNESDAY:
-    #* add sunAngle
-    #* finish code (see #* below)
     
     # If there is an xml layer for stack, get sun angle and add as column to df
     stackXml = stack.xmlLayer()
@@ -273,13 +246,16 @@ def main(args):
         zonalStatsDf = addSunAngleColumn(zonalStatsDf, stackXml)
     
     # If addPathRows is True, get pathrows for each point & add as column to df
- 
+
+    # 7. Now write the data frame to stack-specific csv/shp and append to  
     #* Pandas to stack specific CSV to stack-specific SHP
     stackCsv = os.path.join(outDir, '{}__zonalStats.csv'.format(stackName))
     stackShp = stackCsv.replace('.csv', '.shp')
     
-    zonalStatsDf.to_csv(stackCsv, sep=',', index=False, header=True)
-    import pdb; pdb.set_trace()    
+    zonalStatsDf.to_csv(stackCsv, sep=',', index=False, header=True, na_rep="None")
+    
+    dfToCsv(zonalStatsDf, stackShp, )
+   
     #* Update big CSV
     #* CSV to SHP
     #* Functions: dfToCsv (built into pandas?); csvToShp; updateBigCsv (pandas append to csv option?); call csvToShp for big SHP

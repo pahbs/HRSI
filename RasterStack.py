@@ -14,12 +14,13 @@ import os
 from osgeo import gdal, osr
 #from osgeo.osr import CoordinateTransformation
 
-from SpatialHelper import SpatialHelper
+from Raster import Raster
+#from SpatialHelper import SpatialHelper
 
 #------------------------------------------------------------------------------
 # class RasterStack
 #------------------------------------------------------------------------------
-class RasterStack(object):
+class RasterStack(Raster): #*
     
     #--------------------------------------------------------------------------
     # __init__
@@ -32,22 +33,27 @@ class RasterStack(object):
         #   def outDir(self, baseDir): outDir = join(baseDir, self.stackName)
         # stackType could be a method in here as well
         #self.zonalDir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ZonalStats/'
+
+        # Initialize the base class. #*
+        super(RasterStack, self).__init__(filePath)
+        """Inherits self.filePath, self.extension, self.baseName, etc."""
         
         # Check that the file is TIF or VRT
-        extension = os.path.splitext(filePath)[1]       
+        #extension = os.path.splitext(filePath)[1]       
         
-        if extension != '.vrt' and extension != '.tif':
+        if self.extension != '.vrt' and self.extension != '.tif':
             raise RuntimeError('{} is not a VRT or TIF file'.format(filePath))
-
-        self.filePath = filePath
-        self.extension = extension
+ 
+        
+        #self.filePath = filePath
+        #self.extension = extension
          
-        stackName = os.path.basename(self.filePath).strip(extension).strip('_stack')
-        self.stackName = stackName
+        #*stackName = os.path.basename(self.filePath).strip(extension).strip('_stack')
+        self.stackName = self.baseName.strip('_stack')
         
-        self.inDir = os.path.dirname(self.filePath)
+       # self.inDir = os.path.dirname(self.filePath)
         
-        self.dataset = gdal.Open(self.filePath, gdal.GA_ReadOnly)          
+        #self.dataset = gdal.Open(self.filePath, gdal.GA_ReadOnly)          
 
     """
     #--------------------------------------------------------------------------
@@ -69,7 +75,7 @@ class RasterStack(object):
     
         return (ulxOut, lryOut, lrxOut, ulyOut)
     """
-
+    """
     #--------------------------------------------------------------------------
     # convertExtent()
     #--------------------------------------------------------------------------
@@ -114,7 +120,7 @@ class RasterStack(object):
             nLayers = None
             
         return nLayers
-
+    """
     #--------------------------------------------------------------------------
     # noDataLayer()
     #--------------------------------------------------------------------------

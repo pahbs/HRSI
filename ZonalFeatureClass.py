@@ -45,7 +45,7 @@ class ZonalFeatureClass(object):
         zonalName = os.path.basename(self.filePath).strip(extension)
         self.zonalName = zonalName
         
-        self.inDir = os.path.dirname(self.filePath)
+        self.baseDir = os.path.dirname(self.filePath)
 
         # Set self.driver depending on the extention
         if self.extension == '.gdb':
