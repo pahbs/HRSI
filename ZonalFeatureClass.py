@@ -45,7 +45,7 @@ class ZonalFeatureClass(FeatureClass):
     def __init__(self, filePath):
 
         # Initialize the base class
-        super(FeatureClass, self).__init__(filePath)
+        super(ZonalFeatureClass, self).__init__(filePath)
         
         """
         # Check that the file is SHP or GDB
