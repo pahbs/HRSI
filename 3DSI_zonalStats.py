@@ -136,6 +136,7 @@ def callZonalStats(raster, vector, layerDict, addPathRows = False):
             
         # Now for every layer, add the statistic outputs to df:
         for col in statsList:
+            
             outCol = '{}_{}'.format(layerN, col)
             
             zonalStatsDf[outCol] = [zonalStatsDict[i]['properties'][col] \
@@ -262,6 +263,10 @@ def main(args):
     # 5-6. Call zonal stats and return a pandas dataframe    
     zonalStatsDf = callZonalStats(stack.filePath, zones.filePath, layerDict)
     import pdb; pdb.set_trace()
+  
+    #* WEDNESDAY:
+    #* add sunAngle
+    #* finish code (see #* below)
     
     # If there is an xml layer for stack, get sun angle and add as column to df
     stackXml = stack.xmlLayer()
@@ -270,17 +275,17 @@ def main(args):
     
     # If addPathRows is True, get pathrows for each point & add as column to df
  
+    #* Pandas to stack specific CSV
+    #* Stack-specific CSV to stack-specific SHP
+    stackCsv = os.path.join(outDir, '{}__zonalStats.csv'.format(stackName))
+    stackShp = stackCsv.replace('.csv', '.shp')
     
-   
+    #* Update big CSV
+    #* CSV to SHP
+    #* Functions: dfToCsv (built into pandas?); csvToShp; updateBigCsv (pandas append to csv option?); call csvToShp for big SHP
+    #* Other inputs: big CSV/SHP
     
-    # callZonalStats(raster, vector, layerDict, addPathRows) # will set up 3DSI specific stuff and call zonal stats for each layer
-        # will return a pandas dataframe 
-        
-    # Add additional attributes that are same for entire raster: addSunAngle, etc. see row 150
-    #* ACTUALLY this will happen in callZonalStats
-    # addExtraAttributes()
-        # will return updated pandas dataframe
-      
+    
     #* once df is ready to write to csv, can we reorganize/clean up column order?
     # do we need to if we do stuff before?
     
@@ -293,22 +298,14 @@ def main(args):
 
     return None
 
-"""
-def parseArguments():
-    
-    # maybe keep this, maybe put it in below if
-    #argument_parse_code
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-stack", "--rasterStack", type=str, help="Input stack")
-    
-    return arguments
-"""
-
 if __name__ == "__main__":
     
     parser = argparse.ArgumentParser()
     parser.add_argument("-r", "--rasterStack", type=str, help="Input raster stack")
     parser.add_argument("-z", "--zonalFc", type=str, help="Input zonal shp/gdb")
+    
+    #* Other args ?
+    #parser.add_argument("-o", "--bigCsv", type=str, help="Output csv for all stacks. GDB will also be created")
 
     args = vars(parser.parse_args())
 
