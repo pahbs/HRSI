@@ -9,30 +9,45 @@ With methods designed specifically for Zonal Stats process
 EVENTUALLY: Build a general Raster class and ZFC can inherit from it
 """
 import os
-import tempfile
+#import tempfile
 
 from osgeo import ogr
 #from osgeo.osr import CoordinateTransformation
 
-from SpatialHelper import SpatialHelper
+#from SpatialHelper import SpatialHelper
 
 from rasterstats import zonal_stats
+
+from FeatureClass import FeatureClass
+
+"""
+ZonalFeatureClass inherits the following from FeatureClass:
+    self.filePath; self.extension; self.baseName; self.baseDir; self.dataset
+    self.noDataValue; self.ogrDataType; self.ogrGeotransform; self.ogrProjection
+    self.nColumns; self.nRows; self.nLayers   
+    
+    convertExtent(self, targetEpsg)
+    epsg(self)
+    extent(self)
+    extractBand(self, bandN, outTif = None)
+    toArray(self):   
+"""
+
 
 #------------------------------------------------------------------------------
 # class ZonalFeatureClass
 #------------------------------------------------------------------------------
-class ZonalFeatureClass(object):
+class ZonalFeatureClass(FeatureClass):
     
     #--------------------------------------------------------------------------
     # __init__
     #--------------------------------------------------------------------------
     def __init__(self, filePath):
+
+        # Initialize the base class
+        super(FeatureClass, self).__init__(filePath)
         
         """
-        # Probably doesn't make sense to keep this here but whatever
-        self.zonalDir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ZonalStats/'
-        """
-        
         # Check that the file is SHP or GDB
         extension = os.path.splitext(filePath)[1]       
         
@@ -41,10 +56,12 @@ class ZonalFeatureClass(object):
 
         self.filePath = filePath
         self.extension = extension
-
-        zonalName = os.path.basename(self.filePath).strip(extension)
-        self.zonalName = zonalName
+        """
         
+        #zonalName = os.path.basename(self.filePath).strip(extension)
+        self.zonalName = self.baseName#zonalName
+
+        """            
         self.baseDir = os.path.dirname(self.filePath)
 
         # Set self.driver depending on the extention
@@ -57,7 +74,7 @@ class ZonalFeatureClass(object):
         self.layer = self.dataset.GetLayer()
         
         self.nFeatures = self.layer.GetFeatureCount()
-
+        """
         
     #--------------------------------------------------------------------------
     # applyNoDataMask()
@@ -65,6 +82,7 @@ class ZonalFeatureClass(object):
     def applyNoDataMask(self, mask):
 
         # Expecting mask to be 0 and 1, with 1 where we want to remove data
+        # This is specific to 3DSI and therefore is not kept in FeatureClass
         
         # Get name for output filtered shp:
         outShp = self.filePath.replace(self.extension, '__filtered-ND.shp')
@@ -104,7 +122,7 @@ class ZonalFeatureClass(object):
         ds = layer = dsOut = layerOut = feature = None
         
         return outShp
-
+    """
     #--------------------------------------------------------------------------
     # clipToExtent()
     #--------------------------------------------------------------------------    
@@ -162,7 +180,7 @@ class ZonalFeatureClass(object):
         (ulx, lrx, lry, uly) = self.layer.GetExtent()
         
         return (ulx, lry, lrx, uly)    
-
+    """
     """ just use zonalName for now   
     #--------------------------------------------------------------------------
     # zonalType() # ATL08 or GLAS
