@@ -40,32 +40,30 @@ def addStatsToShp(df, shp):
     # Open shp in write mode (shpObj.layer gives us read-mode layer)        
     shpObj = ZonalFeatureClass(shp)
     dataset = shpObj.driver.Open(shpObj.filePath, 1)
-    
+    layer = dataset.GetLayer()    
     
     # addCols is list of columns that we want to add to shp
     addCols = [f for f in df.columns if f not in shpObj.fieldNames()]   
     
-    # Loop over addCols and: create fields, then add value for all features
+    # Add fields to shapefile
     for col in addCols:
         
         colName = str(col)
         colType = typeMap[str(df[col].dtype)]
         
-        layer = dataset.GetLayer() # Have to get layer here so can iterate thru features again
         layer.CreateField(ogr.FieldDefn(colName, colType))
 
-        # Loop over features in layer and add corresponding value from df
-        i = 0
-        print colName
-        for feature in layer:
-            print ' {}'.format(feature.GetFID())
+    # Iterate over features and add values for the new columns
+    i = 0
+    for feature in layer:
+        print ' {}'.format(feature.GetFID())
             
-            if str(feature.GetField('lat')) != str(df['lat'][i]):
-                import pdb; pdb.set_trace()
+        if str(feature.GetField('lat')) != str(df['lat'][i]):
+            import pdb; pdb.set_trace()
             
-            feature.SetField(colName, df[col][i])
+        for col in addCols: feature.SetField(str(col), df[col][i])
             
-            i+=1
+        i+=1
         
     dataset = layer = feature = None
     
