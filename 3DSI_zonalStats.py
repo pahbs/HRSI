@@ -258,11 +258,10 @@ def main(args):
     # 1. Start log if doing so
     #import pdb; pdb.set_trace()
     
-    # 2. Clip large input zonal shp to raster extent  
-    # outDir/zonalType__stackName.shp
+    # 2. Clip input zonal shp to raster extent. Output projection = that of stack  
     clipZonal = os.path.join(outDir, '{}__{}.shp'.format(zonalType, stackName))
     if not os.path.isfile(clipZonal):
-        inZones.clipToExtent(stackExtent, stackEpsg, clipZonal) 
+        inZones.clipToExtent(stackExtent, stackEpsg, clipZonal, stack.epsg()) 
     
     if not os.path.isfile(clipZonal):
         raise RuntimeError('Could not perform clip of input zonal feature class')
@@ -281,9 +280,9 @@ def main(args):
     noDataMask = stack.noDataLayer()
     
     # Check first that noDataMask is in same projection as zonal fc:
-    if int(RasterStack(noDataMask).epsg()) != int(zones.epsg()):
+    #if int(RasterStack(noDataMask).epsg()) != int(zones.epsg()):
         # Eventually reproject mask to same epsg, but for now just raise error
-        raise RuntimeError("In order to apply noDataMask, mask and zonal fc must be in same projection")
+        #raise RuntimeError("In order to apply noDataMask, mask and zonal fc must be in same projection")
 
     # stackShp is filtered shp and will eventually have the stats added    
     stackShp = zones.applyNoDataMask(noDataMask, stackShp)
