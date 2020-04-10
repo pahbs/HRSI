@@ -279,7 +279,7 @@ def main(args):
     # 3-4. Remove footprints under noData mask 
     noDataMask = stack.noDataLayer()
     rasterMask = RasterStack(noDataMask)
-    
+    stackShp = zones.applyNoDataMask(noDataMask, outShp = stackShp)
     # If noDataMask is NOT in same projection as zonal fc, supply correct EPSG\
     """
     if int(rasterMask.epsg()) != int(zones.epsg()):
