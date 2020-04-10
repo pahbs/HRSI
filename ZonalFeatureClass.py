@@ -20,7 +20,7 @@ ZonalFeatureClass inherits the following from FeatureClass:
 
 import os
 
-from osgeo import ogr
+from osgeo import ogr, osr
 
 from rasterstats import zonal_stats
 
@@ -44,10 +44,11 @@ class ZonalFeatureClass(FeatureClass):
     #--------------------------------------------------------------------------
     # applyNoDataMask()
     #--------------------------------------------------------------------------    
-    def applyNoDataMask(self, mask, outShp = None):
+    def applyNoDataMask(self, mask, transEpsg = None, outShp = None):
 
         # Expecting mask to be 0 and 1, with 1 where we want to remove data
-        # This is specific to 3DSI and therefore is not kept in FeatureClass
+        # This is specific to 3DSI and therefore is not kept in FeatureClass        
+        # if transformEpsg is supplied, convert points to correct SRS before running ZS
         
         # Get name output shp: 
         if not outShp:
@@ -56,13 +57,24 @@ class ZonalFeatureClass(FeatureClass):
         drv = ogr.GetDriverByName("ESRI Shapefile")
         ds = drv.Open(self.filePath)
         layer = ds.GetLayer()
+        
+        # This may be unnecessary but will work even if not needed
+        outSrs = osr.SpatialReference()
+        if transEpsg:
+            outSrs.ImportFromEPSG(int(transEpsg))
+        else:
+            outSrs.ImportFromEPSG(int(self.epsg())) # If transformation EPSG not supplied, keep coords as is
         import pdb; pdb.set_trace()
         # Collect list of FIDs to keep
         keepFIDs = []
         for feature in layer:
 
-            # Get polygon geometry and export to WKT for ZS 
-            wktPoly = feature.GetGeometryRef().ExportToIsoWkt()
+            # Get polygon geometry and transform to outSrs just in case
+            geom = feature.GetGeometryRef()
+            geom.TranformTo(outSrs)
+
+            # Then export to WKT for ZS             
+            wktPoly = geom.ExportToIsoWkt()
             
             # Get info from mask underneath feature
             z = zonal_stats(wktPoly, mask, stats="mean")

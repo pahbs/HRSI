@@ -290,7 +290,7 @@ def main(args):
     
     # 4-5. Get stack key dictionary    
     layerDict = buildLayerDict(stack) # {layerNumber: [layerName, [statistics]]}
-    import pdb; pdb.set_trace()
+
     # 5-6. Call zonal stats and return a pandas dataframe    
     zonalStatsDf = callZonalStats(stack.filePath, zones.filePath, layerDict)
     
