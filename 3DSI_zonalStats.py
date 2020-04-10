@@ -56,12 +56,14 @@ def addStatsToShp(df, shp):
     # Iterate over features and add values for the new columns
     i = 0
     for feature in layer:
-        print ' {}'.format(feature.GetFID())
+        #print ' {}'.format(feature.GetFID())
             
         if str(feature.GetField('lat')) != str(df['lat'][i]):
             import pdb; pdb.set_trace()
             
-        for col in addCols: feature.SetField(str(col), df[col][i])
+        for col in addCols: 
+            if str(col) == 'sunAngle': import pdb; pdb.set_trace()
+            feature.SetField(str(col), df[col][i])
             
         i+=1
         
@@ -312,11 +314,11 @@ def main(args):
 
     # 7. Now write the stack csv, and add stats from the df to stack shp     
     zonalStatsDf.to_csv(stackCsv, sep=',', index=False, header=True, na_rep="NoData")
-    import pdb; pdb.set_trace()
+
     print ogr.OFTReal
     # Create the output stack-specific shp by appending new stats columns to fc:    
     stackShp = addStatsToShp(zonalStatsDf, stackShp)
-    
+    import pdb; pdb.set_trace()    
     # Update the big csv and big output gdb by appending to them:
     
     # FRIDAY:
