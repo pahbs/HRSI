@@ -57,6 +57,7 @@ def addStatsToShp(df, shp):
         i = 0
         print colName
         for feature in layer:
+            print ' {}'.format(feature.GetFID())
             
             if str(feature.GetField('lat')) != str(df['lat'][i]):
                 import pdb; pdb.set_trace()
