@@ -33,11 +33,39 @@ baseDir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ZonalStats/'
 def addStatsToShp(df, shp):   
     # Add the stat columns from df to shp
     
+    # Dict to go from pandas type to GDAL type
+    typeMap = {'float64': ogr.OFTReal, 'int64': ogr.OFTInteger, 
+                                               'object': ogr.OFTString}
+
+    # Open shp in write mode (shpObj.layer gives us read-mode layer) MAYBE        
     shpObj = ZonalFeatureClass(shp)
+    layer = shpObj.layer
     
-    print list(df.columns)
-    print shpObj.fieldNames()
+    # if above does work:
+    #dataset = shpObj.driver.Open(self.filePath, 1)
+    #layer = dataset.GetLayer()
     
+    # addCols is list of columns that we want to add to shp
+    addCols = [f for f in df.columns if f not in shpObj.fieldNames()]   
+    
+    # Loop over addCols and: create fields, then add value for all features
+    for col in addCols:
+        
+        colName = str(col)
+        colType = typeMap[str(df[col].dtype)]
+
+        layer.CreateField(ogr.FieldDefn(colName, colType))
+
+        # Loop over features in layer and add corresponding value from df
+        i = 0
+        for feature in layer:
+            
+            print feature.getField('lat'), df['lat'][0]
+            
+            feature.SetField(colName, df[col][i])
+            
+
+   
     return shp
     
     
