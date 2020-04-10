@@ -48,15 +48,13 @@ def addStatsToShp(df, shp):
     # Add fields to shapefile
     for col in addCols:
         
-        colName = str(col)
         colType = typeMap[str(df[col].dtype)]
         
-        layer.CreateField(ogr.FieldDefn(colName, colType))
+        layer.CreateField(ogr.FieldDefn(str(col), ogr.OFTReal) #colType))
 
     # Iterate over features and add values for the new columns
     i = 0
     for feature in layer:
-        #print ' {}'.format(feature.GetFID())
             
         if str(feature.GetField('lat')) != str(df['lat'][i]):
             import pdb; pdb.set_trace()
@@ -316,7 +314,6 @@ def main(args):
     # 7. Now write the stack csv, and add stats from the df to stack shp     
     zonalStatsDf.to_csv(stackCsv, sep=',', index=False, header=True, na_rep="NoData")
 
-    print ogr.OFTReal
     # Create the output stack-specific shp by appending new stats columns to fc:    
     stackShp = addStatsToShp(zonalStatsDf, stackShp)
     import pdb; pdb.set_trace()    
