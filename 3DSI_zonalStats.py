@@ -282,12 +282,11 @@ def main(args):
     #stackShp = zones.applyNoDataMask(noDataMask, outShp = stackShp)
     
     # If noDataMask is NOT in same projection as zonal fc, supply correct EPSG
-    import pdb; pdb.set_trace()
     if int(rasterMask.epsg()) != int(zones.epsg()):
-        stackShp = zones.applyNoDataMask(noDataMask, outShp = stackShp)    
-    else:
         stackShp = zones.applyNoDataMask(noDataMask, 
-                            transEpsg = rasterMask.epsg(), outShp = stackShp)
+                            transEpsg = rasterMask.epsg(), outShp = stackShp)            
+    else:
+        stackShp = zones.applyNoDataMask(noDataMask, outShp = stackShp)
                
     zones = ZonalFeatureClass(stackShp) # Now zones is the filtered fc obj, will eventually have the stats added 
     
