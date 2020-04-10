@@ -56,7 +56,7 @@ class ZonalFeatureClass(FeatureClass):
         drv = ogr.GetDriverByName("ESRI Shapefile")
         ds = drv.Open(self.filePath)
         layer = ds.GetLayer()
-        
+        import pdb; pdb.set_trace()
         # Collect list of FIDs to keep
         keepFIDs = []
         for feature in layer:
