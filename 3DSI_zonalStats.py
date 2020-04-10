@@ -34,8 +34,8 @@ def addStatsToShp(df, shp):
     # Add the stat columns from df to shp
     
     # Dict to go from pandas type to GDAL type
-    typeMap = {'float64': ogr.OFTReal, 'int64': ogr.OFTInteger, 
-                                               'object': ogr.OFTString}
+    #typeMap = {'float64': ogr.OFTReal, 'int64': ogr.OFTInteger, 
+    #                                           'object': ogr.OFTString}
 
     # Open shp in write mode (shpObj.layer gives us read-mode layer)        
     shpObj = ZonalFeatureClass(shp)
@@ -45,10 +45,10 @@ def addStatsToShp(df, shp):
     # addCols is list of columns that we want to add to shp
     addCols = [f for f in df.columns if f not in shpObj.fieldNames()]   
     
-    # Add fields to shapefile
+    # Add fields to shapefile - all added stat fields should be float64
     for col in addCols:
         
-        colType = typeMap[str(df[col].dtype)]
+        #colType = typeMap[str(df[col].dtype)]
         
         layer.CreateField(ogr.FieldDefn(str(col), ogr.OFTReal)) #colType))
 
@@ -309,10 +309,11 @@ def main(args):
     if stackXml:
         zonalStatsDf = addSunAngleColumn(zonalStatsDf, stackXml)
     
-    # If addPathRows is True, get pathrows for each point & add as column to df
+    # Replace "None" values with our NoData value from stack:
+    zonalStatsDf = zonalStatsDf.fillna(stack.noDataValue)
 
     # 7. Now write the stack csv, and add stats from the df to stack shp     
-    zonalStatsDf.to_csv(stackCsv, sep=',', index=False, header=True, na_rep="NoData")
+    zonalStatsDf.to_csv(stackCsv, sep=',', index=False, header=True)#), na_rep="NoData")
 
     # Create the output stack-specific shp by appending new stats columns to fc:    
     stackShp = addStatsToShp(zonalStatsDf, stackShp)
