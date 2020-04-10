@@ -268,7 +268,8 @@ def main(args):
     # 2. Clip large input zonal shp to raster extent  
     # outDir/zonalType__stackName.shp
     clipZonal = os.path.join(outDir, '{}__{}.shp'.format(zonalType, stackName))
-    inZones.clipToExtent(stackExtent, stackEpsg, clipZonal) 
+    if not os.path.isfile(clipZonal):
+        inZones.clipToExtent(stackExtent, stackEpsg, clipZonal) 
     
     if not os.path.isfile(clipZonal):
         raise RuntimeError('Could not perform clip of input zonal feature class')
