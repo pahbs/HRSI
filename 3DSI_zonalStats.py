@@ -62,7 +62,7 @@ def addStatsToShp(df, shp):
             
             feature.SetField(colName, df[col][i])
             
-        i+=1
+            i+=1
         
     dataset = layer = feature = None
     
