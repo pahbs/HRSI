@@ -55,6 +55,7 @@ def addStatsToShp(df, shp):
 
         # Loop over features in layer and add corresponding value from df
         i = 0
+        print colName
         for feature in layer:
             
             if str(feature.GetField('lat')) != str(df['lat'][i]):
@@ -312,7 +313,7 @@ def main(args):
     # 7. Now write the stack csv, and add stats from the df to stack shp     
     zonalStatsDf.to_csv(stackCsv, sep=',', index=False, header=True, na_rep="NoData")
     import pdb; pdb.set_trace()
-
+    print ogr.OFTReal
     # Create the output stack-specific shp by appending new stats columns to fc:    
     stackShp = addStatsToShp(zonalStatsDf, stackShp)
     
