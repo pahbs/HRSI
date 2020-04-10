@@ -77,7 +77,7 @@ class ZonalFeatureClass(FeatureClass):
 
             # Then export to WKT for ZS             
             wktPoly = geom.ExportToIsoWkt()
-            print wktPoly
+
             # Get info from mask underneath feature
             z = zonal_stats(wktPoly, mask, stats="mean")
             out = z[0]['mean']            
