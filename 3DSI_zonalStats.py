@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import os, sys
 import numpy as np
-#from osgeo import gdal, osr#, ogr
+from osgeo import osr, ogr#gdal, osr#, ogr
 #from osgeo.osr import SpatialReference
 #from osgeo.osr import CoordinateTransformation
 #import tempfile
@@ -12,7 +12,7 @@ from rasterstats import zonal_stats
 
 from RasterStack import RasterStack
 from ZonalFeatureClass import ZonalFeatureClass
-
+from SpatialHelper import SpatialHelper
 
 """
 3/20/2020:
@@ -29,6 +29,19 @@ Inputs:
 
 # Set global variables:
 baseDir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ZonalStats/'
+
+def addStatsToShp(df, shp):   
+    # Add the stat columns from df to shp
+    
+    shpObj = ZonalFeatureClass(shp)
+    
+    print list(df.columns)
+    print shpObj.fieldNames()
+    
+    return shp
+    
+    
+
 
 def addSunAngleColumn(df, stackXml):
     
@@ -142,8 +155,23 @@ def callZonalStats(raster, vector, layerDict, addPathRows = False):
                                         for i in range(0, len(zonalStatsDict))]
     
     return zonalStatsDf
-  
-def getNmad(a, c=1.4826): # this gives the same results as the dshean's method but does not need all the other functions
+
+"""
+def dfToCsv(df, outShp, sEpsg, tEpsg):
+    
+    # df should have lat and lon columns
+    # sEpsg is the source EPSG, i.e. the projection of the points in the df
+    # tEpsg is the target EPSG, i.e. the projection the outShp should be in
+    
+    sr = osr.SpatialReference()
+    sr.ImportFromEPSG(int(tEpsg)) # Set SR object to target EPSG
+    drv = ogr.GetDriverByName('ESRI Shapefile')
+    ds = drv.CreateDataSource(outShp) #so there we will store our data
+    layer = ds.CreateLayer('layer', sr, ogr.wkbPoint)
+    layer_defn = layer.GetLayerDefn() 
+"""    
+     
+def getNmad(a, c=1.4826):
 
     import warnings
 
@@ -187,25 +215,29 @@ def main(args):
 
     # Unpack arguments
     # input raster stack, input zonal shapefile, output directory, log directory,    
-    inRaster = args['rasterStack']
+    inRaster  = args['rasterStack']
     inZonalFc = args['zonalFc']
   
-    stack = RasterStack(inRaster)
+    stack   = RasterStack(inRaster)
     inZones = ZonalFeatureClass(inZonalFc) # This will be clipped
 
-    # Set the output directory
-    # outDir = baseDir / zonalType (ATL08_na or GLAS_buff30m) --> stackType / stackName
-    zonalType = inZones.zonalName
-    outDir = stack.outDir(os.path.join(baseDir, zonalType))
-
-    # 1. Start log if doing so
-    #import pdb; pdb.set_trace()
-    
-    # 2. Clip large input zonal shp to raster extent (with buffer?)
     stackExtent = stack.extent()
     stackEpsg   = stack.epsg()
     stackName   = stack.stackName
     
+    # Set the output directory
+    # outDir = baseDir / zonalType (ATL08_na or GLAS_buff30m) --> stackType / stackName
+    zonalType = inZones.zonalName
+    outDir    = stack.outDir(os.path.join(baseDir, zonalType))
+
+    # Stack-specific outputs
+    stackCsv = os.path.join(outDir, '{}__zonalStats.csv'.format(stackName))
+    stackShp = stackCsv.replace('.csv', '.shp')
+    
+    # 1. Start log if doing so
+    #import pdb; pdb.set_trace()
+    
+    # 2. Clip large input zonal shp to raster extent  
     # outDir/zonalType__stackName.shp
     clipZonal = os.path.join(outDir, '{}__{}.shp'.format(zonalType, stackName))
     inZones.clipToExtent(stackExtent, stackEpsg, clipZonal) 
@@ -230,9 +262,10 @@ def main(args):
     if int(RasterStack(noDataMask).epsg()) != int(zones.epsg()):
         # Eventually reproject mask to same epsg, but for now just raise error
         raise RuntimeError("In order to apply noDataMask, mask and zonal fc must be in same projection")
-    
-    outFilteredShp = zones.applyNoDataMask(noDataMask)
-    zones = ZonalFeatureClass(outFilteredShp) # Now zones is the filtered fc obj
+
+    # stackShp is filtered shp and will eventually have the stats added    
+    stackShp = zones.applyNoDataMask(noDataMask, stackShp)
+    zones = ZonalFeatureClass(stackShp) # Now zones is the filtered fc obj
     
     # 4-5. Get stack key dictionary    
     layerDict = buildLayerDict(stack) # {layerNumber: [layerName, [statistics]]}
@@ -247,14 +280,14 @@ def main(args):
     
     # If addPathRows is True, get pathrows for each point & add as column to df
 
-    # 7. Now write the data frame to stack-specific csv/shp and append to  
-    #* Pandas to stack specific CSV to stack-specific SHP
-    stackCsv = os.path.join(outDir, '{}__zonalStats.csv'.format(stackName))
-    stackShp = stackCsv.replace('.csv', '.shp')
+    # 7. Now write the stack csv, and add stats from the df to stack shp     
+    zonalStatsDf.to_csv(stackCsv, sep=',', index=False, header=True, na_rep="NoData")
+    import pdb; pdb.set_trace()
+
+    # Create the output stack-specific shp by appending new stats columns to fc:    
+    stackShp = addStatsToShp(zonalStatsDf, stackShp)
     
-    zonalStatsDf.to_csv(stackCsv, sep=',', index=False, header=True, na_rep="None")
-    import pdb; pdb.set_trace()       
-    #dfToCsv(zonalStatsDf, stackShp, )
+    # Update the big csv and big output gdb by appending to them:
     
     # FRIDAY:
     # - dfToCsv()

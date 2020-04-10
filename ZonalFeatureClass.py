@@ -9,12 +9,13 @@ with additional methods designed specifically for Zonal Stats process
 
 ZonalFeatureClass inherits the following from FeatureClass:
     self.filePath; self.extension; self.baseName; self.baseDir; self.driver;
-    self.dataset; self.layer; self.nFeatures = self.layer.GetFeatureCount()  
+    self.dataset; self.layer; self.layerDefn; self.nFeatures; self.nFields
 
     clipToExtent(self, clipExtent, extentEpsg, outClip = None)
     createCopy(self, copyName)
     epsg(self)
-    extent(self)  
+    extent(self)
+    fieldNames(self)
 """
 
 import os
@@ -43,13 +44,14 @@ class ZonalFeatureClass(FeatureClass):
     #--------------------------------------------------------------------------
     # applyNoDataMask()
     #--------------------------------------------------------------------------    
-    def applyNoDataMask(self, mask):
+    def applyNoDataMask(self, mask, outShp = None):
 
         # Expecting mask to be 0 and 1, with 1 where we want to remove data
         # This is specific to 3DSI and therefore is not kept in FeatureClass
         
-        # Get name for output filtered shp:
-        outShp = self.filePath.replace(self.extension, '__filtered-ND.shp')
+        # Get name output shp: 
+        if not outShp:
+            outShp = self.filePath.replace(self.extension, '__filtered-ND.shp')
         
         drv = ogr.GetDriverByName("ESRI Shapefile")
         ds = drv.Open(self.filePath)
