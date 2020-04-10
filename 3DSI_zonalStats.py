@@ -285,7 +285,7 @@ def main(args):
         #raise RuntimeError("In order to apply noDataMask, mask and zonal fc must be in same projection")
 
     # stackShp is filtered shp and will eventually have the stats added    
-    stackShp = zones.applyNoDataMask(noDataMask, stackShp)
+    stackShp = zones.applyNoDataMask(noDataMask, outShp = stackShp)
     zones = ZonalFeatureClass(stackShp) # Now zones is the filtered fc obj
     
     # 4-5. Get stack key dictionary    
