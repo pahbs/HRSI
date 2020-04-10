@@ -57,12 +57,12 @@ def addStatsToShp(df, shp):
         i = 0
         for feature in layer:
             
-            print feature.getField('lat'), df['lat'][0]
+            print feature.GetField('lat'), df['lat'][i]
             
             feature.SetField(colName, df[col][i])
             
-
-   
+    dataset = layer = feature = None
+    
     return shp
     
     
