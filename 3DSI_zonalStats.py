@@ -62,9 +62,10 @@ def addStatsToShp(df, shp):
             import pdb; pdb.set_trace()
             
         for col in addCols: 
-            if str(col) == 'sunAngle': import pdb; pdb.set_trace()
+
             feature.SetField(str(col), df[col][i])
-            
+
+        layer.SetFeature(feature)             
         i+=1
         
     dataset = layer = feature = None
