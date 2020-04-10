@@ -47,8 +47,10 @@ class ZonalFeatureClass(FeatureClass):
     def applyNoDataMask(self, mask, transEpsg = None, outShp = None):
 
         # Expecting mask to be 0 and 1, with 1 where we want to remove data
-        # This is specific to 3DSI and therefore is not kept in FeatureClass        
+        # This is specific to 3DSI and therefore is not kept in FeatureClass 
+        
         # if transformEpsg is supplied, convert points to correct SRS before running ZS
+        # if not supplied, will assume projection of mask and ZFC are the same
         
         # Get name output shp: 
         if not outShp:
@@ -57,8 +59,8 @@ class ZonalFeatureClass(FeatureClass):
         drv = ogr.GetDriverByName("ESRI Shapefile")
         ds = drv.Open(self.filePath)
         layer = ds.GetLayer()
-        import pdb; pdb.set_trace()        
-        # This may be unnecessary but will work even if not needed
+     
+        # This will work even if not needed
         outSrs = osr.SpatialReference()
         if transEpsg:
             outSrs.ImportFromEPSG(int(transEpsg))
@@ -71,11 +73,11 @@ class ZonalFeatureClass(FeatureClass):
 
             # Get polygon geometry and transform to outSrs just in case
             geom = feature.GetGeometryRef()
-            geom.TranformTo(outSrs)
+            geom.TransformTo(outSrs)
 
             # Then export to WKT for ZS             
             wktPoly = geom.ExportToIsoWkt()
-            
+            print wktPoly
             # Get info from mask underneath feature
             z = zonal_stats(wktPoly, mask, stats="mean")
             out = z[0]['mean']            

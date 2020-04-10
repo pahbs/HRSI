@@ -278,15 +278,17 @@ def main(args):
      
     # 3-4. Remove footprints under noData mask 
     noDataMask = stack.noDataLayer()
+    rasterMask = RasterStack(noDataMask)
     
-    # Check first that noDataMask is in same projection as zonal fc:
-    #if int(RasterStack(noDataMask).epsg()) != int(zones.epsg()):
-        # Eventually reproject mask to same epsg, but for now just raise error
-        #raise RuntimeError("In order to apply noDataMask, mask and zonal fc must be in same projection")
-
-    # stackShp is filtered shp and will eventually have the stats added    
-    stackShp = zones.applyNoDataMask(noDataMask, outShp = stackShp)
-    zones = ZonalFeatureClass(stackShp) # Now zones is the filtered fc obj
+    # If noDataMask is NOT in same projection as zonal fc, supply correct EPSG\
+    """
+    if int(rasterMask.epsg()) != int(zones.epsg()):
+        stackShp = zones.applyNoDataMask(noDataMask, outShp = stackShp)    
+    else:
+        stackShp = zones.applyNoDataMask(noDataMask, 
+                            transEpsg = rasterMask.epsg(), outShp = stackShp)
+    """                
+    zones = ZonalFeatureClass(stackShp) # Now zones is the filtered fc obj, will eventually have the stats added 
     
     # 4-5. Get stack key dictionary    
     layerDict = buildLayerDict(stack) # {layerNumber: [layerName, [statistics]]}
