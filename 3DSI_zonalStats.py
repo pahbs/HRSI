@@ -31,12 +31,8 @@ Inputs:
 baseDir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ZonalStats/'
 
 def addStatsToShp(df, shp):   
-    # Add the stat columns from df to shp
+    # Edit shp to add the stat columns from df
     
-    # Dict to go from pandas type to GDAL type
-    #typeMap = {'float64': ogr.OFTReal, 'int64': ogr.OFTInteger, 
-    #                                           'object': ogr.OFTString}
-
     # Open shp in write mode (shpObj.layer gives us read-mode layer)        
     shpObj = ZonalFeatureClass(shp)
     dataset = shpObj.driver.Open(shpObj.filePath, 1)
@@ -48,9 +44,7 @@ def addStatsToShp(df, shp):
     # Add fields to shapefile - all added stat fields should be float64
     for col in addCols:
         
-        #colType = typeMap[str(df[col].dtype)]
-        
-        layer.CreateField(ogr.FieldDefn(str(col), ogr.OFTReal)) #colType))
+        layer.CreateField(ogr.FieldDefn(str(col), ogr.OFTReal))
 
     # Iterate over features and add values for the new columns
     i = 0
@@ -69,9 +63,6 @@ def addStatsToShp(df, shp):
     dataset = layer = feature = None
     
     return shp
-    
-    
-
 
 def addSunAngleColumn(df, stackXml):
     
@@ -300,7 +291,7 @@ def main(args):
     
     # 4-5. Get stack key dictionary    
     layerDict = buildLayerDict(stack) # {layerNumber: [layerName, [statistics]]}
-
+    import pdb; pdb.set_trace()
     # 5-6. Call zonal stats and return a pandas dataframe    
     zonalStatsDf = callZonalStats(stack.filePath, zones.filePath, layerDict)
     
@@ -317,7 +308,7 @@ def main(args):
 
     # Create the output stack-specific shp by appending new stats columns to fc:    
     stackShp = addStatsToShp(zonalStatsDf, stackShp)
-    import pdb; pdb.set_trace()    
+        
     # Update the big csv and big output gdb by appending to them:
     
     # FRIDAY:
