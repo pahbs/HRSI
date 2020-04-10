@@ -50,7 +50,7 @@ def addStatsToShp(df, shp):
         
         colType = typeMap[str(df[col].dtype)]
         
-        layer.CreateField(ogr.FieldDefn(str(col), ogr.OFTReal) #colType))
+        layer.CreateField(ogr.FieldDefn(str(col), ogr.OFTReal)) #colType))
 
     # Iterate over features and add values for the new columns
     i = 0
