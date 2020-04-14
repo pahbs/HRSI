@@ -217,6 +217,44 @@ def getSunAngle(useXml):
     except:
         return None 
     
+def logOutput(logFile):
+    
+    print "See {} for log".format(logFile)
+    so = se = open(logFile, 'a', 0) # open our log file
+    sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0) # re-open stdout without buffering
+    os.dup2(so.fileno(), sys.stdout.fileno()) # redirect stdout and stderr to the log file opened above
+    os.dup2(se.fileno(), sys.stderr.fileno())
+    
+    return None
+        
+def updateOutputCsv(outCsv, df):
+    # Append a dataframe to an output CSV - assumes columns are the same
+    
+    hdr = False # Only add the header if the file does not exist
+    if not os.path.isfile(outCsv):
+        hdr = True
+    
+    df.to_csv(outCsv, sep=',', index=False, header=hdr)
+    
+    return None
+    
+def updateOutputGdb(outGdb, inShp, outEPSG = 4326):
+    # Append a shp to output GDB - assumes fields are the same
+    
+    layerName = outGdb.replace('.gdb', '')
+    cmd = 'ogr2ogr -nln {} -a_srs EPSG:4326 -t_srs EPSG:4326'.format(layerName)
+    
+    if not os.path.exists(outGdb):
+        cmd += ' -update -append'
+        
+    cmd += ' -f "FileGDB" {} {}'.format(outGdb, inShp)
+
+    print cmd
+    os.system(cmd)
+
+    return None       
+        
+        
 """
 # Add Landsat pathrows to dataframe with lat/lon columns (decimal degrees)
 def getPathRows(lat, lon):
@@ -234,19 +272,21 @@ def getPathRows(lat, lon):
 
 def main(args):
 
-    # Unpack arguments
-    # input raster stack, input zonal shapefile, output directory, log directory,    
+    # Unpack arguments   
     inRaster  = args['rasterStack']
     inZonalFc = args['zonalFc']
+    logOut    = args['outputCsv']
+    outCsv    = args['outputCsv']
   
     stack   = RasterStack(inRaster)
     inZones = ZonalFeatureClass(inZonalFc) # This will be clipped
 
+    # Set some variables from inputs
     stackExtent = stack.extent()
     stackEpsg   = stack.epsg()
     stackName   = stack.stackName
     
-    # Set the output directory
+    # Get the output directory
     # outDir = baseDir / zonalType (ATL08_na or GLAS_buff30m) --> stackType / stackName
     zonalType = inZones.zonalName
     outDir    = stack.outDir(os.path.join(baseDir, zonalType))
@@ -255,9 +295,14 @@ def main(args):
     stackCsv = os.path.join(outDir, '{}__{}__zonalStats.csv'.format(zonalType, stackName))
     stackShp = stackCsv.replace('.csv', '.shp')
     
-    # 1. Start log if doing so
-    #import pdb; pdb.set_trace()
+    # "Big" outputs (unique for zonal/stack type combos)
+    outGdb = outCsv.replace('.csv', '.gdb')
     
+    # 1. Start stack-specific log if doing so
+    if logOut: 
+        logFile = stackCsv.replace('.csv', '__Log.txt')
+        logOutput(logFile)
+        
     # 2. Clip input zonal shp to raster extent. Output projection = that of stack  
     clipZonal = os.path.join(outDir, '{}__{}.shp'.format(zonalType, stackName))
     if not os.path.isfile(clipZonal):
@@ -279,7 +324,7 @@ def main(args):
     # 3-4. Remove footprints under noData mask 
     noDataMask = stack.noDataLayer()
     rasterMask = RasterStack(noDataMask)
-    import pdb; pdb.set_trace()
+
     # If noDataMask is NOT in same projection as zonal fc, supply correct EPSG
     transEpsg = None
     if int(rasterMask.epsg()) != int(zones.epsg()):
@@ -307,39 +352,23 @@ def main(args):
     # 7. Now write the stack csv, and add stats from the df to stack shp     
     zonalStatsDf.to_csv(stackCsv, sep=',', index=False, header=True)#), na_rep="NoData")
 
-    # Create the output stack-specific shp by appending new stats columns to fc:    
+    # Finish the output stack-specific shp by adding new stats columns to fc:    
     stackShp = addStatsToShp(zonalStatsDf, stackShp)
-        
+    import pdb; pdb.set_trace()        
     # Update the big csv and big output gdb by appending to them:
-    
-    # FRIDAY:
-    # - dfToCsv()
-    # - updateMainCsv (which will call dfToCsv)
-    
-    #* Other inputs: big CSV/SHP or GDB; log file
-    
-    
-    #* once df is ready to write to csv, can we reorganize/clean up column order?
-    # do we need to if we do stuff before?
-    
-    # dataFrameToCsv() # write pandas df to csv
-        # call csvToShp for small csv
-        
-    # updateMainDb() # append to big csv and convert to shp
-        # call csvToShp for big csv
-    
+    updateOutputCsv(outCsv, zonalStatsDf)
+    updateOutputGdb(outGdb, stackShp)
 
     return None
 
 if __name__ == "__main__":
     
     parser = argparse.ArgumentParser()
-    parser.add_argument("-r", "--rasterStack", type=str, help="Input raster stack")
-    parser.add_argument("-z", "--zonalFc", type=str, help="Input zonal shp/gdb")
+    parser.add_argument("-r", "--rasterStack", type=str, required=True, help="Input raster stack")
+    parser.add_argument("-z", "--zonalFc", type=str, required=True, help="Input zonal shp/gdb")
+    parser.add_argument("-o", "--outputCsv", type=str, required=True, help="Output csv for all stacks. GDB will also be created")
+    parser.add_argument("-log", action='store_true', help="Log the output")
     
-    #* Other args ?
-    #parser.add_argument("-o", "--bigCsv", type=str, help="Output csv for all stacks. GDB will also be created")
-
     args = vars(parser.parse_args())
 
     main(args)
