@@ -381,7 +381,7 @@ def main(args):
 
     # Finish the output stack-specific shp by adding new stats columns to fc:    
     stackShp = addStatsToShp(zonalStatsDf, stackShp)
-    import pdb; pdb.set_trace()        
+       
     # Update the big csv and big output gdb by appending to them:
     updateOutputCsv(outCsv, zonalStatsDf)
     updateOutputGdb(outGdb, stackShp)
