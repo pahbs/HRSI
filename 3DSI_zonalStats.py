@@ -44,10 +44,14 @@ def addStatsToShp(df, shp):
     # addCols is list of columns that we want to add to shp
     addCols = [f for f in df.columns if f not in shpObj.fieldNames()]   
     
-    # Add fields to shapefile - all added stat fields should be float64
+    # Add fields to shapefile - all added stat fields except stackName should be float64
     for col in addCols:
         
-        layer.CreateField(ogr.FieldDefn(str(col), ogr.OFTReal))
+        colType = ogr.OFTReal
+        if col == 'stackName':
+            colType = ogr.OFTString
+        
+        layer.CreateField(ogr.FieldDefn(str(col), colType))
 
     # Iterate over features and add values for the new columns
     i = 0
@@ -61,7 +65,7 @@ def addStatsToShp(df, shp):
             feature.SetField(str(col), df[col][i])
 
         layer.SetFeature(feature)             
-        i+=1
+        i += 1
         
     dataset = layer = feature = None
     
@@ -319,7 +323,8 @@ def main(args):
         logFile = stackCsv.replace('.csv', '__Log.txt')
         logOutput(logFile)
     
-    # print some info   
+    # print some info
+    print "BEGIN: {}\n".format(time.strftime("%b %d %Y %:%M:%S"))
     print "Input raster stack: {}".format(inRaster)
     print " n layers = {}".format(stack.nLayers)
     print "Input zonal feature class: {}".format(inZonalFc)
@@ -380,7 +385,8 @@ def main(args):
     zonalStatsDf.to_csv(stackCsv, sep=',', index=False, header=True)#), na_rep="NoData")
 
     # Finish the output stack-specific shp by adding new stats columns to fc:
-    import pdb; pdb.set_trace()    
+    # But first, add stackName column
+    zonalStatsDf['stackName'] = [stackName for i in range(len(zonalStatsDf))]
     stackShp = addStatsToShp(zonalStatsDf, stackShp)
        
     # Update the big csv and big output gdb by appending to them:
