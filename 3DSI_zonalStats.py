@@ -359,7 +359,7 @@ def main(args):
                                                              outShp = stackShp)
                
     zones = ZonalFeatureClass(stackShp) # Now zones is the filtered fc obj, will eventually have the stats added as attributes
-    print "\nZonal feature class after masking ND values".format(noDataMask)
+    print "\nZonal feature class after masking ND values: {}".format(stackShp)
     print " n features after masking = {}".format(zones.nFeatures)
     
     # 4-5. Get stack key dictionary    
@@ -379,7 +379,8 @@ def main(args):
     # 7. Now write the stack csv, and add stats from the df to stack shp     
     zonalStatsDf.to_csv(stackCsv, sep=',', index=False, header=True)#), na_rep="NoData")
 
-    # Finish the output stack-specific shp by adding new stats columns to fc:    
+    # Finish the output stack-specific shp by adding new stats columns to fc:
+    import pdb; pdb.set_trace()    
     stackShp = addStatsToShp(zonalStatsDf, stackShp)
        
     # Update the big csv and big output gdb by appending to them:
