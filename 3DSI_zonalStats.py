@@ -275,9 +275,9 @@ def main(args):
     # Unpack arguments   
     inRaster  = args['rasterStack']
     inZonalFc = args['zonalFc']
-    logOut    = args['outputCsv']
     outCsv    = args['outputCsv']
-  
+    logOut    = args['logOutput']
+    
     stack   = RasterStack(inRaster)
     inZones = ZonalFeatureClass(inZonalFc) # This will be clipped
 
@@ -367,7 +367,7 @@ if __name__ == "__main__":
     parser.add_argument("-r", "--rasterStack", type=str, required=True, help="Input raster stack")
     parser.add_argument("-z", "--zonalFc", type=str, required=True, help="Input zonal shp/gdb")
     parser.add_argument("-o", "--outputCsv", type=str, required=True, help="Output csv for all stacks. GDB will also be created")
-    parser.add_argument("-log", action='store_true', help="Log the output")
+    parser.add_argument("-log", "--logOutput", action='store_true', help="Log the output")
     
     args = vars(parser.parse_args())
 
