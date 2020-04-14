@@ -252,7 +252,7 @@ def main(args):
     outDir    = stack.outDir(os.path.join(baseDir, zonalType))
 
     # Stack-specific outputs
-    stackCsv = os.path.join(outDir, '{}__zonalStats.csv'.format(stackName))
+    stackCsv = os.path.join(outDir, '{}__{}__zonalStats.csv'.format(zonalType, stackName))
     stackShp = stackCsv.replace('.csv', '.shp')
     
     # 1. Start log if doing so
