@@ -33,6 +33,8 @@ baseDir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ZonalStats/'
 
 def addStatsToShp(df, shp):   
     # Edit shp to add the stat columns from df
+
+    print "\nWriting output from Zonal Stats to {}".format(shp)
     
     # Open shp in write mode (shpObj.layer gives us read-mode layer)        
     shpObj = ZonalFeatureClass(shp)
@@ -133,14 +135,20 @@ def buildLayerDict(stackObject):
     return {key: layerDict[key] for key in range(5,8)}
 
 def callZonalStats(raster, vector, layerDict, addPathRows = False):
+
+    print "\nRunning zonal stats for {} layers".format(len(layerDict))
+    print " Input Raster: {}".format(raster)
+    print " Input Vector: {}".format(vector)
     
     # Iterate through layers, run zonal stats and build dataframe
     firstLayer = True
     
     for layerN in layerDict:
         
-        #layerName = layerDict[layerN][0]
+        layerName = layerDict[layerN][0]
         statsList = layerDict[layerN][1]
+
+        print "\nLayer {} ({}): {}".format(layerN, layerName, statsList)
 
         # Run/call dict to pandas    
         if "nmad" in statsList:
@@ -230,6 +238,8 @@ def logOutput(logFile):
         
 def updateOutputCsv(outCsv, df):
     # Append a dataframe to an output CSV - assumes columns are the same
+
+    print "\nUpdating the big output csv {}".format(outCsv)
     
     hdr = False # Only add the header if the file does not exist
     if not os.path.isfile(outCsv):
@@ -241,6 +251,8 @@ def updateOutputCsv(outCsv, df):
     
 def updateOutputGdb(outGdb, inShp, outEPSG = 4326):
     # Append a shp to output GDB - assumes fields are the same
+
+    print "\nUpdating the big output GDB {}".format(outGdb)
     
     layerName = outGdb.replace('.gdb', '')
     cmd = 'ogr2ogr -nln {} -a_srs EPSG:4326 -t_srs EPSG:4326'.format(layerName)
@@ -250,7 +262,7 @@ def updateOutputGdb(outGdb, inShp, outEPSG = 4326):
         
     cmd += ' -f "FileGDB" {} {}'.format(outGdb, inShp)
 
-    print cmd
+    print '', cmd
     os.system(cmd)
 
     return None       
@@ -306,10 +318,16 @@ def main(args):
     if logOut: 
         logFile = stackCsv.replace('.csv', '__Log.txt')
         logOutput(logFile)
-    import pdb; pdb.set_trace()     
+    
+    # print some info   
+    print "Input raster stack: {}".format(inRaster)
+    print " n layers = {}".format(stack.nLayers)
+    print "Input zonal feature class: {}".format(inZonalFc)
+               
     # 2. Clip input zonal shp to raster extent. Output projection = that of stack  
     clipZonal = os.path.join(outDir, '{}__{}.shp'.format(zonalType, stackName))
     if not os.path.isfile(clipZonal):
+        print "\nClipping input feature class to extent..."
         inZones.clipToExtent(stackExtent, stackEpsg, stackEpsg, clipZonal) 
     
     if not os.path.isfile(clipZonal):
@@ -317,6 +335,8 @@ def main(args):
     
     # now zones is the clipped input ZFC object:
     zones = ZonalFeatureClass(clipZonal)   
+    print "\nZonal feature class after clip: {}".format(clipZonal)
+    print " n features after clip = {}".format(zones.nFeatures) 
     
     # 3. Filter NoData points and points based on attributes
     #* if i have to iterate through points to filter below, then combine with applyNoDataMask:
@@ -333,11 +353,14 @@ def main(args):
     transEpsg = None
     if int(rasterMask.epsg()) != int(zones.epsg()):
         transEpsg = rasterMask.epsg() # Need to transform coords to that of mask
-        
+
+    print "\nMasking out NoData values using {}".format(noDataMask)        
     stackShp = zones.applyNoDataMask(noDataMask, transEpsg = transEpsg,
                                                              outShp = stackShp)
                
-    zones = ZonalFeatureClass(stackShp) # Now zones is the filtered fc obj, will eventually have the stats added 
+    zones = ZonalFeatureClass(stackShp) # Now zones is the filtered fc obj, will eventually have the stats added as attributes
+    print "\nZonal feature class after masking ND values".format(noDataMask)
+    print " n features after masking = {}".format(zones.nFeatures)
     
     # 4-5. Get stack key dictionary    
     layerDict = buildLayerDict(stack) # {layerNumber: [layerName, [statistics]]}
@@ -358,7 +381,7 @@ def main(args):
 
     # Finish the output stack-specific shp by adding new stats columns to fc:    
     stackShp = addStatsToShp(zonalStatsDf, stackShp)
-       
+    import pdb; pdb.set_trace()        
     # Update the big csv and big output gdb by appending to them:
     updateOutputCsv(outCsv, zonalStatsDf)
     updateOutputGdb(outGdb, stackShp)
