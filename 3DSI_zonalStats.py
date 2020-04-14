@@ -148,7 +148,7 @@ def callZonalStats(raster, vector, layerDict, addPathRows = False):
         layerName = layerDict[layerN][0]
         statsList = layerDict[layerN][1]
 
-        print "\nLayer {} ({}): {}".format(layerN, layerName, statsList)
+        print "\n Layer {} ({}): {}".format(layerN, layerName, statsList)
 
         # Run/call dict to pandas    
         if "nmad" in statsList:
@@ -254,10 +254,10 @@ def updateOutputGdb(outGdb, inShp, outEPSG = 4326):
 
     print "\nUpdating the big output GDB {}".format(outGdb)
     
-    layerName = outGdb.replace('.gdb', '')
+    layerName = os.path.basename(outGdb).replace('.gdb', '')
     cmd = 'ogr2ogr -nln {} -a_srs EPSG:4326 -t_srs EPSG:4326'.format(layerName)
     
-    if not os.path.exists(outGdb):
+    if os.path.exists(outGdb):
         cmd += ' -update -append'
         
     cmd += ' -f "FileGDB" {} {}'.format(outGdb, inShp)
