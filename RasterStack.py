@@ -49,7 +49,7 @@ class RasterStack(Raster):
     #--------------------------------------------------------------------------
     def noDataLayer(self):
         
-        noDataLayer = self.filePath.replace('stack.vrt', 'mask_proj.tif')
+        noDataLayer = self.filePath.replace('stack.vrt', 'mask.tif')
         
         if os.path.isfile(noDataLayer):
             return noDataLayer
