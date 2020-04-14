@@ -324,7 +324,7 @@ def main(args):
         logOutput(logFile)
     
     # print some info
-    print "BEGIN: {}\n".format(time.strftime("%b %d %Y %:%M:%S"))
+    print "BEGIN: {}\n".format(time.strftime("%b-%d-%y %h:%M:%S"))
     print "Input raster stack: {}".format(inRaster)
     print " n layers = {}".format(stack.nLayers)
     print "Input zonal feature class: {}".format(inZonalFc)
@@ -394,7 +394,8 @@ def main(args):
     updateOutputGdb(outGdb, stackShp)
 
     elapsedTime = round((time.time()-start)/60, 4)
-    print "\nFinished: {} minutes".format(elapsedTime)
+    print "\nEND: {}\n".format(time.strftime("%b-%d-%y %h:%M:%S"))
+    print " Completed in {} minutes".format(elapsedTime)
 
     return None
 
