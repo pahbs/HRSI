@@ -60,17 +60,21 @@ class ZonalFeatureClass(FeatureClass):
         ds = drv.Open(self.filePath)
         layer = ds.GetLayer()
      
-        # This will work even if not needed
+        # OPTION A
+        # This will work even if not needed. If needed and not supplied, could fail
         outSrs = osr.SpatialReference()
         if transEpsg:
             outSrs.ImportFromEPSG(int(transEpsg))
         else:
             outSrs.ImportFromEPSG(int(self.epsg())) # If transformation EPSG not supplied, keep coords as is
-
+            
+        # OPTION B: Assume projection of mask and shp are the same 
+        
         # Collect list of FIDs to keep
         keepFIDs = []
         for feature in layer:
 
+            # OPTION A
             # Get polygon geometry and transform to outSrs just in case
             geom = feature.GetGeometryRef()
             geom.TransformTo(outSrs)

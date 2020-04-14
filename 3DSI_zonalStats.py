@@ -279,14 +279,14 @@ def main(args):
     # 3-4. Remove footprints under noData mask 
     noDataMask = stack.noDataLayer()
     rasterMask = RasterStack(noDataMask)
-    #stackShp = zones.applyNoDataMask(noDataMask, outShp = stackShp)
-    
+    import pdb; pdb.set_trace()
     # If noDataMask is NOT in same projection as zonal fc, supply correct EPSG
+    transEpsg = None
     if int(rasterMask.epsg()) != int(zones.epsg()):
-        stackShp = zones.applyNoDataMask(noDataMask, 
-                            transEpsg = rasterMask.epsg(), outShp = stackShp)            
-    else:
-        stackShp = zones.applyNoDataMask(noDataMask, outShp = stackShp)
+        transEpsg = rasterMask.epsg() # Need to transform coords to that of mask
+        
+    stackShp = zones.applyNoDataMask(noDataMask, transEpsg = transEpsg,
+                                                             outShp = stackShp)
                
     zones = ZonalFeatureClass(stackShp) # Now zones is the filtered fc obj, will eventually have the stats added 
     
