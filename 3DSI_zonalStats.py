@@ -1,18 +1,19 @@
 # -*- coding: utf-8 -*-
 import os, sys
 import numpy as np
-from osgeo import osr, ogr#gdal, osr#, ogr
-#from osgeo.osr import SpatialReference
-#from osgeo.osr import CoordinateTransformation
-#import tempfile
 import argparse
 import pandas as pd
+import time
+
+from osgeo import ogr#gdal, osr#, ogr
+#from osgeo.osr import SpatialReference
+#from osgeo.osr import CoordinateTransformation
 
 from rasterstats import zonal_stats
 
 from RasterStack import RasterStack
 from ZonalFeatureClass import ZonalFeatureClass
-from SpatialHelper import SpatialHelper
+#from SpatialHelper import SpatialHelper
 
 """
 3/20/2020:
@@ -234,7 +235,7 @@ def updateOutputCsv(outCsv, df):
     if not os.path.isfile(outCsv):
         hdr = True
     
-    df.to_csv(outCsv, sep=',', index=False, header=hdr)
+    df.to_csv(outCsv, sep=',', mode='a', index=False, header=hdr)
     
     return None
     
@@ -272,6 +273,9 @@ def getPathRows(lat, lon):
 
 def main(args):
 
+    # Start clock:
+    start = time.time()
+    
     # Unpack arguments   
     inRaster  = args['rasterStack']
     inZonalFc = args['zonalFc']
@@ -302,7 +306,7 @@ def main(args):
     if logOut: 
         logFile = stackCsv.replace('.csv', '__Log.txt')
         logOutput(logFile)
-        
+    import pdb; pdb.set_trace()     
     # 2. Clip input zonal shp to raster extent. Output projection = that of stack  
     clipZonal = os.path.join(outDir, '{}__{}.shp'.format(zonalType, stackName))
     if not os.path.isfile(clipZonal):
@@ -354,10 +358,13 @@ def main(args):
 
     # Finish the output stack-specific shp by adding new stats columns to fc:    
     stackShp = addStatsToShp(zonalStatsDf, stackShp)
-    import pdb; pdb.set_trace()        
+       
     # Update the big csv and big output gdb by appending to them:
     updateOutputCsv(outCsv, zonalStatsDf)
     updateOutputGdb(outGdb, stackShp)
+
+    elapsedTime = round((time.time()-start)/60, 4)
+    print "\nFinished: {} minutes".format(elapsedTime)
 
     return None
 
