@@ -401,7 +401,7 @@ def main(args):
 if __name__ == "__main__":
     
     parser = argparse.ArgumentParser()
-    parser.add_argument("-r", "--rasterStack", type=str, required=True, help="Input raster stack")
+    parser.add_argument("-rs", "--rasterStack", type=str, required=True, help="Input raster stack")
     parser.add_argument("-z", "--zonalFc", type=str, required=True, help="Input zonal shp/gdb")
     parser.add_argument("-o", "--outputCsv", type=str, required=True, help="Output csv for all stacks. GDB will also be created")
     parser.add_argument("-log", "--logOutput", action='store_true', help="Log the output")

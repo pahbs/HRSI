@@ -121,7 +121,7 @@ def main(args):
                 continue
         """
         
-        cmd = 'python {} -r {} -z {} -o {} -log'.format(runScript, stack, varsDict['inZonal'], varsDict['outCsv'])        
+        cmd = 'python {} -rs {} -z {} -o {} -log'.format(runScript, stack, varsDict['inZonal'], varsDict['outCsv'])        
         print cmd
         os.system(cmd) 
         
