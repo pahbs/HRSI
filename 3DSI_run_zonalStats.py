@@ -96,7 +96,7 @@ def unpackValidateArgs(args):
     return stackType, zonalType, stackRange
 
 def main(args):
-    import pdb; pdb.set_trace()
+
     # Unpack and validate arguments
     stackType, zonalType, stackRange = unpackValidateArgs(args)
     
@@ -115,7 +115,7 @@ def main(args):
         c+=1
         print "\n{}/{}:".format(c, len(stackList))
         
-        # Check stack's existence, and skip if it exists and overwrite is False
+        # Check stack's outputs, and skip if it exists and overwrite is False
         rs = RasterStack(stack)
         check = os.path.join(mainDir, zonalType, stackType, rs.stackName,
                     '{}__{}__zonalStats.shp'.format(zonalType, rs.stackName))
@@ -123,17 +123,7 @@ def main(args):
         if not overwrite:
             if os.path.isfile(check):
                 print "\nOutputs for {} already exist\n".format(rs.stackName)
-                continue                
-            
-        # COME BACK TO THIS - can we easily forumlate the output .shx or .csv from RasterStack class here?
-        """
-        bname = os.path.basename(stack).strip(os.path.splitext(stack)[1]).strip('_stack')
-        # skip files whose .shx file (last file to be created) already exists
-        if not overwrite:
-            if os.path.isfile(os.path.join(outDir, '{}__stats.shx'.format(bname))):
-                print "\nOutputs for {} already exist\n".format(bname)
                 continue
-        """
         
         cmd = 'python {} -rs {} -z {} -o {} -log'.format(runScript, stack, varsDict['inZonal'], varsDict['outCsv'])        
         print cmd
