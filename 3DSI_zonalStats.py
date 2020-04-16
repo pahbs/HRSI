@@ -134,9 +134,9 @@ def buildLayerDict(stackObject):
             
         layerDict[layerN] = [layerName, zonalStats]
 
-    #return layerDict
+    return layerDict
     # subset for testing
-    return {key: layerDict[key] for key in range(5,8)}
+    #return {key: layerDict[key] for key in range(5,8)}
 
 def callZonalStats(raster, vector, layerDict, addPathRows = False):
 
@@ -338,7 +338,10 @@ def main(args):
         raise RuntimeError('Could not perform clip of input zonal feature class')
     
     # now zones is the clipped input ZFC object:
-    zones = ZonalFeatureClass(clipZonal)   
+    zones = ZonalFeatureClass(clipZonal)
+    if zones.nFeatures == 0:
+        print " There were 0 features after clipping to stack extent"
+        return None
     print "\nZonal feature class after clip: {}".format(clipZonal)
     print " n features after clip = {}".format(zones.nFeatures) 
     
@@ -364,6 +367,9 @@ def main(args):
                
     zones = ZonalFeatureClass(stackShp) # Now zones is the filtered fc obj, will eventually have the stats added as attributes
     print "\nZonal feature class after masking ND values: {}".format(stackShp)
+    if zones.nFeatures == 0:
+        print " There were 0 features after masking ND values"
+        return None
     print " n features after masking = {}".format(zones.nFeatures)
     
     # 5. Get stack key dictionary    
