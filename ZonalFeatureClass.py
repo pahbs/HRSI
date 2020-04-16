@@ -39,7 +39,12 @@ class ZonalFeatureClass(FeatureClass):
         # Initialize the base class
         super(ZonalFeatureClass, self).__init__(filePath)
 
-        self.zonalName = self.baseName
+        bname = self.baseName
+        if 'ATL08' in bname:
+            self.zonalName = 'ATL08'
+        if 'GLAS' in bname:
+            self.zonalName = 'GLAS'
+        else: self.zonalName = None
         
     #--------------------------------------------------------------------------
     # applyNoDataMask()
