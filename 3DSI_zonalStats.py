@@ -304,7 +304,7 @@ def main(args):
     stackExtent = stack.extent()
     stackEpsg   = stack.epsg()
     stackName   = stack.stackName
-    import pdb; pdb.set_trace()
+
     # Get the output directory
     # outDir = baseDir / zonalType (ATL08_na or GLAS_buff30m) --> stackType / stackName
     zonalType = inZones.zonalName
