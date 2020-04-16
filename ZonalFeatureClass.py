@@ -38,7 +38,7 @@ class ZonalFeatureClass(FeatureClass):
 
         # Initialize the base class
         super(ZonalFeatureClass, self).__init__(filePath)
-        import pdb; pdb.set_trace()
+
         bname = self.baseName
         if 'ATL08' in bname:
             self.zonalName = 'ATL08'
