@@ -21,7 +21,7 @@ validStackTypes = ['SGM', 'LVIS', 'GLiHT']
 validZonalTypes = ['ATL08', 'GLAS']
 
 """ Dirs as of 4/15/2020
-    DSM: /att/gpfsfs/briskfs01/ppl/pmontesa/userfs02/projects/3dsi/stacks/Out_SGM/
+    SGM: /att/gpfsfs/briskfs01/ppl/pmontesa/userfs02/projects/3dsi/stacks/Out_SGM/
     LVIS: /att/gpfsfs/briskfs01/ppl/pmontesa/userfs02/projects/3dsi/stacks/out_lvis/
     GLiHT: /att/gpfsfs/briskfs01/ppl/pmontesa/userfs02/projects/3dsi/stacks/out_gliht/
 """
@@ -55,6 +55,7 @@ def getStackList(inList, stackRange):
     with open (inList, 'r') as l:
         stacks = [x.strip('\r\n') for x in l.readlines()]
 
+    # TO-DO try statement here and reject stackRange input
     if stackRange: 
         S, E = stackRange
         stackList = stacks[ int(S)-1 : int(E) ]
@@ -85,7 +86,8 @@ def unpackValidateArgs(args):
         
     if stackRange:        
         try:
-            stackRange = stackRange.split('-')            
+            stackRange = stackRange.split('-')
+            S, E = stackRange
         except:
             raise RuntimeError("Range must be supplied like: 1-20")
             
