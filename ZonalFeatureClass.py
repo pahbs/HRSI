@@ -42,7 +42,7 @@ class ZonalFeatureClass(FeatureClass):
         bname = self.baseName
         if 'ATL08' in bname:
             self.zonalName = 'ATL08'
-        if 'GLAS' in bname:
+        elif 'GLAS' in bname:
             self.zonalName = 'GLAS'
         else: self.zonalName = None
         
