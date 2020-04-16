@@ -117,7 +117,7 @@ def main(args):
         
         # Check stack's existence, and skip if it exists and overwrite is False
         rs = RasterStack(stack)
-        check = os.path.join(mainDir, zonalType, stackType, 
+        check = os.path.join(mainDir, zonalType, stackType, rs.stackName,
                     '{}__{}__zonalStats.shp'.format(zonalType, rs.stackName))
         
         if not overwrite:
