@@ -12,6 +12,8 @@ Inputs:
 import os
 import argparse
 
+from RasterStack import RasterStack
+
 overwrite = False
 
 mainDir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ZonalStats'
@@ -113,6 +115,16 @@ def main(args):
         c+=1
         print "\n{}/{}:".format(c, len(stackList))
         
+        # Check stack's existence, and skip if it exists and overwrite is False
+        rs = RasterStack(stack)
+        check = os.path.join(mainDir, zonalType, stackType, 
+                    '{}__{}__zonalStats.shp'.format(zonalType, rs.stackName))
+        
+        if not overwrite:
+            if os.path.isfile(check):
+                print "\nOutputs for {} already exist\n".format(rs.stackName)
+                continue                
+            
         # COME BACK TO THIS - can we easily forumlate the output .shx or .csv from RasterStack class here?
         """
         bname = os.path.basename(stack).strip(os.path.splitext(stack)[1]).strip('_stack')
