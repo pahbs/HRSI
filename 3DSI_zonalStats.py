@@ -270,8 +270,7 @@ def updateOutputGdb(outGdb, inShp, outEPSG = 4326):
     os.system(cmd)
 
     return None       
-        
-        
+             
 """
 # Add Landsat pathrows to dataframe with lat/lon columns (decimal degrees)
 def getPathRows(lat, lon):
@@ -329,7 +328,7 @@ def main(args):
     print " n layers = {}".format(stack.nLayers)
     print "Input zonal feature class: {}".format(inZonalFc)
                
-    # 2. Clip input zonal shp to raster extent. Output projection = that of stack  
+    # 2. Clip input zonal shp to raster extent. Output proj = that of stack  
     clipZonal = os.path.join(outDir, '{}__{}.shp'.format(zonalType, stackName))
     if not os.path.isfile(clipZonal):
         print "\nClipping input feature class to extent..."
@@ -343,14 +342,14 @@ def main(args):
     print "\nZonal feature class after clip: {}".format(clipZonal)
     print " n features after clip = {}".format(zones.nFeatures) 
     
-    # 3. Filter NoData points and points based on attributes
+    # 3. Filter footprints based on attributes
     #* if i have to iterate through points to filter below, then combine with applyNoDataMask:
     #* in ZFC: def filterData(self, noData, filterAttributesKey/Dict or hardcoded in ZFC)
     
     # filterData(shp, zonalName) # filter dataframe based on GLAS or ATL08 using OGR - faster?
         # and return filtered shp OR (later...)
      
-    # 3-4. Remove footprints under noData mask 
+    # 4. Remove footprints under noData mask 
     noDataMask = stack.noDataLayer()
     rasterMask = RasterStack(noDataMask)
 
@@ -367,13 +366,13 @@ def main(args):
     print "\nZonal feature class after masking ND values: {}".format(stackShp)
     print " n features after masking = {}".format(zones.nFeatures)
     
-    # 4-5. Get stack key dictionary    
+    # 5. Get stack key dictionary    
     layerDict = buildLayerDict(stack) # {layerNumber: [layerName, [statistics]]}
 
-    # 5-6. Call zonal stats and return a pandas dataframe    
+    # 6. Call zonal stats and return a pandas dataframe    
     zonalStatsDf = callZonalStats(stack.filePath, zones.filePath, layerDict)
     
-    # If there is an xml layer for stack, get sun angle and add as column to df
+    # 7. If there is an xml layer for stack, get sun angle and add as column to df
     stackXml = stack.xmlLayer()
     if stackXml:
         zonalStatsDf = addSunAngleColumn(zonalStatsDf, stackXml)
@@ -381,15 +380,15 @@ def main(args):
     # Replace "None" values with our NoData value from stack:
     zonalStatsDf = zonalStatsDf.fillna(stack.noDataValue)
 
-    # 7. Now write the stack csv, and add stats from the df to stack shp     
+    # 8. Now write the stack csv, and add stats from the df to stack shp     
     zonalStatsDf.to_csv(stackCsv, sep=',', index=False, header=True)#), na_rep="NoData")
 
-    # Finish the output stack-specific shp by adding new stats columns to fc:
-    # But first, add stackName column
+    # 9. Finish the output stack-specific shp by adding new stats columns to fc:
+    #    But first, add stackName column
     zonalStatsDf['stackName'] = [stackName for i in range(len(zonalStatsDf))]
     stackShp = addStatsToShp(zonalStatsDf, stackShp)
        
-    # Update the big csv and big output gdb by appending to them:
+    # 10. Update the big csv and big output gdb by appending to them:
     updateOutputCsv(outCsv, zonalStatsDf)
     updateOutputGdb(outGdb, stackShp)
 
