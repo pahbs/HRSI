@@ -92,7 +92,7 @@ def unpackValidateArgs(args):
     return stackType, zonalType, stackRange
 
 def main(args):
-
+    import pdb; pdb.set_trace()
     # Unpack and validate arguments
     stackType, zonalType, stackRange = unpackValidateArgs(args)
     
@@ -130,11 +130,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("stackType", type=str, 
                                 help="Stack type (SGM, LVIS, or GLiHT)")
-    parser.add_argument("zoneType", type=str,
+    parser.add_argument("zonalType", type=str,
                                 help="Zonal type (ATL08 or GLAS)")
     parser.add_argument("-r", "--range", type=str,
                                 help="Range for stack iteration (i.e. 1-20)")
-    import pdb; pdb.set_trace()
+
     args = vars(parser.parse_args())
 
     main(args)
