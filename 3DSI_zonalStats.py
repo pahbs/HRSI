@@ -327,7 +327,7 @@ def main(args):
         logOutput(logFile)
     
     # print some info
-    print "BEGIN: {}\n".format(time.strftime("%b-%d-%y %h:%M:%S"))
+    print "BEGIN: {}\n".format(time.strftime("%m-%d-%y %I:%M:%S"))
     print "Input raster stack: {}".format(inRaster)
     print " n layers = {}".format(stack.nLayers)
     print "Input zonal feature class: {}".format(inZonalFc)
