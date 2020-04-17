@@ -59,7 +59,7 @@ def addStatsToShp(df, shp):
     for feature in layer:
             
         if str(feature.GetField('lat')) != str(df['lat'][i]):
-            import pdb; pdb.set_trace()
+            import pdb; pdb.set_trace() # We have a problem that needs checking
             
         for col in addCols: 
 
@@ -185,6 +185,9 @@ def callZonalStats(raster, vector, layerDict, addPathRows = False):
         for col in statsList:
             
             outCol = '{}_{}'.format(layerN, col)
+            
+            # Shorten "majority" in case it's in in column name
+            outCol.replace('majority', 'mjrty')
             
             zonalStatsDf[outCol] = [zonalStatsDict[i]['properties'][col] \
                                         for i in range(0, len(zonalStatsDict))]
@@ -400,7 +403,7 @@ def main(args):
     updateOutputGdb(outGdb, stackShp)
 
     elapsedTime = round((time.time()-start)/60, 4)
-    print "\nEND: {}\n".format(time.strftime("%b-%d-%y %h:%M:%S"))
+    print "\nEND: {}\n".format(time.strftime("%m-%d-%y %I:%M:%S"))
     print " Completed in {} minutes".format(elapsedTime)
 
     # Lastly, record some info to a batch-level csv:
