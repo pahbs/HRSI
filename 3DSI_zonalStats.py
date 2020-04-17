@@ -137,7 +137,7 @@ def buildLayerDict(stackObject):
 
     #return layerDict
     # subset for testing
-    return {key: layerDict[key] for key in range(10,11)}
+    return {key: layerDict[key] for key in range(9,11)}
 
 def callZonalStats(raster, vector, layerDict, addPathRows = False):
 
