@@ -135,7 +135,7 @@ def buildLayerDict(stackObject):
             
         layerDict[layerN] = [layerName, zonalStats]
 
-    return layerDict
+    #return layerDict
     # subset for testing
     return {key: layerDict[key] for key in range(10,11)}
 
