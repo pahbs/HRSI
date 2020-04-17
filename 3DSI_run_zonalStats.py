@@ -46,7 +46,7 @@ def getVarsDict(stackType, zonalType):
     elif zonalType == 'GLAS':
         inputZonal = '' # ?????        
         
-    outCsv = os.path.join(mainDir, '_zonalGdb',
+    outCsv = os.path.join(mainDir, '_zonalStatsGdb',
                          '{}__{}__ZonalStats.csv'.format(zonalType, stackType))
     
     varsDict = {'inList': inputList, 'inZonal': inputZonal, 'outCsv': outCsv}

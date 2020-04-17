@@ -4,6 +4,7 @@ import numpy as np
 import argparse
 import pandas as pd
 import time
+import platform
 
 from osgeo import ogr#gdal, osr#, ogr
 #from osgeo.osr import SpatialReference
@@ -136,7 +137,7 @@ def buildLayerDict(stackObject):
 
     return layerDict
     # subset for testing
-    #return {key: layerDict[key] for key in range(5,8)}
+    return {key: layerDict[key] for key in range(10,11)}
 
 def callZonalStats(raster, vector, layerDict, addPathRows = False):
 
@@ -288,7 +289,7 @@ def getPathRows(lat, lon):
 
 def main(args):
 
-    # Start clock:
+    # Start clock
     start = time.time()
     
     # Unpack arguments   
@@ -374,7 +375,7 @@ def main(args):
     
     # 5. Get stack key dictionary    
     layerDict = buildLayerDict(stack) # {layerNumber: [layerName, [statistics]]}
-
+    import pdb; pdb.set_trace()
     # 6. Call zonal stats and return a pandas dataframe    
     zonalStatsDf = callZonalStats(stack.filePath, zones.filePath, layerDict)
     
@@ -401,6 +402,15 @@ def main(args):
     elapsedTime = round((time.time()-start)/60, 4)
     print "\nEND: {}\n".format(time.strftime("%b-%d-%y %h:%M:%S"))
     print " Completed in {} minutes".format(elapsedTime)
+
+    # Lastly, record some info to a batch-level csv:
+    batchCsv = os.path.join(baseDir, '_timing', 
+                        '{}_{}__timing.csv'.format(zonalType, stack.stackType))
+    if not os.path.isfile(batchCsv):
+        with open(batchCsv, 'w') as bc:
+            bc.write('stackName,n layers,n zonal features,node,minutes\n')
+    with open(batchCsv, 'a') as bc:
+        bc.write('{},{},{},{},{}\n'.format(stackName, stack.nLayers, zones.nFeatures, platform.node(), elapsedTime))
 
     return None
 
