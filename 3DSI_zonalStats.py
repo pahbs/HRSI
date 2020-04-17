@@ -187,7 +187,7 @@ def callZonalStats(raster, vector, layerDict, addPathRows = False):
             outCol = '{}_{}'.format(layerN, col)
             
             # Shorten "majority" in case it's in in column name
-            outCol.replace('majority', 'mjrty')
+            outCol = outCol.replace('majority', 'mjrty')
             
             zonalStatsDf[outCol] = [zonalStatsDict[i]['properties'][col] \
                                         for i in range(0, len(zonalStatsDict))]
@@ -378,7 +378,7 @@ def main(args):
     
     # 5. Get stack key dictionary    
     layerDict = buildLayerDict(stack) # {layerNumber: [layerName, [statistics]]}
-    import pdb; pdb.set_trace()
+
     # 6. Call zonal stats and return a pandas dataframe    
     zonalStatsDf = callZonalStats(stack.filePath, zones.filePath, layerDict)
     
@@ -392,7 +392,7 @@ def main(args):
 
     # 8. Now write the stack csv, and add stats from the df to stack shp     
     zonalStatsDf.to_csv(stackCsv, sep=',', index=False, header=True)#), na_rep="NoData")
-
+    import pdb; pdb.set_trace()
     # 9. Finish the output stack-specific shp by adding new stats columns to fc:
     #    But first, add stackName column
     zonalStatsDf['stackName'] = [stackName for i in range(len(zonalStatsDf))]
@@ -408,7 +408,7 @@ def main(args):
 
     # Lastly, record some info to a batch-level csv:
     batchCsv = os.path.join(baseDir, '_timing', 
-                        '{}_{}__timing.csv'.format(zonalType, stack.stackType))
+                        '{}_{}__timing.csv'.format(zonalType, stack.stackType())))
     if not os.path.isfile(batchCsv):
         with open(batchCsv, 'w') as bc:
             bc.write('stackName,n layers,n zonal features,node,minutes\n')
