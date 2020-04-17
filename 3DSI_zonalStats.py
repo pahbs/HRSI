@@ -135,9 +135,9 @@ def buildLayerDict(stackObject):
             
         layerDict[layerN] = [layerName, zonalStats]
 
-    #return layerDict
+    return layerDict
     # subset for testing
-    return {key: layerDict[key] for key in range(9,11)}
+    #return {key: layerDict[key] for key in range(9,11)}
 
 def callZonalStats(raster, vector, layerDict, addPathRows = False):
 
@@ -392,7 +392,7 @@ def main(args):
 
     # 8. Now write the stack csv, and add stats from the df to stack shp     
     zonalStatsDf.to_csv(stackCsv, sep=',', index=False, header=True)#), na_rep="NoData")
-    import pdb; pdb.set_trace()
+
     # 9. Finish the output stack-specific shp by adding new stats columns to fc:
     #    But first, add stackName column
     zonalStatsDf['stackName'] = [stackName for i in range(len(zonalStatsDf))]
