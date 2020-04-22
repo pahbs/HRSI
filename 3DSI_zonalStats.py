@@ -199,7 +199,7 @@ def checkZfcResults(zfc, activity):
     print "\nZonal feature class after {}: {}".format(activity, zfc.filePath)
 
     if zfc.nFeatures == 0:
-        print " There were 0 features after ".format(activity)
+        print "There were 0 features after {}. Exiting".format(activity)
         return None
 
     print " n features now = {}".format(zfc.nFeatures)
