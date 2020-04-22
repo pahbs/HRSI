@@ -340,10 +340,7 @@ def main(args):
     clipZonal = os.path.join(outDir, '{}__{}.shp'.format(zonalType, stackName))
     if not os.path.isfile(clipZonal):
         print "\nClipping input feature class to extent..."
-        inZones.clipToExtent(stackExtent, stackEpsg, stackEpsg, clipZonal) 
-    
-    if not os.path.isfile(clipZonal):
-        raise RuntimeError('Could not perform clip of input zonal feature class')
+        inZones.clipToExtent(stackExtent, stackEpsg, stackEpsg, clipZonal)
     
     # now zones is the clipped input ZFC object:
     zones = ZonalFeatureClass(clipZonal)
@@ -354,12 +351,24 @@ def main(args):
     print " n features after clip = {}".format(zones.nFeatures) 
     
     # 3. Filter footprints based on attributes
-    #* if i have to iterate through points to filter below, then combine with applyNoDataMask:
-    #* in ZFC: def filterData(self, noData, filterAttributesKey/Dict or hardcoded in ZFC)
+    if zonalType == 'ATL08':
+        filterStr = "can_open != {}".format(float(340282346638999984013312))       
+    elif zonalType == 'GLAS':
+        filterStr = '' # ??????        
+    else:
+        print "zonal type {} not recognized".format(zonalType)
+        return None
+
+    print '\nFiltering on attributes using statement = "{}"'.format(filterStr)    
+    filterShp = zones.filterAttributes(filterStr)
+
+    zones = ZonalFeatureClass(filterShp) # Now zones is the filtered fc obj, will eventually have the stats added as attributes
+    print "\nZonal feature class after filtering on attributes: {}".format(filterShp)
+    if zones.nFeatures == 0:
+        print " There were 0 features after filtering on attributes"
+        return None
+    print " n features after filtering = {}".format(zones.nFeatures)
     
-    # filterData(shp, zonalName) # filter dataframe based on GLAS or ATL08 using OGR - faster?
-        # and return filtered shp OR (later...)
-     
     # 4. Remove footprints under noData mask 
     noDataMask = stack.noDataLayer()
     rasterMask = RasterStack(noDataMask)
