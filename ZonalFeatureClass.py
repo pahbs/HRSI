@@ -111,3 +111,34 @@ class ZonalFeatureClass(FeatureClass):
         ds = layer = dsOut = layerOut = feature = None
         
         return outShp
+
+    #--------------------------------------------------------------------------
+    # filterAttributes()
+    #--------------------------------------------------------------------------    
+    def filterAttributes(self, filterStr, outShp = None):
+        
+        # Get name output shp: 
+        if not outShp:
+            outShp = self.filePath.replace(self.extension, '__filtered.shp')        
+        
+        # Filter attributes using filterStr
+        # can_open != 340282346638999984013312
+        
+        import pdb; pdb.set_trace()
+        # Get layer and filter the attributes
+        layer = self.layer
+        layer.SetAttributeFilter(filterStr) 
+        
+        # Copy filtered layer to output and save
+        drv = ogr.GetDriverByName("ESRI Shapefile")        
+        dsOut = drv.CreateDataSource(outShp)
+        layerOutName = os.path.basename(outShp).replace('.shp', '')
+        layerOut = dsOut.CopyLayer(layer, layerOutName)
+
+        if not layerOut: # If CopyLayer failed for whatever reason
+            print "Could not filter based on string {}".format(filterStr)
+            return self.filePath
+        
+        return outShp
+        
+        
