@@ -141,7 +141,6 @@ def buildLayerDict(stackObject):
 
 def callZonalStats(raster, vector, layerDict, addPathRows = False):
 
-    print "\nRunning zonal stats for {} layers".format(len(layerDict))
     print " Input Raster: {}".format(raster)
     print " Input Vector: {}".format(vector)
     
@@ -304,7 +303,7 @@ def getPathRows(lat, lon):
 def main(args):
     
     ogr.UseExceptions() # Unsure about this, but pretty sure we want errors to cause exceptions
-    #os.system('export CPL_LOG=/dev/null') # Also unsure, but stop warnings from being printed to log
+    # "export CPL_LOG=/dev/null" -- to hide warnings, must be set from shell or in bashrc
 
     # Start clock
     start = time.time()
@@ -339,11 +338,10 @@ def main(args):
     """
     outGdb = outCsv.replace('.csv', '-{}.gdb'.format(platform.node()))
     
-    # 1. Start stack-specific log if doing so
+    # Start stack-specific log if doing so
     if logOut: 
         logFile = stackCsv.replace('.csv', '__Log.txt')
         logOutput(logFile)
-    os.system('export CPL_LOG=/dev/null') # Unsure, but stop warnings from being printed to log
    
     # print some info
     print "BEGIN: {}\n".format(time.strftime("%m-%d-%y %I:%M:%S"))
@@ -351,11 +349,12 @@ def main(args):
     print " n layers = {}".format(stack.nLayers)
     print "Input zonal feature class: {}".format(inZonalFc)
                
-    # 2. Clip input zonal shp to raster extent. Output proj = that of stack  
+    # 1. Clip input zonal shp to raster extent. Output proj = that of stack  
     clipZonal = os.path.join(outDir, '{}__{}.shp'.format(zonalType, stackName))
     if not os.path.isfile(clipZonal):
-        print "\nClipping input feature class to extent..."
+        print "\n1. Clipping input feature class to extent..."
         inZones.clipToExtent(stackExtent, stackEpsg, stackEpsg, clipZonal)
+    else: print "\n1. Clipped feature class {} already exists...".format(clipZonal)
     
     # now zones is the clipped input ZFC object:
     zones = ZonalFeatureClass(clipZonal)
@@ -364,7 +363,7 @@ def main(args):
     if not checkZfcResults(zones, "clipping to stack extent"): 
         return None
 
-    # 3. Filter footprints based on attributes
+    # 2. Filter footprints based on attributes - maybe make filterDict for this
     if zonalType == 'ATL08':
         filterStr = "can_open != {}".format(float(340282346638999984013312))       
     elif zonalType == 'GLAS':
@@ -373,14 +372,15 @@ def main(args):
         print "zonal type {} not recognized".format(zonalType)
         return None
 
-    print '\nFiltering on attributes using statement = "{}"\n'.format(filterStr)    
+    print '\n2. Filtering on attributes using statement = "{}"...'.format(filterStr)
+    
     filterShp = zones.filterAttributes(filterStr)
 
     zones = ZonalFeatureClass(filterShp)
     if not checkZfcResults(zones, "filtering on attributes"): 
         return None
     
-    # 4. Remove footprints under noData mask 
+    # 3. Remove footprints under noData mask 
     noDataMask = stack.noDataLayer()
     rasterMask = RasterStack(noDataMask)
 
@@ -389,7 +389,7 @@ def main(args):
     if int(rasterMask.epsg()) != int(zones.epsg()):
         transEpsg = rasterMask.epsg() # Need to transform coords to that of mask
 
-    print "\nMasking out NoData values using {}".format(noDataMask)        
+    print "\n3. Masking out NoData values using {}...".format(noDataMask)        
     stackShp = zones.applyNoDataMask(noDataMask, transEpsg = transEpsg,
                                                              outShp = stackShp)
                
@@ -397,13 +397,14 @@ def main(args):
     if not checkZfcResults(zones, "masking ND values"): 
         return None
     
-    # 5. Get stack key dictionary    
+    # Get stack key dictionary    
     layerDict = buildLayerDict(stack) # {layerNumber: [layerName, [statistics]]}
 
-    # 6. Call zonal stats and return a pandas dataframe    
+    # 4. Call zonal stats and return a pandas dataframe    
+    print "\n4. Running zonal stats for {} layers".format(len(layerDict))
     zonalStatsDf = callZonalStats(stack.filePath, zones.filePath, layerDict)
     
-    # 7. If there is an xml layer for stack, get sun angle and add as column to df
+    # If there is an xml layer for stack, get sun angle and add as column to df
     stackXml = stack.xmlLayer()
     if stackXml:
         zonalStatsDf = addSunAngleColumn(zonalStatsDf, stackXml)
@@ -411,15 +412,15 @@ def main(args):
     # Replace "None" values with our NoData value from stack:
     zonalStatsDf = zonalStatsDf.fillna(stack.noDataValue)
 
-    # 8. Now write the stack csv, and add stats from the df to stack shp     
+    # 5. Now write the stack csv, and add stats from the df to stack shp     
     zonalStatsDf.to_csv(stackCsv, sep=',', index=False, header=True)#), na_rep="NoData")
 
-    # 9. Finish the output stack-specific shp by adding new stats columns to fc:
-    #    But first, add stackName column
+    # 6. Finish the output stack-specific shp by adding new stats columns to fc:
+    #    First, add stackName column
     zonalStatsDf['stackName'] = [stackName for i in range(len(zonalStatsDf))]
     stackShp = addStatsToShp(zonalStatsDf, stackShp)
        
-    # 10. Update the big csv and big output gdb by appending to them:
+    # 7. Update the big csv and big output gdb by appending to them:
     updateOutputCsv(outCsv, zonalStatsDf)
     updateOutputGdb(outGdb, stackShp)
 
@@ -427,7 +428,7 @@ def main(args):
     print "\nEND: {}\n".format(time.strftime("%m-%d-%y %I:%M:%S"))
     print " Completed in {} minutes".format(elapsedTime)
 
-    # Lastly, record some info to a batch-level csv:
+    # 8. Lastly, record some info to a batch-level csv:
     batchCsv = os.path.join(baseDir, '_timing', 
                     '{}_{}__timing.csv'.format(zonalType, stack.stackType()))
     if not os.path.isfile(batchCsv):
