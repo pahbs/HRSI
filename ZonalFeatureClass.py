@@ -126,8 +126,10 @@ class ZonalFeatureClass(FeatureClass):
         
         import pdb; pdb.set_trace()
         # Get layer and filter the attributes
-        layer = self.layer
-        layer.SetAttributeFilter(filterStr) 
+        drv = ogr.GetDriverByName("ESRI Shapefile")
+        ds = drv.Open(self.filePath)
+        layer = ds.GetLayer()
+        layer.SetAttributeFilter(filterStr)
         
         # Copy filtered layer to output and save
         drv = ogr.GetDriverByName("ESRI Shapefile")        
