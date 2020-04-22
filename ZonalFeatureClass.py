@@ -117,6 +117,8 @@ class ZonalFeatureClass(FeatureClass):
     #--------------------------------------------------------------------------    
     def filterAttributes(self, filterStr, outShp = None):
         
+        ogr.UseExceptions() # To catch possible error with filtering
+        
         # Get name output shp: 
         if not outShp:
             outShp = self.filePath.replace(self.extension, '__filtered.shp')        
@@ -124,12 +126,15 @@ class ZonalFeatureClass(FeatureClass):
         # Filter attributes using filterStr
         # can_open != 340282346638999984013312
         
-        import pdb; pdb.set_trace()
         # Get layer and filter the attributes
         drv = ogr.GetDriverByName("ESRI Shapefile")
         ds = drv.Open(self.filePath)
         layer = ds.GetLayer()
-        layer.SetAttributeFilter(filterStr)
+        
+        try:
+            layer.SetAttributeFilter(filterStr)
+        except RuntimeError as e:
+            print "Could not filter based on string {}: {}".format(filterStr, e)
         
         # Copy filtered layer to output and save
         drv = ogr.GetDriverByName("ESRI Shapefile")        
