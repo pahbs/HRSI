@@ -319,7 +319,11 @@ def main(args):
     stackShp = stackCsv.replace('.csv', '.shp')
     
     # "Big" outputs (unique for zonal/stack type combos)
-    outGdb = outCsv.replace('.csv', '.gdb')
+    """ Need to come up with better/automated solution for locking issue when
+        writing to the output gdb. For now, just write to a node-specific 
+        output and merge by hand when all are done
+    """
+    outGdb = outCsv.replace('.csv', '-{}.gdb'.format(platform.node()))
     
     # 1. Start stack-specific log if doing so
     if logOut: 
