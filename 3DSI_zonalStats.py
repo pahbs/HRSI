@@ -199,7 +199,7 @@ def checkZfcResults(zfc, activity):
     print "\nZonal feature class after {}: {}".format(activity, zfc.filePath)
 
     if zfc.nFeatures == 0:
-        print "\nThere were 0 features after {}. Exiting".format(activity)
+        print "\nThere were 0 features after {}. Exiting ({})".format(activity, time.strftime("%m-%d-%y %I:%M:%S"))
         return None
 
     print " n features now = {}".format(zfc.nFeatures)
@@ -304,7 +304,7 @@ def getPathRows(lat, lon):
 def main(args):
     
     ogr.UseExceptions() # Unsure about this, but pretty sure we want errors to cause exceptions
-    os.system('export CPL_LOG=/dev/null') # Also unsure, but stop warnings from being printed to log
+    #os.system('export CPL_LOG=/dev/null') # Also unsure, but stop warnings from being printed to log
 
     # Start clock
     start = time.time()
@@ -343,7 +343,8 @@ def main(args):
     if logOut: 
         logFile = stackCsv.replace('.csv', '__Log.txt')
         logOutput(logFile)
-    
+    os.system('export CPL_LOG=/dev/null') # Unsure, but stop warnings from being printed to log
+   
     # print some info
     print "BEGIN: {}\n".format(time.strftime("%m-%d-%y %I:%M:%S"))
     print "Input raster stack: {}".format(inRaster)
@@ -358,13 +359,6 @@ def main(args):
     
     # now zones is the clipped input ZFC object:
     zones = ZonalFeatureClass(clipZonal)
-    """ TEST
-    if zones.nFeatures == 0:
-        print " There were 0 features after clipping to stack extent"
-        return None
-    print "\nZonal feature class after clip: {}".format(clipZonal)
-    print " n features after clip = {}".format(zones.nFeatures) 
-    """
     
     # if checkResults == None, there are no features to work with
     if not checkZfcResults(zones, "clipping to stack extent"): 
@@ -383,14 +377,6 @@ def main(args):
     filterShp = zones.filterAttributes(filterStr)
 
     zones = ZonalFeatureClass(filterShp)
-
-    """ TEST
-    print "\nZonal feature class after filtering on attributes: {}".format(filterShp)
-    if zones.nFeatures == 0:
-        print " There were 0 features after filtering on attributes"
-        return None
-    print " n features after filtering = {}".format(zones.nFeatures)
-    """
     if not checkZfcResults(zones, "filtering on attributes"): 
         return None
     
@@ -408,13 +394,6 @@ def main(args):
                                                              outShp = stackShp)
                
     zones = ZonalFeatureClass(stackShp) # Now zones is the filtered fc obj, will eventually have the stats added as attributes
-    """
-    print "\nZonal feature class after masking ND values: {}".format(stackShp)
-    if zones.nFeatures == 0:
-        print " There were 0 features after masking ND values"
-        return None
-    print " n features after masking = {}".format(zones.nFeatures)
-    """
     if not checkZfcResults(zones, "masking ND values"): 
         return None
     
@@ -450,7 +429,7 @@ def main(args):
 
     # Lastly, record some info to a batch-level csv:
     batchCsv = os.path.join(baseDir, '_timing', 
-                        '{}_{}__timing.csv'.format(zonalType, stack.stackType()))
+                    '{}_{}__timing.csv'.format(zonalType, stack.stackType()))
     if not os.path.isfile(batchCsv):
         with open(batchCsv, 'w') as bc:
             bc.write('stackName,n layers,n zonal features,node,minutes\n')
