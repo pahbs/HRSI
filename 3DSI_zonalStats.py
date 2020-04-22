@@ -302,6 +302,9 @@ def getPathRows(lat, lon):
 """
 
 def main(args):
+    
+    ogr.UseExceptions() # Unsure about this, but pretty sure we want errors to cause exceptions
+    os.system('export CPL_LOG=/dev/null') # Also unsure, but stop warnings from being printed to log
 
     # Start clock
     start = time.time()
