@@ -194,6 +194,17 @@ def callZonalStats(raster, vector, layerDict, addPathRows = False):
     
     return zonalStatsDf
 
+def checkZfcResults(zfc, activity):
+
+    print "\nZonal feature class after {}: {}".format(activity, zfc.filePath)
+
+    if zfc.nFeatures == 0:
+        print " There were 0 features after ".format(activity)
+        return None
+
+    print " n features now = {}".format(zfc.nFeatures)
+    return 'continue'
+
 """
 def dfToCsv(df, outShp, sEpsg, tEpsg):
     
@@ -344,12 +355,18 @@ def main(args):
     
     # now zones is the clipped input ZFC object:
     zones = ZonalFeatureClass(clipZonal)
+    """ TEST
     if zones.nFeatures == 0:
         print " There were 0 features after clipping to stack extent"
         return None
     print "\nZonal feature class after clip: {}".format(clipZonal)
     print " n features after clip = {}".format(zones.nFeatures) 
+    """
     
+    # if checkResults == None, there are no features to work with
+    if not checkZfcResults(zones, "clipping to stack extent"): 
+        return None
+
     # 3. Filter footprints based on attributes
     if zonalType == 'ATL08':
         filterStr = "can_open != {}".format(float(340282346638999984013312))       
@@ -359,15 +376,20 @@ def main(args):
         print "zonal type {} not recognized".format(zonalType)
         return None
 
-    print '\nFiltering on attributes using statement = "{}"'.format(filterStr)    
+    print '\nFiltering on attributes using statement = "{}"\n'.format(filterStr)    
     filterShp = zones.filterAttributes(filterStr)
 
-    zones = ZonalFeatureClass(filterShp) # Now zones is the filtered fc obj, will eventually have the stats added as attributes
+    zones = ZonalFeatureClass(filterShp)
+
+    """ TEST
     print "\nZonal feature class after filtering on attributes: {}".format(filterShp)
     if zones.nFeatures == 0:
         print " There were 0 features after filtering on attributes"
         return None
     print " n features after filtering = {}".format(zones.nFeatures)
+    """
+    if not checkZfcResults(zones, "filtering on attributes"): 
+        return None
     
     # 4. Remove footprints under noData mask 
     noDataMask = stack.noDataLayer()
@@ -383,11 +405,15 @@ def main(args):
                                                              outShp = stackShp)
                
     zones = ZonalFeatureClass(stackShp) # Now zones is the filtered fc obj, will eventually have the stats added as attributes
+    """
     print "\nZonal feature class after masking ND values: {}".format(stackShp)
     if zones.nFeatures == 0:
         print " There were 0 features after masking ND values"
         return None
     print " n features after masking = {}".format(zones.nFeatures)
+    """
+    if not checkZfcResults(zones, "masking ND values"): 
+        return None
     
     # 5. Get stack key dictionary    
     layerDict = buildLayerDict(stack) # {layerNumber: [layerName, [statistics]]}
