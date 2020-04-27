@@ -183,7 +183,7 @@ def callZonalStats(raster, vector, layerDict, addPathRows = False):
         # Now for every layer, add the statistic outputs to df:
         for col in statsList:
             
-            outCol = '{}_{}'.format(layerN, col)
+            outCol = 'L{}_{}'.format(layerN, col) #gdb's don't like columns to start with numbers
             
             # Shorten "majority" in case it's in in column name
             outCol = outCol.replace('majority', 'mjrty')
@@ -273,13 +273,17 @@ def updateOutputGdb(outGdb, inShp, outEPSG = 4326):
     print "\nUpdating the big output GDB {}".format(outGdb)
     
     layerName = os.path.basename(outGdb).replace('.gdb', '')
+    # CHECK - this part stays same
     cmd = 'ogr2ogr -nln {} -a_srs EPSG:4326 -t_srs EPSG:4326'.format(layerName)
     
     if os.path.exists(outGdb):
         cmd += ' -update -append'
         
-    cmd += ' -f "FileGDB" {} {}'.format(outGdb, inShp)
-
+    # CHECK - original command
+    #cmd += ' -f "FileGDB" {} {}'.format(outGdb, inShp)
+    # new possible command (no gdb extension for output, new -f) 
+    cmd += ' -f "GPKG" {} {}'.format(outGdb.replace('.gdb', ''), inShp)    
+    
     print '', cmd
     os.system(cmd)
 
@@ -336,7 +340,10 @@ def main(args):
         writing to the output gdb. For now, just write to a node-specific 
         output and merge by hand when all are done
     """
-    outGdb = outCsv.replace('.csv', '-{}.gdb'.format(platform.node()))
+    # CHECK - old output with .gdb extension and node in name
+    #outGdb = outCsv.replace('.csv', '-{}.gdb'.format(platform.node()))
+    # CHECK - try without node in name - Simply strip off extension
+    outGdb = outCsv.replace('.csv', '')
     
     # Start stack-specific log if doing so
     if logOut: 
@@ -345,9 +352,10 @@ def main(args):
    
     # print some info
     print "BEGIN: {}\n".format(time.strftime("%m-%d-%y %I:%M:%S"))
+    print "Input zonal feature class: {}".format(inZonalFc)
     print "Input raster stack: {}".format(inRaster)
     print " n layers = {}".format(stack.nLayers)
-    print "Input zonal feature class: {}".format(inZonalFc)
+
                
     # 1. Clip input zonal shp to raster extent. Output proj = that of stack  
     clipZonal = os.path.join(outDir, '{}__{}.shp'.format(zonalType, stackName))
