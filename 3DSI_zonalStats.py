@@ -272,7 +272,10 @@ def updateOutputGdb(outGdb, inShp, outEPSG = 4326):
 
     print "\nUpdating the big output GDB {}".format(outGdb)
     
-    layerName = os.path.basename(outGdb).replace('.gdb', '')
+    #layerName = os.path.basename(outGdb).replace('.gdb', '')
+    # CHECK - new layerName:
+    layerName = os.path.basename(outGdb).replace('.gpkg', '')
+    
     # CHECK - this part stays same
     cmd = 'ogr2ogr -nln {} -a_srs EPSG:4326 -t_srs EPSG:4326'.format(layerName)
     
