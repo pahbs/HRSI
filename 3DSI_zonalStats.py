@@ -281,8 +281,10 @@ def updateOutputGdb(outGdb, inShp, outEPSG = 4326):
         
     # CHECK - original command
     #cmd += ' -f "FileGDB" {} {}'.format(outGdb, inShp)
-    # new possible command (no gdb extension for output, new -f) 
-    cmd += ' -f "GPKG" {} {}'.format(outGdb.replace('.gdb', ''), inShp)    
+    # new possible command (no gdb extension for output, new -f)
+    #cmd += ' -f "GPKG" {} {}'.format(outGdb.replace('.gdb', ''), inShp)  
+    # try without stripping gdb (unnecessary as sent as gpkg)
+    cmd += ' -f "GPKG" {} {}'.format(outGdb, inShp) 
     
     print '', cmd
     os.system(cmd)
@@ -343,7 +345,9 @@ def main(args):
     # CHECK - old output with .gdb extension and node in name
     #outGdb = outCsv.replace('.csv', '-{}.gdb'.format(platform.node()))
     # CHECK - try without node in name - Simply strip off extension
-    outGdb = outCsv.replace('.csv', '')
+    #outGdb = outCsv.replace('.csv', '')
+    # CHECK - try writing to node-specific gpkg
+    outGdb = outCsv.replace('.csv', '-{}.gpkg'.format(platform.node()))
     
     # Start stack-specific log if doing so
     if logOut: 
@@ -400,10 +404,13 @@ def main(args):
     print "\n3. Masking out NoData values using {}...".format(noDataMask)        
     stackShp = zones.applyNoDataMask(noDataMask, transEpsg = transEpsg,
                                                              outShp = stackShp)
-               
-    zones = ZonalFeatureClass(stackShp) # Now zones is the filtered fc obj, will eventually have the stats added as attributes
-    if not checkZfcResults(zones, "masking ND values"): 
+
+    if not stackShp: # Method returns None if no points remain
+        print "\nThere were 0 features after masking ND vals. Exiting ({})".format(time.strftime("%m-%d-%y %I:%M:%S"))
         return None
+              
+    zones = ZonalFeatureClass(stackShp) 
+    # Now zones is the filtered fc obj, will eventually have the stats added as attributes
     
     # Get stack key dictionary    
     layerDict = buildLayerDict(stack) # {layerNumber: [layerName, [statistics]]}

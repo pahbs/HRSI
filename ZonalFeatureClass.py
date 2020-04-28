@@ -65,15 +65,12 @@ class ZonalFeatureClass(FeatureClass):
         ds = drv.Open(self.filePath)
         layer = ds.GetLayer()
      
-        # OPTION A
         # This will work even if not needed. If needed and not supplied, could fail
         outSrs = osr.SpatialReference()
         if transEpsg:
             outSrs.ImportFromEPSG(int(transEpsg))
         else:
             outSrs.ImportFromEPSG(int(self.epsg())) # If transformation EPSG not supplied, keep coords as is
-            
-        # OPTION B: Assume projection of mask and shp are the same 
         
         # Collect list of FIDs to keep
         keepFIDs = []
@@ -96,6 +93,9 @@ class ZonalFeatureClass(FeatureClass):
             # Else, add FID to list to keep
             keepFIDs.append(feature.GetFID())
 
+        if len(keepFIDs) == 0: # If there are no points remaining, return None
+            return None
+        
         # Filter and write the features we want to keep to new output DS:
         ## Pass ID's to a SQL query as a tuple, i.e. "(1, 2, 3, ...)"
         layer.SetAttributeFilter("FID IN {}".format(tuple(keepFIDs)))
