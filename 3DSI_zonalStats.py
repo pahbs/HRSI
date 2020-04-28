@@ -108,7 +108,7 @@ def buildLayerDict(stackObject):
     # If there is no Log, build layerDict like --> {0: ['0', [defaultStats]]}
     if not stackKey:
         
-        nLayers = stackObject.nLayers()
+        nLayers = stackObject.nLayers
         
         for i in range(nLayers):
             layerDict[int(i+1)] = [str(i+1), defaultZonalStats]
@@ -267,7 +267,7 @@ def updateOutputCsv(outCsv, df):
     
     return None
     
-def updateOutputGdb(outGdb, inShp, outEPSG = 4326):
+def updateOutputGdb(outGdb, inShp, outDrv = "GPKG", outEPSG = 4326):
     # Append a shp to output GDB - assumes fields are the same
 
     print "\nUpdating the big output GDB {}".format(outGdb)
@@ -287,7 +287,8 @@ def updateOutputGdb(outGdb, inShp, outEPSG = 4326):
     # new possible command (no gdb extension for output, new -f)
     #cmd += ' -f "GPKG" {} {}'.format(outGdb.replace('.gdb', ''), inShp)  
     # try without stripping gdb (unnecessary as sent as gpkg)
-    cmd += ' -f "GPKG" {} {}'.format(outGdb, inShp) 
+    # NOW added output driver as option. defaults to GPKG but 
+    cmd += ' -f "{}" {} {}'.format(outDrv, outGdb, inShp) 
     
     print '', cmd
     os.system(cmd)
