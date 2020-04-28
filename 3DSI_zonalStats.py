@@ -411,8 +411,9 @@ def main(args):
     if not stackShp: # Method returns None if no points remain
         print "\nThere were 0 features after masking ND vals. Exiting ({})".format(time.strftime("%m-%d-%y %I:%M:%S"))
         return None
-              
-    zones = ZonalFeatureClass(stackShp) 
+             
+    zones = ZonalFeatureClass(stackShp)
+    checkZfcResults(zones, "masking out NoData values") 
     # Now zones is the filtered fc obj, will eventually have the stats added as attributes
     
     # Get stack key dictionary    
