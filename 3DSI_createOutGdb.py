@@ -45,10 +45,11 @@ def main(args):
 if __name__ == "__main__":
     
     parser = argparse.ArgumentParser()
+    parser.add_argument("zonalType", type=str,
+                                help="Zonal type (ATL08 or GLAS)")    
     parser.add_argument("stackType", type=str, 
                                 help="Stack type (SGM, LVIS, or GLiHT)")
-    parser.add_argument("zonalType", type=str,
-                                help="Zonal type (ATL08 or GLAS)")
+
 
     args = vars(parser.parse_args())
 
