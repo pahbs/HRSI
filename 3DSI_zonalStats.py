@@ -267,19 +267,29 @@ def updateOutputCsv(outCsv, df):
     
     return None
     
-def updateOutputGdb(outGdb, inShp, outDrv = "GPKG", outEPSG = 4326):
-    # Append a shp to output GDB - assumes fields are the same
+def updateOutputGdb(output, inFile, outDrv = "GPKG", outEPSG = 4326):
+    # Append a shp to output GDB/GPKG - assumes fields are the same
 
-    print "\nUpdating the big output GDB {}".format(outGdb)
+    ext = os.path.splitext(output)[1]
+    if outDrv == 'GPKG':
+        output = output.replace(ext, '.gpkg')
+    elif outDrv == 'FileGDB':
+        output = output.replace(ext, '.gdb')
+    else:
+        print "\nUnrecognized output driver '{}'".format(outDrv)
+        return None
+    ext = os.path.splitext(output)[1]
+    
+    print "\nUpdating the big output {}".format(output)
     
     #layerName = os.path.basename(outGdb).replace('.gdb', '')
     # CHECK - new layerName:
-    layerName = os.path.basename(outGdb).replace('.gpkg', '')
+    layerName = os.path.basename(output).replace(ext, '')
     
     # CHECK - this part stays same
     cmd = 'ogr2ogr -nln {} -a_srs EPSG:4326 -t_srs EPSG:4326'.format(layerName)
     
-    if os.path.exists(outGdb):
+    if os.path.exists(output):
         cmd += ' -update -append'
         
     # CHECK - original command
@@ -288,7 +298,7 @@ def updateOutputGdb(outGdb, inShp, outDrv = "GPKG", outEPSG = 4326):
     #cmd += ' -f "GPKG" {} {}'.format(outGdb.replace('.gdb', ''), inShp)  
     # try without stripping gdb (unnecessary as sent as gpkg)
     # NOW added output driver as option. defaults to GPKG but 
-    cmd += ' -f "{}" {} {}'.format(outDrv, outGdb, inShp) 
+    cmd += ' -f "{}" {} {}'.format(outDrv, output, inFile) 
     
     print '', cmd
     os.system(cmd)

@@ -131,6 +131,10 @@ def main(args):
         print cmd
         os.system(cmd) 
         
+    # COULD PUT CALL TO UPDATE THE FINAL OUTPUT GDB HERE instead of running
+    # createOuyGdb.py. Likliehood of two nodes trying to write to same GDB
+    # at same time is low. Think about it but for now keep separate.
+        
 if __name__ == "__main__":
     
     parser = argparse.ArgumentParser()
