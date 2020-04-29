@@ -32,10 +32,13 @@ def main(args):
 
     bname = '{}__{}__ZonalStats'.format(zonalType, stackType)    
     outGdb = os.path.join(outDir, '{}.gdb'.format(bname))
+    
+    globDir = glob.glob(os.path.join(inDir, '{}*gpkg'.format(bname)))
+    print "\nCreating {} from {} input files...\n".format(outGdb, len(globDir))
     import pdb; pdb.set_trace()
-    for f in glob.glob(os.path.join(inDir, '{}*gpkg'.format(bname))):
+    for f in globDir:
         print f
-        zs.updateOutputGdb(outGdb, f, outDrv = "GDB")
+        zs.updateOutputGdb(outGdb, f, outDrv = "FileGDB")
         
         
     # Lastly, move the csv to its final directory
