@@ -38,7 +38,7 @@ def main(args):
     import pdb; pdb.set_trace()
     for f in globDir:
         print f
-        zs.updateOutputGdb(outGdb, f, outDrv = 'GPKG')#outDrv = "FileGDB")
+        zs.updateOutputGdb(outGdb, f, outDrv = "FileGDB")
         
         
     # Lastly, move the csv to its final directory
