@@ -267,37 +267,27 @@ def updateOutputCsv(outCsv, df):
     
     return None
     
-def updateOutputGdb(output, inFile, outDrv = "GPKG", outEPSG = 4326):
+def updateOutputGdb(output, inFile, outEPSG = 4326):
     # Append a shp to output GDB/GPKG - assumes fields are the same
 
-    ext = os.path.splitext(output)[1]
-    if outDrv == 'GPKG':
-        output = output.replace(ext, '.gpkg')
-    elif outDrv == 'FileGDB':
-        output = output.replace(ext, '.gdb')
+    # Get driver based off output extension
+    ext = os.path.splitext(output)[1]   
+    if ext == '.gdb':
+        outDrv = 'FileGDB'
+    elif ext == '.gpkg':
+        outDrv = 'GPKG'
     else:
-        print "\nUnrecognized output driver '{}'".format(outDrv)
+        print "\nUnrecognized output extension '{}'".format(ext)
         return None
-    ext = os.path.splitext(output)[1]
     
     print "\nUpdating the big output {}".format(output)
     
-    #layerName = os.path.basename(outGdb).replace('.gdb', '')
-    # CHECK - new layerName:
     layerName = os.path.basename(output).replace(ext, '')
-    
-    # CHECK - this part stays same
     cmd = 'ogr2ogr -nln {} -a_srs EPSG:4326 -t_srs EPSG:4326'.format(layerName)
     
     if os.path.exists(output):
         cmd += ' -update -append'
         
-    # CHECK - original command
-    #cmd += ' -f "FileGDB" {} {}'.format(outGdb, inShp)
-    # new possible command (no gdb extension for output, new -f)
-    #cmd += ' -f "GPKG" {} {}'.format(outGdb.replace('.gdb', ''), inShp)  
-    # try without stripping gdb (unnecessary as sent as gpkg)
-    # NOW added output driver as option. defaults to GPKG but 
     cmd += ' -f "{}" {} {}'.format(outDrv, output, inFile) 
     
     print '', cmd
@@ -361,7 +351,7 @@ def main(args):
     # CHECK - try without node in name - Simply strip off extension
     #outGdb = outCsv.replace('.csv', '')
     # CHECK - try writing to node-specific gpkg
-    outGdb = outCsv.replace('.csv', '-{}.gpkg'.format(platform.node()))
+    outGdb = outCsv.replace('.csv', '.gdb')#DEL'-{}.gpkg'.format(platform.node()))
     
     # Start stack-specific log if doing so
     if logOut: 
@@ -414,7 +404,7 @@ def main(args):
     transEpsg = None
     if int(rasterMask.epsg()) != int(zones.epsg()):
         transEpsg = rasterMask.epsg() # Need to transform coords to that of mask
-
+    import pdb; pdb.set_trace() #DEL
     print "\n3. Masking out NoData values using {}...".format(noDataMask)        
     stackShp = zones.applyNoDataMask(noDataMask, transEpsg = transEpsg,
                                                              outShp = stackShp)
