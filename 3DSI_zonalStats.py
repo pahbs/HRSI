@@ -404,7 +404,7 @@ def main(args):
     transEpsg = None
     if int(rasterMask.epsg()) != int(zones.epsg()):
         transEpsg = rasterMask.epsg() # Need to transform coords to that of mask
-    import pdb; pdb.set_trace() #DEL
+
     print "\n3. Masking out NoData values using {}...".format(noDataMask)        
     stackShp = zones.applyNoDataMask(noDataMask, transEpsg = transEpsg,
                                                              outShp = stackShp)
