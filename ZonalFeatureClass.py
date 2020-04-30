@@ -96,9 +96,15 @@ class ZonalFeatureClass(FeatureClass):
         if len(keepFIDs) == 0: # If there are no points remaining, return None
             return None
         
+        if len(keepFIDs) == 1: # tuple(listWithOneItem) wont work in Set Filter
+            query = "FID = {}".format(keepFIDs[0])
+            
+        else:
+            query = "FID IN {}".format(tuple(keepFIDs))
+        
         # Filter and write the features we want to keep to new output DS:
         ## Pass ID's to a SQL query as a tuple, i.e. "(1, 2, 3, ...)"
-        layer.SetAttributeFilter("FID IN {}".format(tuple(keepFIDs)))
+        layer.SetAttributeFilter(query)
 
         dsOut = drv.CreateDataSource(outShp)
         layerOutName = os.path.basename(outShp).replace('.shp', '')
