@@ -101,7 +101,14 @@ class ZonalFeatureClass(FeatureClass):
             
         else:
             query = "FID IN {}".format(tuple(keepFIDs))
-        import pdb; pdb.set_trace()
+
+        """ In the event that there are too many features to Set Filter with, 
+        run pair twice with this following block uncommented, and manually 
+        setting keepFIDs to A or B depending on which iteration you're on:"""
+        halfway = len(keepFIDs)/2 # if len is odd, 1st list will have 1 more item
+        keepFIDs = keepFIDs[:halfway] # On first iteration
+        #keepFIDs = keepFIDs[halfway:] # On second   
+
         # Filter and write the features we want to keep to new output DS:
         ## Pass ID's to a SQL query as a tuple, i.e. "(1, 2, 3, ...)"
         layer.SetAttributeFilter(query)
