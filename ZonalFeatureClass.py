@@ -101,7 +101,7 @@ class ZonalFeatureClass(FeatureClass):
             
         else:
             query = "FID IN {}".format(tuple(keepFIDs))
-        
+        import pdb; pdb.set_trace()
         # Filter and write the features we want to keep to new output DS:
         ## Pass ID's to a SQL query as a tuple, i.e. "(1, 2, 3, ...)"
         layer.SetAttributeFilter(query)

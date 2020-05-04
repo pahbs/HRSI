@@ -344,13 +344,8 @@ def main(args):
     # "Big" outputs (unique for zonal/stack type combos)
     """ Need to come up with better/automated solution for locking issue when
         writing to the output gdb. For now, just write to a node-specific 
-        output and merge by hand when all are done
+        output GPKG and merge by hand when all are done
     """
-    # CHECK - old output with .gdb extension and node in name
-    #outGdb = outCsv.replace('.csv', '-{}.gdb'.format(platform.node()))
-    # CHECK - try without node in name - Simply strip off extension
-    #outGdb = outCsv.replace('.csv', '')
-    # CHECK - try writing to node-specific gpkg
     outGdb = outCsv.replace('.csv', '.gdb')#DEL'-{}.gpkg'.format(platform.node()))
     
     # Start stack-specific log if doing so
