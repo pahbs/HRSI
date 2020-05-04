@@ -346,7 +346,7 @@ def main(args):
         writing to the output gdb. For now, just write to a node-specific 
         output GPKG and merge by hand when all are done
     """
-    outGdb = outCsv.replace('.csv', '.gdb')#DEL'-{}.gpkg'.format(platform.node()))
+    outGdb = outCsv.replace('.csv', '-{}.gpkg'.format(platform.node()))
     
     # Start stack-specific log if doing so
     if logOut: 
