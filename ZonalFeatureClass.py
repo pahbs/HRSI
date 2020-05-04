@@ -108,6 +108,7 @@ class ZonalFeatureClass(FeatureClass):
         halfway = len(keepFIDs)/2 # if len is odd, 1st list will have 1 more item
         keepFIDs = keepFIDs[:halfway] # On first iteration
         #keepFIDs = keepFIDs[halfway:] # On second   
+        query = "FID IN {}".format(tuple(keepFIDs)) # redo query
 
         # Filter and write the features we want to keep to new output DS:
         ## Pass ID's to a SQL query as a tuple, i.e. "(1, 2, 3, ...)"
