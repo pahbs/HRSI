@@ -429,7 +429,7 @@ def main(args):
 
     # 5. Now write the stack csv, and add stats from the df to stack shp     
     zonalStatsDf.to_csv(stackCsv, sep=',', index=False, header=True)#), na_rep="NoData")
-
+    import pdb;pdb.set_trace()
     # 6. Finish the output stack-specific shp by adding new stats columns to fc:
     #    First, add stackName column
     zonalStatsDf['stackName'] = [stackName for i in range(len(zonalStatsDf))]
