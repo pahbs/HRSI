@@ -419,21 +419,20 @@ def main(args):
     print "\n4. Running zonal stats for {} layers".format(len(layerDict))
     zonalStatsDf = callZonalStats(stack.filePath, zones.filePath, layerDict)
     
+    # 5. Complete the ZS DF by:
+    #    adding stackName col, sunAngle if need be and replacing None vals
+    zonalStatsDf = zonalStatsDf.fillna(stack.noDataValue)
+    zonalStatsDf['stackName'] = [stackName for i in range(len(zonalStatsDf))]
+    stackShp = addStatsToShp(zonalStatsDf, stackShp)
+
     # If there is an xml layer for stack, get sun angle and add as column to df
     stackXml = stack.xmlLayer()
     if stackXml:
         zonalStatsDf = addSunAngleColumn(zonalStatsDf, stackXml)
-    
-    # Replace "None" values with our NoData value from stack:
-    zonalStatsDf = zonalStatsDf.fillna(stack.noDataValue)
-
-    # 5. Now write the stack csv, and add stats from the df to stack shp     
+        
+    # 6. Now write the stack csv, and finish stack-specific shp by adding 
+    #    new stats columns to ZFC     
     zonalStatsDf.to_csv(stackCsv, sep=',', index=False, header=True)#), na_rep="NoData")
-    import pdb;pdb.set_trace()
-    # 6. Finish the output stack-specific shp by adding new stats columns to fc:
-    #    First, add stackName column
-    zonalStatsDf['stackName'] = [stackName for i in range(len(zonalStatsDf))]
-    stackShp = addStatsToShp(zonalStatsDf, stackShp)
        
     # 7. Update the big csv and big output gdb by appending to them:
     updateOutputCsv(outCsv, zonalStatsDf)
