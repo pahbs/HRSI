@@ -291,6 +291,9 @@ def main(args):
     outCsvDir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/flight_csvs'
     outShpDir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/flight_shps'
     
+    for d in [outCsvDir, outShpDir]:
+        os.system('mkdir -p {}'.format(d))
+    
     outCsv = os.path.join(outCsvDir, '{}.csv'.format(bname))
     outShp = os.path.join(outShpDir, '{}.shp'.format(bname))
        
