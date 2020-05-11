@@ -327,14 +327,14 @@ def main(args):
     createShapefiles(utmLonList, utmLatList, 14, 100, int(epsg), pdf, outShp)
     
     # Get number of features from shp and add to csv
-    trackCsv = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ATL08-v3_featureCount.csv'
+    trackCsv = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ATL08_v3__featureCount.csv'
     fc = FeatureClass(outShp)
     
     with open(trackCsv, 'a') as c:
         c.write('{},{}\n'.format(inH5, fc.nFeatures))
         
     # Update the output .gdb (or .gpkg?)
-    outGdb = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ATL08-v3_na.gdb'
+    outGdb = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ATL08_na_v3.gdb'
     zs.updateOutputGdb(outGdb, outShp)
 
     return outShp
