@@ -2,12 +2,17 @@
 
 import os, sys
 import numpy as np
-from osgeo import gdal, osr, ogr
-from osgeo.osr import SpatialReference
+
+from osgeo import osr, ogr
+#from osgeo.osr import SpatialReference
 from osgeo.osr import CoordinateTransformation
+
 import tempfile
 import argparse
 import pandas as pd
+
+from FeatureClass import FeatureClass
+zs = __import__('3DSI_zonalStats')
 
 """
 To convert an ATL08 h5 file to a polygon shp
@@ -18,6 +23,10 @@ Steps:
     Convert lat/lon coords to UTM coords
     Use coords as input to function from Eric, which will make the shapefile
     Add the other columns from the .csv as attributes in the shapefile
+
+    Added 5/11 (lines ~327+):
+        Writing number of points for each h5 file to spreadsheet
+        Calling the update GDB function on outShp
 """
 
 ###############################################################################
@@ -202,7 +211,7 @@ def addAttributesToDf(pdf, utmLonList, utmLatList, epsg, bname):
     pdf['epsg']  = [epsg for i in range(0,len(utmLonList))]
     
     # Add full path to input h5 file
-    pdf['filename']  = [bname for i in range(0,len(utmLonList))]
+    pdf['ATLfile']  = [bname for i in range(0,len(utmLonList))]
     
     return None
 
@@ -314,11 +323,18 @@ def main(args):
     # 4. Run Eric's functions to get polygon shp
     createShapefiles(utmLonList, utmLatList, 14, 100, int(epsg), pdf, outShp)
     
-    # TO DO:
-    # test large h5 file that spans many UTM zones, check polygons
-    # verify output attributes are in right spot
+    # Get number of features from shp and add to csv
+    trackCsv = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ATL08-v3_featureCount.csv'
+    fc = FeatureClass(outShp)
+    
+    with open(trackCsv, 'a') as c:
+        c.write('{},{}\n'.format(inH5, fc.nFeatures))
+        
+    # Update the output .gdb (or .gpkg?)
+    outGdb = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ATL08-v3_na.gdb'
+    zs.updateOutputGdb(outGdb, outShp)
 
-    return None
+    return outShp
 
 if __name__ == "__main__":
     
