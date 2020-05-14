@@ -287,6 +287,14 @@ def latLonToUtmLists(lonList, latList, targetEpsg):
         
 def main(args):
     
+    # Log output
+    logFile = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/Logs/create_ATL08_gdb__{}.txt'.format(platform.node())
+    print "See {} for log".format(logFile)
+    so = se = open(logFile, 'a', 0) # open our log file
+    sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0) # re-open stdout without buffering
+    os.dup2(so.fileno(), sys.stdout.fileno()) # redirect stdout and stderr to the log file opened above
+    os.dup2(se.fileno(), sys.stderr.fileno())
+    
     # Check inputs and set up vars
     inH5 = args.input
     if not inH5.endswith('.h5'):
