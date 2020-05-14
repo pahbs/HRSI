@@ -310,7 +310,7 @@ def main(args):
         return None
     
     # 1. H5 file --> outCsv (Paul's extract code):
-    cmd = 'python icesat2/extract_atl08.py -i {} -o {}'.format(inH5, outCsvDir)
+    cmd = 'python extract_atl08.py -i {} -o {}'.format(inH5, outCsvDir)
     os.system(cmd)
     
     # Check if ICESAT2GRID (extract) failed
