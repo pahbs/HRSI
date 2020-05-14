@@ -293,7 +293,9 @@ def main(args):
         sys.exit('Input file must have an .h5 extension')   
     bname = os.path.basename(inH5).strip('.h5')
 
-    outCsvDir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/flight_csvs'
+    #outCsvDir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/flight_csvs'
+    # 5/14/2020 - write directly to Paul's nbu
+    outCsvDir = '/att/nobackup/pmontesa/userfs02/data/icesat2/atl08/csv_na'
     outShpDir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/flight_shps'
     
     for d in [outCsvDir, outShpDir]:
