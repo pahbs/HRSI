@@ -9,6 +9,7 @@ from osgeo.osr import CoordinateTransformation
 
 import tempfile
 import argparse
+import platform
 import pandas as pd
 
 from FeatureClass import FeatureClass
@@ -27,6 +28,10 @@ Steps:
     Added 5/11 (lines ~327+):
         Writing number of points for each h5 file to spreadsheet
         Calling the update GDB function on outShp
+        
+    Added/edited 5/14 (~342): 
+        Output gdb is now platform-specific GPKG for parallel processing
+        Will merge together after
 """
 
 ###############################################################################
@@ -334,7 +339,7 @@ def main(args):
         c.write('{},{}\n'.format(inH5, fc.nFeatures))
         
     # Update the output .gdb (or .gpkg?)
-    outGdb = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ATL08_na_v3.gdb'
+    outGdb = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ATL08_na_v3__{}.gdb'.format(platform.node())
     zs.updateOutputGdb(outGdb, outShp)
 
     return outShp

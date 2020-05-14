@@ -11,7 +11,7 @@ Inputs:
 
 import os
 import argparse
-import platform
+#import platform
 
 from RasterStack import RasterStack
 
@@ -132,7 +132,7 @@ def main(args):
         os.system(cmd) 
         
     # COULD PUT CALL TO UPDATE THE FINAL OUTPUT GDB HERE instead of running
-    # createOuyGdb.py. Likliehood of two nodes trying to write to same GDB
+    # createOutGdb.py. Likliehood of two nodes trying to write to same GDB
     # at same time is low. Think about it but for now keep separate.
         
 if __name__ == "__main__":
