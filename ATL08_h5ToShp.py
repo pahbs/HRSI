@@ -311,7 +311,8 @@ def main(args):
         return None
     
     # 1. H5 file --> outCsv (Paul's extract code):
-    cmd = 'python extract_atl08.py -i {} -o {}'.format(inH5, outCsvDir)
+    extractCode = '/att/home/mwooten3/code/icesat2/extract_atl08.py'
+    cmd = 'python {} -i {} -o {}'.format(extractCode, inH5, outCsvDir)
     os.system(cmd)
     
     # Check if ICESAT2GRID (extract) failed
