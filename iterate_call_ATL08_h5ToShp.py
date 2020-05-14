@@ -45,10 +45,12 @@ except:
 # Get list using range
 h5Files = h5Files[ int(S)-1 : int(E) ]    
 
+""" Exploring duplicates thing"
 import collections
 print [item for item, count in collections.Counter(h5Files).items() if count > 1]
 sys.exit()            
-            
+"""
+        
 #loopDir = '/att/gpfsfs/briskfs01/ppl/pmontesa/userfs02/data/icesat2/atl08/h5_na/*h5'
 print "Processing {} .h5 files\n".format(len(h5Files))
 
