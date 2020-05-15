@@ -229,12 +229,16 @@ def getUTM(ulx, uly, lrx, lry):
     if uly >= 84.0: uly = 84.0
     if lry <= -80.0: lry = -80.0
     
+    """ Script fails for other reasons if there is  only one footprint.
+        Instead of forcing it through, just skip if only one footprint.
+        Can delete this:
     # It may be the case that there is just one ATL footprint for file. If so,
     # we need to enlarge the extent by a bit to ensure we can get UTM zone
     if ulx == lrx:
         lrx += 0.003
     if uly == lry:
         uly += 0.003
+    """
     
     # Clip UTM to shp according to extent
     utmShp = '/att/gpfsfs/briskfs01/ppl/mwooten3/GeneralReference/' + \
@@ -250,7 +254,7 @@ def getUTM(ulx, uly, lrx, lry):
     driver = ogr.GetDriverByName("ESRI Shapefile")
     ds = driver.Open(clipFile, 0)
     layer = ds.GetLayer()
-    import pdb; pdb.set_trace()
+
     # Find zone with largest area of overlap
     maxArea = 0
     for feature in layer:
@@ -352,6 +356,11 @@ def main(args):
     pdf = pd.read_csv(outCsv)
     latArr = np.asarray(pdf['lat'])
     lonArr = np.asarray(pdf['lon']) 
+    import pdb; pdb.set_trace()
+    
+    """ calculategrounddirection() fails if there is only one footprint in csv.
+        Skip if only one footprint.
+    """
     
     # 3. Convert lat/lon lists to appropriate UTM zones
     epsg = getUTM(np.min(lonArr), np.max(latArr), np.max(lonArr), np.min(latArr))
