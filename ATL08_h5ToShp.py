@@ -365,7 +365,6 @@ def main(args):
         
     # If output is specified, update the output .gdb (or .gpkg?)
     if outGdb is not None:
-        #outGdb = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ATL08_na_v3__{}.gdb'.format(platform.node())
         zs.updateOutputGdb(outGdb, outShp)
 
     print "\nEND: {}\n".format(time.strftime("%m-%d-%y %I:%M:%S"))

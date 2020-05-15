@@ -27,10 +27,12 @@ ATL08_h5toShp.py
         
 """
 import os, sys
-#import glob
-#import platform
+import platform
 import time
 import argparse
+import glob
+
+outGdb = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ATL08_na_v3__{}.gdb'.format(platform.node())
 
 listRange = sys.argv[1]
 
@@ -73,12 +75,15 @@ def main(args):
     
         parList = ' '.join(h5Files)
 
-        print "Processing {} .h5 files in parallel\n".format(len(h5Files))
+        print "Processing {} .h5 files in parallel...\n".format(len(h5Files))
 
+        # Do not supply output GDB
         parCall = '{} -i '.format(runScript) + '{1}'
         cmd = "parallel --progress -j {} --delay 1 '{}' ::: {}".format(ncpu, parCall, parList)
-    
         os.system(cmd)
+        
+        # Get list of output shapefiles that were just created above    
+        
 
     # Do not run in parallel
     else:        
@@ -88,8 +93,9 @@ def main(args):
             c += 1
             print "\nProcessing {} of {}...".format(c, len(h5Files))
             
-            call = 'python {} -i {}'.format(runScript, h5)
-            os.system(call)
+            # Call script one at a time and supply node-specific output GDB
+            cmd = 'python {} -i {} -gdb'.format(runScript, h5, outGdb)
+            os.system(cmd)
             
             #o = os.popen(call).read()
         
