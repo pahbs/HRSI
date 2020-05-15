@@ -85,7 +85,8 @@ def main(args):
         os.system(cmd)
         import pdb; pdb.set_trace()        
         # Get list of output shapefiles using input h5 files  
-        shps = [os.path.join(flightShpDir, os.path.basename(i).replace('.h5', '.shp')) for i in l]
+        shps = [os.path.join(flightShpDir, 
+                os.path.basename(i).replace('.h5', '.shp')) for i in h5Files]
 
         print "\nCreating {} with completed shapefiles...".format(outGdb)
         # And update node-specific GDB    
