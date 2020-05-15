@@ -289,10 +289,18 @@ def latLonToUtmLists(lonList, latList, targetEpsg):
         
 def main(args):
 
-    # Check inputs and set up vars
-    inH5 = args.input
+    # Unpack args, check inputs and set up vars
+        # Unpack arguments   
+    inH5  = args['input']
+    outGdb = args['outGdb']
+
     if not inH5.endswith('.h5'):
-        sys.exit('Input file must have an .h5 extension')   
+        sys.exit('Input file must have an .h5 extension')  
+        
+    if not outGdb.endswith('.gdb') and not outGdb.endswith('.gpkg')         \
+        and not outGdb.endswith('.shp'):
+        sys.exit('Output GDB must have an .gdb, .gpkg, or .shp extension') 
+        
     bname = os.path.basename(inH5).strip('.h5')
     
     # Set output dir variables and make dirs
@@ -353,11 +361,12 @@ def main(args):
     fc = FeatureClass(outShp)
     
     with open(trackCsv, 'a') as c:
-        c.write('{},{}\n'.format(inH5, fc.nFeatures))
+        c.write('{},{},{}\n'.format(inH5, platform.node(), fc.nFeatures))
         
-    # Update the output .gdb (or .gpkg?)
-    outGdb = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ATL08_na_v3__{}.gdb'.format(platform.node())
-    zs.updateOutputGdb(outGdb, outShp)
+    # If output is specified, update the output .gdb (or .gpkg?)
+    if outGdb is not None:
+        outGdb = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ATL08_na_v3__{}.gdb'.format(platform.node())
+        zs.updateOutputGdb(outGdb, outShp)
 
     print "\nEND: {}\n".format(time.strftime("%m-%d-%y %I:%M:%S"))
 
@@ -367,9 +376,12 @@ if __name__ == "__main__":
     
     parser = argparse.ArgumentParser()
     
-    parser.add_argument("-i", "--input", type=str, help="Specify the input ICESAT H5 file")
+    parser.add_argument("-i", "--input", required=True, type=str, 
+                        help="Specify the input ICESAT H5 file")
+    parser.add_argument("-gdb", "--outGdb", required=False, type=str, 
+                        help="Specify the output GDB, if you wish to write to one")
     
-    args = parser.parse_args()
+    args = vars(parser.parse_args())
     
     main(args)
     
