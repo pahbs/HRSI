@@ -243,7 +243,7 @@ def getUTM(ulx, uly, lrx, lry):
     driver = ogr.GetDriverByName("ESRI Shapefile")
     ds = driver.Open(clipFile, 0)
     layer = ds.GetLayer()
-
+    import pdb; pdb.set_trace()
     # Find zone with largest area of overlap
     maxArea = 0
     for feature in layer:
