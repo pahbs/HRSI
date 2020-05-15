@@ -10,27 +10,22 @@ ATL08_h5toShp.py
     Added 5/11 - ACTUALLY this is happening in ATL08_h5ToShp.py: 
         Use update GDB function in 3DSI_zonalStats.py to create big GDB
         If GDB does not work, write to GPKG then convert to GDB
-        
+    
+    NEW 5/15 - 
+        utilizing all of the CPUs on nodes by running ATL08_h5ToShp.py
+            with GNU parallel
+        Also moving logging to h5ToShp.py so overwriting not an issue
 """
 import os, sys
 #import glob
-import platform
+#import platform
 import time
 
 listRange = sys.argv[1]
 
+print "BEGIN: {}".format(time.strftime("%m-%d-%y %I:%M:%S"))
+    
 fileList = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ls_ATL08_na_v3.txt'
-logFile = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/Logs/create_ATL08_gdb__{}.txt'.format(platform.node())
-
-
-# Log output
-print "See {} for log".format(logFile)
-so = se = open(logFile, 'a', 0) # open our log file
-sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0) # re-open stdout without buffering
-os.dup2(so.fileno(), sys.stdout.fileno()) # redirect stdout and stderr to the log file opened above
-os.dup2(se.fileno(), sys.stderr.fileno())
-
-print "BEGIN: {}\n".format(time.strftime("%m-%d-%y %I:%M:%S"))
 
 with open (fileList, 'r') as l:
     h5Files = [x.strip('\r\n') for x in l.readlines()]
@@ -52,8 +47,8 @@ sys.exit()
 """
         
 #loopDir = '/att/gpfsfs/briskfs01/ppl/pmontesa/userfs02/data/icesat2/atl08/h5_na/*h5'
-print "Processing {} .h5 files\n".format(len(h5Files))
-
+print "Processing {} .h5 files in parallel\n".format(len(h5Files))
+import pdb; pdb.set_trace()
 c = 0
 for h5 in h5Files:
     
@@ -66,5 +61,4 @@ for h5 in h5Files:
 
     
     #o = os.popen(call).read()
-    
-print "\nEND: {}\n".format(time.strftime("%m-%d-%y %I:%M:%S"))
+print "\nEND: {}\n".format(time.strftime("%m-%d-%y %I:%M:%S"))    

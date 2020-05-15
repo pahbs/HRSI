@@ -8,6 +8,7 @@ from osgeo import osr, ogr
 #from osgeo.osr import SpatialReference
 from osgeo.osr import CoordinateTransformation
 
+import time
 import tempfile
 import argparse
 import platform
@@ -287,20 +288,32 @@ def latLonToUtmLists(lonList, latList, targetEpsg):
     return utmLonList, utmLatList  
         
 def main(args):
-    
+
     # Check inputs and set up vars
     inH5 = args.input
     if not inH5.endswith('.h5'):
         sys.exit('Input file must have an .h5 extension')   
     bname = os.path.basename(inH5).strip('.h5')
-
+    
+    # Set output dir variables and make dirs
     outCsvDir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/flight_csvs'
     # 5/14/2020 - write directly to Paul's nbu
     #outCsvDir = '/att/nobackup/pmontesa/userfs02/data/icesat2/atl08/csv_na'
     outShpDir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/flight_shps'
-    
-    for d in [outCsvDir, outShpDir]:
+    outLogDir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/flight_logs' # 5/15 - log file for each h5 file bc par processing
+    for d in [outCsvDir, outShpDir, outLogDir]:
         os.system('mkdir -p {}'.format(d))
+        
+    # Log output:
+    logFile = os.path.join(outLogDir, 'ATL08-h5_to_shp__{}__Log.txt'.format(bname))
+    print "See {} for log".format(logFile)
+    so = se = open(logFile, 'a', 0) # open our log file
+    sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0) # re-open stdout without buffering
+    os.dup2(so.fileno(), sys.stdout.fileno()) # redirect stdout and stderr to the log file opened above
+    os.dup2(se.fileno(), sys.stderr.fileno())
+
+    print "BEGIN: {}".format(time.strftime("%m-%d-%y %I:%M:%S"))    
+    print "h5 File: {}\n".format(inH5)
     
     outCsv = os.path.join(outCsvDir, '{}.csv'.format(bname))
     outShp = os.path.join(outShpDir, '{}.shp'.format(bname))
@@ -345,6 +358,8 @@ def main(args):
     # Update the output .gdb (or .gpkg?)
     outGdb = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ATL08_na_v3__{}.gdb'.format(platform.node())
     zs.updateOutputGdb(outGdb, outShp)
+
+    print "\nEND: {}\n".format(time.strftime("%m-%d-%y %I:%M:%S"))
 
     return outShp
 
