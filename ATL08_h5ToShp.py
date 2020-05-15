@@ -289,17 +289,17 @@ def latLonToUtmLists(lonList, latList, targetEpsg):
         
 def main(args):
 
-    # Unpack args, check inputs and set up vars
-        # Unpack arguments   
+    # Unpack args, check inputs and set up vars  
     inH5  = args['input']
     outGdb = args['outGdb']
 
     if not inH5.endswith('.h5'):
         sys.exit('Input file must have an .h5 extension')  
-        
-    if not outGdb.endswith('.gdb') and not outGdb.endswith('.gpkg')         \
+    
+    if outGdb is not None:
+        if not outGdb.endswith('.gdb') and not outGdb.endswith('.gpkg')       \
         and not outGdb.endswith('.shp'):
-        sys.exit('Output GDB must have an .gdb, .gpkg, or .shp extension') 
+            sys.exit('Output GDB must have an .gdb, .gpkg, or .shp extension') 
         
     bname = os.path.basename(inH5).strip('.h5')
     
