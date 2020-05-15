@@ -65,7 +65,7 @@ def main(args):
     print [item for item, count in collections.Counter(h5Files).items() if count > 1]
     sys.exit()            
     """
-    import pdb; pdb.set_trace()
+    #import pdb; pdb.set_trace()
     
     # Run in parallel
     if runPar:    
@@ -94,7 +94,7 @@ def main(args):
             print "\nProcessing {} of {}...".format(c, len(h5Files))
             
             # Call script one at a time and supply node-specific output GDB
-            cmd = 'python {} -i {} -gdb'.format(runScript, h5, outGdb)
+            cmd = 'python {} -i {} -gdb {}'.format(runScript, h5, outGdb)
             os.system(cmd)
             
             #o = os.popen(call).read()
