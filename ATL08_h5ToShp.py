@@ -356,11 +356,12 @@ def main(args):
     pdf = pd.read_csv(outCsv)
     latArr = np.asarray(pdf['lat'])
     lonArr = np.asarray(pdf['lon']) 
-    import pdb; pdb.set_trace()
     
-    """ calculategrounddirection() fails if there is only one footprint in csv.
-        Skip if only one footprint.
-    """
+    # calculategrounddirection() fails if there is only one footprint in csv.
+    # Skip if only one footprint:
+    if len(latArr) <= 1:
+        print "\n CSV {} has only one entry. Skipping".format(outCsv)
+        return None        
     
     # 3. Convert lat/lon lists to appropriate UTM zones
     epsg = getUTM(np.min(lonArr), np.max(latArr), np.max(lonArr), np.min(latArr))
