@@ -48,7 +48,7 @@ def main(args):
     listRange  = args['range']
     runPar = args['parallel']
     
-    print "BEGIN: {}".format(time.strftime("%m-%d-%y %I:%M:%S"))
+    print "\nBEGIN: {}".format(time.strftime("%m-%d-%y %I:%M:%S"))
     
     with open (fileList, 'r') as l:
         h5Files = [x.strip('\r\n') for x in l.readlines()]
@@ -63,12 +63,11 @@ def main(args):
     # Get list using range
     h5Files = h5Files[ int(S)-1 : int(E) ]    
     
-    """ Exploring duplicates thing"
+    """ Exploring possible duplicates issue
     import collections
     print [item for item, count in collections.Counter(h5Files).items() if count > 1]
     sys.exit()            
     """
-    #import pdb; pdb.set_trace()
     
     # Run in parallel
     if runPar:    
@@ -78,17 +77,17 @@ def main(args):
     
         parList = ' '.join(h5Files)
 
-        print "Processing {} .h5 files in parallel...\n".format(len(h5Files))
+        print "\nProcessing {} .h5 files in parallel...\n".format(len(h5Files))
 
         # Do not supply output GDB
         parCall = '{} -i '.format(runScript) + '{1}'
         cmd = "parallel --progress -j {} --delay 1 '{}' ::: {}".format(ncpu, parCall, parList)
         os.system(cmd)
-        
+        import pdb; pdb.set_trace()        
         # Get list of output shapefiles using input h5 files  
-        shps = [os.path.join(flightShpDir, 
-                        os.path.basename(i).replace('.h5', '.shp')) for i in l]
+        shps = [os.path.join(flightShpDir, os.path.basename(i).replace('.h5', '.shp')) for i in l]
 
+        print "\nCreating {} with completed shapefiles...".format(outGdb)
         # And update node-specific GDB    
         for shp in shps:
             if os.path.isfile(shp):
