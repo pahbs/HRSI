@@ -30,9 +30,15 @@ import os, sys
 import platform
 import time
 import argparse
-import glob
+#import glob
+zs = __import__('3DSI_zonalStats')
 
+# Set variables that should more or less stay the same:
+runScript = '/home/mwooten3/code/HRSI/ATL08_h5ToShp.py'       
+fileList = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ls_ATL08_na_v3.txt'
+flightShpDir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/flight_shps'
 outGdb = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ATL08_na_v3__{}.gdb'.format(platform.node())
+
 
 listRange = sys.argv[1]
 
@@ -43,9 +49,6 @@ def main(args):
     runPar = args['parallel']
     
     print "BEGIN: {}".format(time.strftime("%m-%d-%y %I:%M:%S"))
-
-    runScript = '/home/mwooten3/code/HRSI/ATL08_h5ToShp.py'       
-    fileList = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ls_ATL08_na_v3.txt'
     
     with open (fileList, 'r') as l:
         h5Files = [x.strip('\r\n') for x in l.readlines()]
@@ -82,8 +85,14 @@ def main(args):
         cmd = "parallel --progress -j {} --delay 1 '{}' ::: {}".format(ncpu, parCall, parList)
         os.system(cmd)
         
-        # Get list of output shapefiles that were just created above    
-        
+        # Get list of output shapefiles using input h5 files  
+        shps = [os.path.join(flightShpDir, 
+                        os.path.basename(i).replace('.h5', '.shp')) for i in l]
+
+        # And update node-specific GDB    
+        for shp in shps:
+            if os.path.isfile(shp):
+                zs.updateOutputGdb(outGdb, shp)
 
     # Do not run in parallel
     else:        
