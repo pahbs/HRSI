@@ -233,7 +233,7 @@ def getUTM(ulx, uly, lrx, lry):
     # we need to enlarge the extent by a bit to ensure we can get UTM zone
     if ulx == lrx:
         lrx += 0.003
-    if uly == lrx:
+    if uly == lry:
         uly += 0.003
     
     # Clip UTM to shp according to extent
