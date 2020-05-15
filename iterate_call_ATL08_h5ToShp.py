@@ -88,7 +88,7 @@ def main(args):
         shps = [os.path.join(flightShpDir, 
                 os.path.basename(i).replace('.h5', '.shp')) for i in h5Files]
 
-        print "\nCreating {} with completed shapefiles...".format(outGdb)
+        print "\n\nCreating {} with completed shapefiles...".format(outGdb)
         # And update node-specific GDB    
         for shp in shps:
             if os.path.isfile(shp):

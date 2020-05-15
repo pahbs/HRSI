@@ -229,6 +229,13 @@ def getUTM(ulx, uly, lrx, lry):
     if uly >= 84.0: uly = 84.0
     if lry <= -80.0: lry = -80.0
     
+    # It may be the case that there is just one ATL footprint for file. If so,
+    # we need to enlarge the extent by a bit to ensure we can get UTM zone
+    if ulx == lrx:
+        lrx += 0.003
+    if uly == lrx:
+        uly += 0.003
+    
     # Clip UTM to shp according to extent
     utmShp = '/att/gpfsfs/briskfs01/ppl/mwooten3/GeneralReference/' + \
                                         'UTM_Zone_Boundaries.shp'
@@ -344,7 +351,7 @@ def main(args):
     # 2. Import csv into pandas df and extract lat/lon columns into arrays    
     pdf = pd.read_csv(outCsv)
     latArr = np.asarray(pdf['lat'])
-    lonArr = np.asarray(pdf['lon'])
+    lonArr = np.asarray(pdf['lon']) 
     
     # 3. Convert lat/lon lists to appropriate UTM zones
     epsg = getUTM(np.min(lonArr), np.max(latArr), np.max(lonArr), np.min(latArr))
