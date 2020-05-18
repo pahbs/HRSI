@@ -74,7 +74,7 @@ def main(args):
         # Prepare inputs for parallel call:
         call = "lscpu | awk '/^Socket.s.:/ {sockets=$NF} END {print sockets}'"
         ncpu = os.popen(call).read().strip()
-        ncpu -= 1 # all CPUs minus 1
+        ncpu = int(ncpu) - 1 # all CPUs minus 1
     
         parList = ' '.join(h5Files)
 
