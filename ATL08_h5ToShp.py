@@ -375,14 +375,13 @@ def main(args):
     
     # Get number of features from shp and add to csv
     trackCsv = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ATL08_v3__featureCount.csv'
-    fc = FeatureClass(outShp)
+    outFc = FeatureClass(outShp)
     
     with open(trackCsv, 'a') as c:
-        c.write('{},{},{}\n'.format(inH5, platform.node(), fc.nFeatures))
+        c.write('{},{},{}\n'.format(inH5, platform.node(), outFc.nFeatures))
         
     # If output is specified, update the output .gdb (or .gpkg?)
     if outGdb is not None:
-        outFc = FeatureClass(outShp)
         #zs.updateOutputGdb(outGdb, outShp)
         outFc.addToFeatureClass(outGdb)
 
