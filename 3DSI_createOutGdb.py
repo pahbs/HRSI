@@ -18,7 +18,8 @@ import glob
 import argparse
 
 #import 3DSI_zonalStats as zs #updateOutputGdb
-zs = __import__('3DSI_zonalStats') # the above does not work because it starts w number
+#zs = __import__('3DSI_zonalStats') # the above does not work because it starts w number
+from FeatureClass import FeatureClass
 
 # Set up directories - these are kinda hardcoded according to current set-up in other code
 inDir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ZonalStats/_zonalStatsGdb'
@@ -35,10 +36,12 @@ def main(args):
     
     globDir = glob.glob(os.path.join(inDir, '{}*gpkg'.format(bname)))
     print "\nCreating {} from {} input files...\n".format(outGdb, len(globDir))
-    import pdb; pdb.set_trace()
+
     for f in globDir:
-        print f
-        zs.updateOutputGdb(outGdb, f)
+
+        fc = FeatureClass(f)
+        #zs.updateOutputGdb(outGdb, f)
+        fc.addToFeatureClass(outGdb)
         
         
     # Lastly, move the csv to its final directory

@@ -31,7 +31,9 @@ import platform
 import time
 import argparse
 #import glob
-zs = __import__('3DSI_zonalStats')
+
+from FeatureClass import FeatureClass
+#zs = __import__('3DSI_zonalStats')
 
 # Set variables that should more or less stay the same:
 runScript = '/home/mwooten3/code/HRSI/ATL08_h5ToShp.py'       
@@ -93,7 +95,9 @@ def main(args):
         # And update node-specific GDB    
         for shp in shps:
             if os.path.isfile(shp):
-                zs.updateOutputGdb(outGdb, shp)
+                #zs.updateOutputGdb(outGdb, shp)
+                fc = FeatureClass(shp)
+                fc.addToFeatureClass(outGdb)
 
     # Do not run in parallel
     else:        

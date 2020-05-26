@@ -15,7 +15,7 @@ import platform
 import pandas as pd
 
 from FeatureClass import FeatureClass
-zs = __import__('3DSI_zonalStats')
+#zs = __import__('3DSI_zonalStats')
 
 """
 To convert an ATL08 h5 file to a polygon shp

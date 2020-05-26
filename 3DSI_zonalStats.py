@@ -266,7 +266,7 @@ def updateOutputCsv(outCsv, df):
     df.to_csv(outCsv, sep=',', mode='a', index=False, header=hdr)
     
     return None
-    
+"""    
 def updateOutputGdb(output, inFile, outEPSG = 4326):
     # Append a shp to output GDB/GPKG - assumes fields are the same
 
@@ -294,6 +294,7 @@ def updateOutputGdb(output, inFile, outEPSG = 4326):
     os.system(cmd)
 
     return None       
+"""
              
 """
 # Add Landsat pathrows to dataframe with lat/lon columns (decimal degrees)
@@ -436,7 +437,9 @@ def main(args):
        
     # 7. Update the big csv and big output gdb by appending to them:
     updateOutputCsv(outCsv, zonalStatsDf)
-    updateOutputGdb(outGdb, stackShp)
+    #updateOutputGdb(outGdb, stackShp)
+    fc = ZonalFeatureClass(stackShp) # Update GDB now a method in FC.py
+    fc.addToFeatureClass(outGdb)
 
     elapsedTime = round((time.time()-start)/60, 4)
     print "\nEND: {}\n".format(time.strftime("%m-%d-%y %I:%M:%S"))
