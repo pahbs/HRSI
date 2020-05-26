@@ -63,8 +63,12 @@ def main(args):
     # Get list using range
     h5Files = h5Files[ int(S)-1 : int(E) ]    
     
+    # Get list of output shapefiles using input h5 files  
+    shps = [os.path.join(flightShpDir, 
+            os.path.basename(i).replace('.h5', '.shp')) for i in h5Files]
+    
     """ Exploring possible duplicates issue
-    import collections
+    import collection
     print [item for item, count in collections.Counter(h5Files).items() if count > 1]
     sys.exit()            
     """
@@ -83,11 +87,7 @@ def main(args):
         # Do not supply output GDB
         parCall = '{} -i '.format(runScript) + '{1}'
         cmd = "parallel --progress -j {} --delay 1 '{}' ::: {}".format(ncpu, parCall, parList)
-        os.system(cmd)
-        import pdb; pdb.set_trace()        
-        # Get list of output shapefiles using input h5 files  
-        shps = [os.path.join(flightShpDir, 
-                os.path.basename(i).replace('.h5', '.shp')) for i in h5Files]
+        os.system(cmd)       
 
         print "\n\nCreating {} with completed shapefiles ({})...".format(outGdb, time.strftime("%m-%d-%y %I:%M:%S"))
         # And update node-specific GDB    

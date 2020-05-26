@@ -382,7 +382,9 @@ def main(args):
         
     # If output is specified, update the output .gdb (or .gpkg?)
     if outGdb is not None:
-        zs.updateOutputGdb(outGdb, outShp)
+        outFc = FeatureClass(outShp)
+        #zs.updateOutputGdb(outGdb, outShp)
+        outFc.addToFeatureClass(outGdb)
 
     print "\nEND: {}\n".format(time.strftime("%m-%d-%y %I:%M:%S"))
 
