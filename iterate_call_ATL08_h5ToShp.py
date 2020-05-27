@@ -35,13 +35,9 @@ import argparse
 #import glob
 
 from FeatureClass import FeatureClass
-#zs = __import__('3DSI_zonalStats')
 
 # Set variables that should more or less stay the same (do not depend on input):
 runScript = '/home/mwooten3/code/HRSI/ATL08_h5ToShp.py'
-
-
-listRange = sys.argv[1]
 
 def main(args):
     
@@ -104,7 +100,6 @@ def main(args):
         print "\n\nCreating {} with completed shapefiles ({})...".format(outGdb, time.strftime("%m-%d-%y %I:%M:%S"))   
         for shp in shps:
             if os.path.isfile(shp):
-                #zs.updateOutputGdb(outGdb, shp)
                 fc = FeatureClass(shp)
                 fc.addToFeatureClass(outGdb)
 

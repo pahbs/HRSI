@@ -15,7 +15,6 @@ import platform
 import pandas as pd
 
 from FeatureClass import FeatureClass
-#zs = __import__('3DSI_zonalStats')
 
 """
 To convert an ATL08 h5 file to a polygon shp
@@ -151,7 +150,6 @@ def createShapefiles(xx, yy, width, height, epsg, attributes, outfile):
     srs = ogr.osr.SpatialReference()
     srs.ImportFromEPSG(epsg)
     
- #   import pdb; pdb.set_trace()
     # Create file with srs
     layer = ds.CreateLayer('', srs, ogr.wkbPolygon)
     
@@ -390,7 +388,6 @@ def main(args):
         
     # If output is specified, update the output .gdb (or .gpkg?)
     if outGdb is not None:
-        #zs.updateOutputGdb(outGdb, outShp)
         outFc.addToFeatureClass(outGdb)
 
     print "\nEND: {}\n".format(time.strftime("%m-%d-%y %I:%M:%S"))
