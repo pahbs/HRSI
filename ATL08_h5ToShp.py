@@ -307,7 +307,11 @@ def main(args):
     # Unpack args, check inputs and set up vars  
     inH5  = args['input']
     outGdb = args['outGdb']
-
+    cont = args['continent'] # eu or na (default na)
+        
+    if cont != 'na' and cont != 'eu': # Check that continent is na or eu
+        raise RuntimeError("Continent must be 'na' or 'eu'")
+        
     if not inH5.endswith('.h5'):
         sys.exit('Input file must have an .h5 extension')  
     
@@ -319,11 +323,10 @@ def main(args):
     bname = os.path.basename(inH5).strip('.h5')
     
     # Set output dir variables and make dirs
-    outCsvDir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/flight_csvs'
-    # 5/14/2020 - write directly to Paul's nbu
-    #outCsvDir = '/att/nobackup/pmontesa/userfs02/data/icesat2/atl08/csv_na'
-    outShpDir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/flight_shps'
-    outLogDir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/flight_logs' # 5/15 - log file for each h5 file bc par processing
+    baseOutdir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/{}'.format(cont)
+    outCsvDir  = os.path.join(baseOutdir, 'flight_csvs')
+    outShpDir  = os.path.join(baseOutdir, 'flight_shps')
+    outLogDir  = os.path.join(baseOutdir, 'flight_logs') # 5/15 - log file for each h5 file bc par processing
     for d in [outCsvDir, outShpDir, outLogDir]:
         os.system('mkdir -p {}'.format(d))
         
@@ -335,7 +338,8 @@ def main(args):
     os.dup2(so.fileno(), sys.stdout.fileno()) # redirect stdout and stderr to the log file opened above
     os.dup2(se.fileno(), sys.stderr.fileno())
 
-    print "BEGIN: {}".format(time.strftime("%m-%d-%y %I:%M:%S"))    
+    print "BEGIN: {}".format(time.strftime("%m-%d-%y %I:%M:%S"))
+    print "Continent: {}".format(cont)
     print "h5 File: {}\n".format(inH5)
     
     outCsv = os.path.join(outCsvDir, '{}.csv'.format(bname))
@@ -378,7 +382,7 @@ def main(args):
     createShapefiles(utmLonList, utmLatList, 11, 100, int(epsg), pdf, outShp)
     
     # Get number of features from shp and add to csv
-    trackCsv = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ATL08_v3__featureCount.csv'
+    trackCsv = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ATL08_{}_v3__featureCount.csv'.format(cont)
     outFc = FeatureClass(outShp)
     
     with open(trackCsv, 'a') as c:
@@ -401,6 +405,8 @@ if __name__ == "__main__":
                         help="Specify the input ICESAT H5 file")
     parser.add_argument("-gdb", "--outGdb", required=False, type=str, 
                         help="Specify the output GDB, if you wish to write to one")
+    parser.add_argument("-continent", "--continent", type=str, required=False,
+                                default = 'na', help="Continent (na or eu)")
     
     args = vars(parser.parse_args())
     

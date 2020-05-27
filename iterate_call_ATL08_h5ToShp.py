@@ -48,11 +48,7 @@ def main(args):
     # Unpack arguments   
     listRange  = args['range']
     runPar = args['parallel']
-    eu = args['eu'] # eu or na (if no -eu flag, continent = na)
-    if eu:
-        cont = "eu"
-    else:
-        cont = "na"
+    cont = args['continent'] # eu or na (default na)
         
     import pdb; pdb.set_trace()
     # Set variables that should more or less stay the same (but depend on input)     
@@ -64,13 +60,12 @@ def main(args):
      
     with open (fileList, 'r') as l:
         h5Files = [x.strip('\r\n') for x in l.readlines()]
-    """
+
     # Check inputs
     
     # Check that continent is na or eu
     if cont != 'na' and cont != 'eu':
-        raise RuntimeError("Continent must be na or eu")
-        """
+        raise RuntimeError("Continent must be 'na' or 'eu'")
         
     # Check that range is supplied correctly
     try:
@@ -103,9 +98,9 @@ def main(args):
 
         print "\nProcessing {} .h5 files in parallel...\n".format(len(h5Files))
 
-        # Do not supply output GDB
-        parCall = '{} -i '.format(runScript) + '{1}'
-        cmd = "parallel --progress -j {} --delay 1 '{}' ::: {}".format(ncpu, parCall, parList)
+        # Do not supply output GDB, do supply continent
+        parCall = '{} -i '.format(runScript) + '{1} -continent {2}'
+        cmd = "parallel --progress -j {} --delay 1 '{}' ::: {} ::: {}".format(ncpu, parCall, parList, cont)
         os.system(cmd)       
 
         print "\n\nCreating {} with completed shapefiles ({})...".format(outGdb, time.strftime("%m-%d-%y %I:%M:%S"))
@@ -124,8 +119,8 @@ def main(args):
             c += 1
             print "\nProcessing {} of {}...".format(c, len(h5Files))
             
-            # Call script one at a time and supply node-specific output GDB
-            cmd = 'python {} -i {} -gdb {}'.format(runScript, h5, outGdb)
+            # Call script one at a time and supply node-specific output GDB and continent
+            cmd = 'python {} -i {} -gdb {} -continent {}'.format(runScript, h5, outGdb, cont)
             os.system(cmd)
             
             #o = os.popen(call).read()
@@ -140,10 +135,10 @@ if __name__ == "__main__":
     parser.add_argument("-r", "--range", type=str, required=True,
                                 help="Range for stack iteration (i.e. 1-20)")
     parser.add_argument("-par", "--parallel", action='store_true', help="Run in parallel")
-    #parser.add_argument("-continent", "--continent", type=str, required=False,
-           #                     default = 'na', help="Continent (na or eu)")
-    parser.add_argument("-eu", "--eu", action='store_true',
-                help= "Include -eu if running Eurasia. Otherwise, running na")
+    parser.add_argument("-continent", "--continent", type=str, required=False,
+                                default = 'na', help="Continent (na or eu)")
+    #parser.add_argument("-eu", "--eu", action='store_true',
+      #          help= "Include -eu if running Eurasia. Otherwise, running na")
     
     args = vars(parser.parse_args())
 
