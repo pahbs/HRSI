@@ -34,6 +34,10 @@ Steps:
     Added/edited 5/14 (~342): 
         Output gdb is now platform-specific GPKG for parallel processing
         Will merge together after
+        
+        
+    Added 5/27: Continent argument (default na); editing output dirs to include
+        Also, changing 14m to 11m for polygon creation 
 """
 
 ###############################################################################
@@ -371,7 +375,7 @@ def main(args):
     addAttributesToDf(pdf, utmLonList, utmLatList, epsg, bname)
     
     # 4. Run Eric's functions to get polygon shp
-    createShapefiles(utmLonList, utmLatList, 14, 100, int(epsg), pdf, outShp)
+    createShapefiles(utmLonList, utmLatList, 11, 100, int(epsg), pdf, outShp)
     
     # Get number of features from shp and add to csv
     trackCsv = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ATL08_v3__featureCount.csv'

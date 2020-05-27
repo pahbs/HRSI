@@ -23,7 +23,9 @@ ATL08_h5toShp.py
                 Will instead build list of output shapefiles after parallel is 
                 done running here and update gdb using list
 
-        
+    NEW 5/27 -
+        Adding option to specify na or eu. The former is default, and will be
+        used in output naming
         
 """
 import os, sys
@@ -35,11 +37,8 @@ import argparse
 from FeatureClass import FeatureClass
 #zs = __import__('3DSI_zonalStats')
 
-# Set variables that should more or less stay the same:
-runScript = '/home/mwooten3/code/HRSI/ATL08_h5ToShp.py'       
-fileList = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ls_ATL08_na_v3.txt'
-flightShpDir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/flight_shps'
-outGdb = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ATL08_na_v3__{}.gdb'.format(platform.node())
+# Set variables that should more or less stay the same (do not depend on input):
+runScript = '/home/mwooten3/code/HRSI/ATL08_h5ToShp.py'
 
 
 listRange = sys.argv[1]
@@ -49,12 +48,24 @@ def main(args):
     # Unpack arguments   
     listRange  = args['range']
     runPar = args['parallel']
+    cont = args['continent'] # eu or na (default na)
+    import pdb; pdb.set_trace()
+    # Set variables that should more or less stay the same (but depend on input)     
+    fileList = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ls_ATL08_{}_v3.txt'.format(cont)
+    flightShpDir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/{}/flight_shps'.format(cont)
+    outGdb = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ATL08_{}_v3__{}.gdb'.format(cont, platform.node())
     
     print "\nBEGIN: {}".format(time.strftime("%m-%d-%y %I:%M:%S"))
-    
+     
     with open (fileList, 'r') as l:
         h5Files = [x.strip('\r\n') for x in l.readlines()]
     
+    # Check inputs
+    
+    # Check that continent is na or eu
+    if cont != 'na' and cont != 'eu':
+        raise RuntimeError("Continent must be na or eu")
+        
     # Check that range is supplied correctly
     try:
         listRange = listRange.split('-')
@@ -123,6 +134,8 @@ if __name__ == "__main__":
     parser.add_argument("-r", "--range", type=str, required=True,
                                 help="Range for stack iteration (i.e. 1-20)")
     parser.add_argument("-par", "--parallel", action='store_true', help="Run in parallel")
+    parser.add_argument("-continent", "--continent", type=str, required=False,
+                                default = 'na', help="Continent (na or eu)")
 
     args = vars(parser.parse_args())
 
