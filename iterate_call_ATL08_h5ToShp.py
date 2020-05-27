@@ -25,7 +25,7 @@ ATL08_h5toShp.py
 
     NEW 5/27 -
         Adding option to specify na or eu. The former is default, and will be
-        used in output naming
+        used in output naming, and sent to ATL08 h5 to shp code
         
 """
 import os, sys
@@ -49,25 +49,22 @@ def main(args):
     listRange  = args['range']
     runPar = args['parallel']
     cont = args['continent'] # eu or na (default na)
-        
-    import pdb; pdb.set_trace()
+
     # Set variables that should more or less stay the same (but depend on input)     
     fileList = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ls_ATL08_{}_v3.txt'.format(cont)
     flightShpDir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/{}/flight_shps'.format(cont)
-    outGdb = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ATL08_{}_v3__{}.gdb'.format(cont, platform.node())
+    outGdb = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/{}/ATL08_{}_v3__{}.gdb'.format(cont, cont, platform.node())
     
     print "\nBEGIN: {}".format(time.strftime("%m-%d-%y %I:%M:%S"))
      
     with open (fileList, 'r') as l:
         h5Files = [x.strip('\r\n') for x in l.readlines()]
 
-    # Check inputs
-    
-    # Check that continent is na or eu
+    # Check inputs: 
+    # 1. Check that continent is na or eu
     if cont != 'na' and cont != 'eu':
-        raise RuntimeError("Continent must be 'na' or 'eu'")
-        
-    # Check that range is supplied correctly
+        raise RuntimeError("Continent must be 'na' or 'eu'")  
+    # 2. Check that range is supplied correctly
     try:
         listRange = listRange.split('-')
         S, E = listRange
@@ -103,8 +100,8 @@ def main(args):
         cmd = "parallel --progress -j {} --delay 1 '{}' ::: {} ::: {}".format(ncpu, parCall, parList, cont)
         os.system(cmd)       
 
-        print "\n\nCreating {} with completed shapefiles ({})...".format(outGdb, time.strftime("%m-%d-%y %I:%M:%S"))
-        # And update node-specific GDB    
+        # And update node-specific GDB 
+        print "\n\nCreating {} with completed shapefiles ({})...".format(outGdb, time.strftime("%m-%d-%y %I:%M:%S"))   
         for shp in shps:
             if os.path.isfile(shp):
                 #zs.updateOutputGdb(outGdb, shp)
@@ -137,8 +134,6 @@ if __name__ == "__main__":
     parser.add_argument("-par", "--parallel", action='store_true', help="Run in parallel")
     parser.add_argument("-continent", "--continent", type=str, required=False,
                                 default = 'na', help="Continent (na or eu)")
-    #parser.add_argument("-eu", "--eu", action='store_true',
-      #          help= "Include -eu if running Eurasia. Otherwise, running na")
     
     args = vars(parser.parse_args())
 

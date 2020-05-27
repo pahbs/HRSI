@@ -371,14 +371,14 @@ def main(args):
         print "\n CSV {} has only one entry. Skipping".format(outCsv)
         return None        
     
-    # 3. Convert lat/lon lists to appropriate UTM zones
+    # 3. Convert lat/lon lists to appropriate UTM zone
     epsg = getUTM(np.min(lonArr), np.max(latArr), np.max(lonArr), np.min(latArr))
     utmLonList, utmLatList = latLonToUtmLists(lonArr, latArr, epsg)
    
     # Add more information to attributes/pandas df
     addAttributesToDf(pdf, utmLonList, utmLatList, epsg, bname)
     
-    # 4. Run Eric's functions to get polygon shp
+    # 4. Run Eric's functions to get polygon shp - 5/27 using 11m
     createShapefiles(utmLonList, utmLatList, 11, 100, int(epsg), pdf, outShp)
     
     # Get number of features from shp and add to csv
