@@ -376,14 +376,14 @@ def main(args):
                
     # 1. Clip input zonal shp to raster extent. Output proj = that of stack  
     # 6/5 Try filterin src data in clip
-    import pdb; pdb.set_trace()
     tableName = inZones.baseName
-    sqlQry = 'SELECT * FROM {} WHERE ;'
+    sqlQry = 'SELECT * FROM {} WHERE {};'.format(tableName, filterStr.replace('!=', '<>'))
     
     clipZonal = os.path.join(outDir, '{}__{}.shp'.format(zonalType, stackName))
     if not os.path.isfile(clipZonal):
         print "\n1. Clipping input feature class to extent..."
-        inZones.clipToExtent(stackExtent, stackEpsg, stackEpsg, clipZonal)
+        inZones.clipToExtent(stackExtent, stackEpsg, stackEpsg, 
+                             clipZonal, sqlQry)
     else: print "\n1. Clipped feature class {} already exists...".format(clipZonal)
     
     # now zones is the clipped input ZFC object:
