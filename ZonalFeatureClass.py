@@ -40,11 +40,13 @@ class ZonalFeatureClass(FeatureClass):
         super(ZonalFeatureClass, self).__init__(filePath)
 
         bname = self.baseName
+        
         if 'ATL08' in bname:
             self.zonalName = 'ATL08'
         elif 'GLAS' in bname:
             self.zonalName = 'GLAS'
-        else: self.zonalName = None
+        else: 
+            self.zonalName = None
         
     #--------------------------------------------------------------------------
     # applyNoDataMask()

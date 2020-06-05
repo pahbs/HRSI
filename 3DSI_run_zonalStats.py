@@ -43,7 +43,8 @@ def getVarsDict(stackType, zonalType):
     """
     
     if zonalType == 'ATL08':
-        inputZonal = os.path.join(mainDir, '_zonalGdb', 'ATL08_na.gdb')
+        #inputZonal = os.path.join(mainDir, '_zonalGdb', 'ATL08_na.gdb')
+        inputZonal = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08_na_v003.gdb'
     elif zonalType == 'GLAS':
         inputZonal = '' # ?????        
         
@@ -127,7 +128,8 @@ def main(args):
                 print "\nOutputs for {} already exist\n".format(rs.stackName)
                 continue
         
-        cmd = 'python {} -rs {} -z {} -o {} -log'.format(runScript, stack, varsDict['inZonal'], varsDict['outCsv'])        
+        cmd = 'python {} -rs {} -z {} -o {} -log'.format(runScript, stack,  \
+                      varsDict['inZonal'], varsDict['outCsv'])        
         print cmd
         os.system(cmd) 
         
