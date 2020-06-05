@@ -123,7 +123,7 @@ def main(args):
     outGdb = varsDict['outCsv'].replace('.csv', '-{}.gpkg'.format(platform.node()))
 
     if runPar: # If running in parallel
-        import pdb; pdb.set_trace()
+        
         # Get list of output stacks that we are expecting based off stackList
         shps = [os.path.join(mainDir, zonalType, stackType, RasterStack(stack).stackName, 
                 '{}__{}__zonalStats.shp'.format(zonalType, RasterStack(stack).stackName)) for stack in stackList]
