@@ -337,6 +337,9 @@ def main(args):
     # outDir = baseDir / zonalType (ATL08_na or GLAS_buff30m) --> stackType / stackName
     zonalType = inZones.zonalName
     outDir    = stack.outDir(os.path.join(baseDir, zonalType))
+    
+    # Create directory where output is supposed to go:
+    os.system('mkdir -p {}'.format(os.path.dirname(outCsv)))
 
     # Stack-specific outputs
     stackCsv = os.path.join(outDir, '{}__{}__zonalStats.csv'.format(zonalType, stackName))
