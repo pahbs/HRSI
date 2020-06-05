@@ -19,8 +19,10 @@ Inputs:
 import os
 import argparse
 import platform
+import time
 
 from RasterStack import RasterStack
+from FeatureClass import FeatureClass
 
 overwrite = False
 
@@ -116,34 +118,66 @@ def main(args):
     
     # Get list of stacks to iterate
     stackList = getStackList(varsDict['inList'], stackRange)
-    import pdb; pdb.set_trace()
-    # Iterate through stacks and call
-    print "\nProcessing {} stacks...".format(len(stackList))
     
-    c = 0
-    for stack in stackList:
+    # Get node-specific output .gdb
+    outGdb = varsDict['outCsv'].replace('.csv', '-{}.gpkg'.format(platform.node()))
+
+    if runPar: # If running in parallel
         
-        c+=1
-        print "\n{}/{}:".format(c, len(stackList))
+        # Get list of output stacks that we are expecting based off stackList
+        shps = [os.path.join(mainDir, zonalType, stackType, RasterStack(stack).stackName, 
+                '{}__{}__zonalStats.shp'.format(zonalType, RasterStack(stack).stackName)) for stack in stackList]
+
+        # Prepare inputs for parallel call:
+        call = "lscpu | awk '/^Socket.s.:/ {sockets=$NF} END {print sockets}'"
+        ncpu = os.popen(call).read().strip()
+        ncpu = int(ncpu) - 1 # all CPUs minus 1
+    
+        parList = ' '.join(stackList)
         
-        # Check stack's outputs, and skip if it exists and overwrite is False
-        rs = RasterStack(stack)
-        check = os.path.join(mainDir, zonalType, stackType, rs.stackName,
-                    '{}__{}__zonalStats.shp'.format(zonalType, rs.stackName))
+        print "\nProcessing {} stack files in parallel...\n".format(len(stackList))
+
+        # Do not supply output GDB, just supply .csv
+        parCall = '{} -rs '.format(runScript) + '{1} -z {2} -o {3} -log'
+        cmd = "parallel --progress -j {} --delay 1 '{}' ::: {} ::: {} ::: {}". \
+                format(ncpu, parCall, parList, varsDict['inZonal'], varsDict['outCsv'])
+        os.system(cmd)       
+
+        # And update node-specific GDB 
+        print "\n\nCreating {} with completed shapefiles ({})...".format(outGdb, time.strftime("%m-%d-%y %I:%M:%S"))   
+        for shp in shps:
+            if os.path.isfile(shp):
+                fc = FeatureClass(shp)
+                fc.addToFeatureClass(outGdb)        
+                
+    # Do not run in parallel
+    else:   
         
-        if not overwrite:
-            if os.path.isfile(check):
-                print "\nOutputs for {} already exist\n".format(rs.stackName)
-                continue
+        # Iterate through stacks and call
+        print "\nProcessing {} stacks...".format(len(stackList))
         
-        cmd = 'python {} -rs {} -z {} -o {} -log'.format(runScript, stack,  \
-                      varsDict['inZonal'], varsDict['outCsv'])        
-        print cmd
-        os.system(cmd) 
+        c = 0
+        for stack in stackList:
+            
+            c+=1
+            print "\n{}/{}:".format(c, len(stackList))
+            
+            # Check stack's outputs, and skip if it exists and overwrite is False
+            rs = RasterStack(stack)
+            check = os.path.join(mainDir, zonalType, stackType, rs.stackName,
+                        '{}__{}__zonalStats.shp'.format(zonalType, rs.stackName))
+            
+            if not overwrite:
+                if os.path.isfile(check):
+                    print "\nOutputs for {} already exist\n".format(rs.stackName)
+                    continue
+            
+            # Not running in parallel, send the node-specific ouput .gdb and both should get written
+            cmd = 'python {} -rs {} -z {} -o {} -log'.format(runScript, stack,  \
+                                          varsDict['inZonal'], outGdb)        
+            print cmd
+            os.system(cmd) 
         
-    # COULD PUT CALL TO UPDATE THE FINAL OUTPUT GDB HERE instead of running
-    # createOutGdb.py. Likliehood of two nodes trying to write to same GDB
-    # at same time is low. Think about it but for now keep separate.
         
 if __name__ == "__main__":
     

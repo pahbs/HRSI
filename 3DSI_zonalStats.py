@@ -346,8 +346,11 @@ def main(args):
     # Figure out if we are writing to .gdb/.gpkg and .csv or just .csv
     bigExt = os.path.splitext(bigOutput)[1]
     if bigExt == '.gdb' or bigExt == 'gpkg': # Write to both
-        outCsv = bigOutput.replace(bigExt, '.csv')
-        outGdb = bigOutput
+        # Assume gdb/gpkg is node specific (eg. output-crane101.gdb)
+        outCsv = bigOutput.replace('-{}{}'.format(platform.node(), bigExt), '.csv')
+        if not outCsv.endswith('.csv'): # If that assumption is wrong and the above didn't work
+            outCsv = bigOutput.replace(bigExt, '.csv') # then replace extension as is
+        outGdb = bigOutput # Keep gdb as is
     elif bigExt == '.csv': # Write only to .csv
         outCsv = bigOutput
         outGdb = None
