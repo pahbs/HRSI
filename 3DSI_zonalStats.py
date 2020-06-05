@@ -488,7 +488,7 @@ def main(args):
     return None
 
 if __name__ == "__main__":
-    
+    import pdb; pdb.set_trace()
     parser = argparse.ArgumentParser()
     parser.add_argument("-rs", "--rasterStack", type=str, required=True, help="Input raster stack")
     parser.add_argument("-z", "--zonalFc", type=str, required=True, help="Input zonal shp/gdb")
