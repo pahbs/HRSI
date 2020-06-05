@@ -138,8 +138,8 @@ def main(args):
         print "\nProcessing {} stack files in parallel...\n".format(len(stackList))
 
         # Do not supply output GDB, just supply .csv
-        parCall = '{} -rs '.format(runScript) + '{1} -z {2} -o {3} -log'
-        cmd = "parallel -q --progress -j {} --delay 1 '{}' ::: {} ::: {} ::: {} :::". \
+        parCall = '{} -rs '.format(runScript) + '{1} -z {2} -o {3}'
+        cmd = "parallel -q --progress -j {} --delay 1 '{}' ::: {} ::: {} ::: {}". \
                 format(ncpu, parCall, parList, varsDict['inZonal'], varsDict['outCsv'])
         print cmd
         os.system(cmd)       
