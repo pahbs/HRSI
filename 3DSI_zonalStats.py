@@ -363,8 +363,23 @@ def main(args):
     print "Input raster stack: {}".format(inRaster)
     print " n layers = {}".format(stack.nLayers)
 
+    # 6/5 Get filter depending on zonal type. Try to weed out bad data on front end
+    # also use this in step 2, but may get rid of that later
+    if zonalType == 'ATL08':
+        filterStr = "can_open != {}".format(float(340282346638999984013312))       
+    elif zonalType == 'GLAS':
+        filterStr = '' # ??????        
+    else:
+        print "zonal type {} not recognized".format(zonalType)
+        return None
+
                
     # 1. Clip input zonal shp to raster extent. Output proj = that of stack  
+    # 6/5 Try filterin src data in clip
+    import pdb; pdb.set_trace()
+    tableName = inZones.baseName
+    sqlQry = 'SELECT * FROM {} WHERE ;'
+    
     clipZonal = os.path.join(outDir, '{}__{}.shp'.format(zonalType, stackName))
     if not os.path.isfile(clipZonal):
         print "\n1. Clipping input feature class to extent..."
@@ -378,15 +393,7 @@ def main(args):
     if not checkZfcResults(zones, "clipping to stack extent"): 
         return None
 
-    # 2. Filter footprints based on attributes - maybe make filterDict for this
-    if zonalType == 'ATL08':
-        filterStr = "can_open != {}".format(float(340282346638999984013312))       
-    elif zonalType == 'GLAS':
-        filterStr = '' # ??????        
-    else:
-        print "zonal type {} not recognized".format(zonalType)
-        return None
-
+    # 2. Filter footprints based on attributes - 6/5 maybe don't need this if we get sql to work for ogr2ogr
     print '\n2. Filtering on attributes using statement = "{}"...'.format(filterStr)
     
     filterShp = zones.filterAttributes(filterStr)
