@@ -27,6 +27,11 @@ Inputs:
     RasterStack
     ZonalFeatureClass (will be clipped to extent)
     
+    
+6/5: Changing csv argument to be either csv or gdb
+     If gdb is passed, create .csv and .gdb
+     If .csv is passed, create only .csv
+    
 """
 
 # Set global variables:
@@ -322,7 +327,7 @@ def main(args):
     # Unpack arguments   
     inRaster  = args['rasterStack']
     inZonalFc = args['zonalFc']
-    outCsv    = args['outputCsv']
+    bigOutput = args['bigOutput']
     logOut    = args['logOutput']
     
     stack   = RasterStack(inRaster)
@@ -338,6 +343,15 @@ def main(args):
     zonalType = inZones.zonalName
     outDir    = stack.outDir(os.path.join(baseDir, zonalType))
     
+    # Figure out if we are writing to .gdb/.gpkg and .csv or just .csv
+    bigExt = os.path.splitext(bigOutput)[1]
+    if bigExt == '.gdb' or bigExt == 'gpkg': # Write to both
+        outCsv = bigOutput.replace(bigExt, '.csv')
+        outGdb = bigOutput
+    elif bigExt == '.csv': # Write only to .csv
+        outCsv = bigOutput
+        outGdb = None
+    
     # Create directory where output is supposed to go:
     os.system('mkdir -p {}'.format(os.path.dirname(outCsv)))
 
@@ -350,7 +364,8 @@ def main(args):
         writing to the output gdb. For now, just write to a node-specific 
         output GPKG and merge by hand when all are done
     """
-    outGdb = outCsv.replace('.csv', '-{}.gpkg'.format(platform.node()))
+    #6/5 already defined outGdb
+    #outGdb = outCsv.replace('.csv', '-{}.gpkg'.format(platform.node()))
     
     # Start stack-specific log if doing so
     if logOut: 
@@ -382,7 +397,7 @@ def main(args):
     if not os.path.isfile(clipZonal):
         print "\n1. Clipping input feature class to extent..."
         inZones.clipToExtent(stackExtent, stackEpsg, stackEpsg, 
-                             clipZonal, sqlQry)
+                             clipZonal)#, sqlQry)
     else: print "\n1. Clipped feature class {} already exists...".format(clipZonal)
     
     # now zones is the clipped input ZFC object:
@@ -448,7 +463,7 @@ def main(args):
     updateOutputCsv(outCsv, zonalStatsDf)
     #updateOutputGdb(outGdb, stackShp)
     fc = ZonalFeatureClass(stackShp) # Update GDB now a method in FC.py
-    fc.addToFeatureClass(outGdb)
+    if outGdb: fc.addToFeatureClass(outGdb)
 
     elapsedTime = round((time.time()-start)/60, 4)
     print "\nEND: {}\n".format(time.strftime("%m-%d-%y %I:%M:%S"))
@@ -463,7 +478,8 @@ def main(args):
         with open(batchCsv, 'w') as bc:
             bc.write('stackName,n layers,n zonal features,node,minutes\n')
     with open(batchCsv, 'a') as bc:
-        bc.write('{},{},{},{},{}\n'.format(stackName, stack.nLayers, zones.nFeatures, platform.node(), elapsedTime))
+        bc.write('{},{},{},{},{}\n'.format(stackName, stack.nLayers, 
+                                zones.nFeatures, platform.node(), elapsedTime))
 
     return None
 
@@ -472,7 +488,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-rs", "--rasterStack", type=str, required=True, help="Input raster stack")
     parser.add_argument("-z", "--zonalFc", type=str, required=True, help="Input zonal shp/gdb")
-    parser.add_argument("-o", "--outputCsv", type=str, required=True, help="Output csv for all stacks. GDB will also be created")
+    parser.add_argument("-o", "--bigOutput", type=str, required=True, help="Output for all stacks. If .gdb/.gpkg is provided, output and csv are created. If .csv, only .csv is created")
     parser.add_argument("-log", "--logOutput", action='store_true', help="Log the output")
     
     args = vars(parser.parse_args())

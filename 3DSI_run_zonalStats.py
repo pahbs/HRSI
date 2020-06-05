@@ -7,11 +7,18 @@ Iterate through a list of stacks for a given stack/zone type combo,
 Inputs: 
     stackType [SGM, LVIS, or GLiHT for now]
     zoneType  [ATL08?, GLAS for now]
+    
+6/5 
+    Adding parameter in 3DSI_zonalStats.py to update an output GDB or not
+    If not running in parallel, supply output GDB/GPKG
+    If running in parallel, do not supply output GDB
+        Will instead build list of output shapefiles after parallel is 
+        done running here and update gdb using list
 """
 
 import os
 import argparse
-#import platform
+import platform
 
 from RasterStack import RasterStack
 
@@ -77,6 +84,7 @@ def unpackValidateArgs(args):
     stackType  = args['stackType']
     zonalType  = args['zonalType']
     stackRange = args['range']
+    runPar     = args['parallel']
 
     # Validate inputs   
     if stackType not in validStackTypes:
@@ -96,19 +104,19 @@ def unpackValidateArgs(args):
         except:
             raise RuntimeError("Range must be supplied like: 1-20")
             
-    return stackType, zonalType, stackRange
+    return stackType, zonalType, stackRange, runPar
 
 def main(args):
 
     # Unpack and validate arguments
-    stackType, zonalType, stackRange = unpackValidateArgs(args)
+    stackType, zonalType, stackRange, runPar = unpackValidateArgs(args)
     
     # Get varsDict --> {inList; inZonal; outCsv}
     varsDict = getVarsDict(stackType, zonalType) 
     
     # Get list of stacks to iterate
     stackList = getStackList(varsDict['inList'], stackRange)
-
+    import pdb; pdb.set_trace()
     # Iterate through stacks and call
     print "\nProcessing {} stacks...".format(len(stackList))
     
@@ -146,7 +154,8 @@ if __name__ == "__main__":
                                 help="Stack type (SGM, LVIS, or GLiHT)")
     parser.add_argument("-r", "--range", type=str,
                                 help="Range for stack iteration (i.e. 1-20)")
-
+    parser.add_argument("-par", "--parallel", action='store_true', help="Run in parallel")
+    
     args = vars(parser.parse_args())
 
     main(args)
