@@ -34,8 +34,6 @@ Inputs:
     
 """
 
-# Set global variables:
-baseDir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ZonalStats/'
 
 def addStatsToShp(df, shp):   
     # Edit shp to add the stat columns from df
@@ -324,6 +322,9 @@ def main(args):
     # Start clock
     start = time.time()
     
+    # Set main directory:
+    baseDir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ZonalStats/'
+    
     # Unpack arguments   
     inRaster  = args['rasterStack']
     inZonalFc = args['zonalFc']
@@ -342,7 +343,7 @@ def main(args):
     # outDir = baseDir / zonalType (ATL08_na or GLAS_buff30m) --> stackType / stackName
     zonalType = inZones.zonalName
     outDir    = stack.outDir(os.path.join(baseDir, zonalType))
-    #import pdb; pdb.set_trace()    
+   
     # Figure out if we are writing to .gdb/.gpkg and .csv or just .csv
     bigExt = os.path.splitext(bigOutput)[1]
     if bigExt == '.gdb' or bigExt == '.gpkg': # Write to both
