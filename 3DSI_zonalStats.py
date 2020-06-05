@@ -342,7 +342,7 @@ def main(args):
     # outDir = baseDir / zonalType (ATL08_na or GLAS_buff30m) --> stackType / stackName
     zonalType = inZones.zonalName
     outDir    = stack.outDir(os.path.join(baseDir, zonalType))
-    
+    import pdb; pdb.set_trace()    
     # Figure out if we are writing to .gdb/.gpkg and .csv or just .csv
     bigExt = os.path.splitext(bigOutput)[1]
     if bigExt == '.gdb' or bigExt == 'gpkg': # Write to both
