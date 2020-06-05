@@ -452,6 +452,7 @@ def main(args):
     batchCsv = os.path.join(baseDir, '_timing', 
                     '{}_{}__timing.csv'.format(zonalType, stack.stackType()))
     os.system('mkdir -p {}'.format(os.path.dirname(batchCsv)))
+    
     if not os.path.isfile(batchCsv):
         with open(batchCsv, 'w') as bc:
             bc.write('stackName,n layers,n zonal features,node,minutes\n')
