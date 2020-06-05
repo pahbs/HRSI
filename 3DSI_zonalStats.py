@@ -372,7 +372,6 @@ def main(args):
     else:
         print "zonal type {} not recognized".format(zonalType)
         return None
-
                
     # 1. Clip input zonal shp to raster extent. Output proj = that of stack  
     # 6/5 Try filterin src data in clip
