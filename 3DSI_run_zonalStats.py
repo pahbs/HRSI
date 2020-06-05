@@ -27,7 +27,7 @@ from FeatureClass import FeatureClass
 overwrite = False
 
 mainDir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ZonalStats'
-runScript = '/att/home/mwooten3/code/HRSI/3DSI_zonalStats.py'
+runScript = '/home/mwooten3/code/HRSI/3DSI_zonalStats.py'
 
 validStackTypes = ['SGM', 'LVIS', 'GLiHT']
 validZonalTypes = ['ATL08', 'GLAS']
