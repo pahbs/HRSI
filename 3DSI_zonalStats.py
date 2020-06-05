@@ -342,10 +342,10 @@ def main(args):
     # outDir = baseDir / zonalType (ATL08_na or GLAS_buff30m) --> stackType / stackName
     zonalType = inZones.zonalName
     outDir    = stack.outDir(os.path.join(baseDir, zonalType))
-    import pdb; pdb.set_trace()    
+    #import pdb; pdb.set_trace()    
     # Figure out if we are writing to .gdb/.gpkg and .csv or just .csv
     bigExt = os.path.splitext(bigOutput)[1]
-    if bigExt == '.gdb' or bigExt == 'gpkg': # Write to both
+    if bigExt == '.gdb' or bigExt == '.gpkg': # Write to both
         # Assume gdb/gpkg is node specific (eg. output-crane101.gdb)
         outCsv = bigOutput.replace('-{}{}'.format(platform.node(), bigExt), '.csv')
         if not outCsv.endswith('.csv'): # If that assumption is wrong and the above didn't work
