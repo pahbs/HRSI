@@ -396,8 +396,8 @@ def main(args):
                
     # 1. Clip input zonal shp to raster extent. Output proj = that of stack  
     # 6/5 Try filterin src data in clip
-    tableName = inZones.baseName
-    sqlQry = 'SELECT * FROM {} WHERE {};'.format(tableName, filterStr.replace('!=', '<>'))
+    #tableName = inZones.baseName
+    #sqlQry = 'SELECT * FROM {} WHERE {};'.format(tableName, filterStr.replace('!=', '<>'))
     
     clipZonal = os.path.join(outDir, '{}__{}.shp'.format(zonalType, stackName))
     if not os.path.isfile(clipZonal):
@@ -440,7 +440,8 @@ def main(args):
         return None
              
     zones = ZonalFeatureClass(stackShp)
-    checkZfcResults(zones, "masking out NoData values") 
+    if not checkZfcResults(zones, "masking out NoData values"):
+        return None
     # Now zones is the filtered fc obj, will eventually have the stats added as attributes
     
     # Get stack key dictionary    
@@ -465,11 +466,12 @@ def main(args):
     #    new stats columns to ZFC     
     zonalStatsDf.to_csv(stackCsv, sep=',', index=False, header=True)#), na_rep="NoData")
        
-    # 7. Update the big csv and big output gdb by appending to them:
+    # 7. Update the big csv and big output gdb (if True) by appending to them:
     updateOutputCsv(outCsv, zonalStatsDf)
-    #updateOutputGdb(outGdb, stackShp)
-    fc = ZonalFeatureClass(stackShp) # Update GDB now a method in FC.py
-    if outGdb: fc.addToFeatureClass(outGdb)
+    
+    if outGdb:
+        fc = ZonalFeatureClass(stackShp) # Update GDB now a method in FC.py
+        fc.addToFeatureClass(outGdb)
 
     elapsedTime = round((time.time()-start)/60, 4)
     print "\nEND: {}\n".format(time.strftime("%m-%d-%y %I:%M:%S"))
@@ -487,6 +489,8 @@ def main(args):
         bc.write('{},{},{},{},{}\n'.format(stackName, stack.nLayers, 
                                 zones.nFeatures, platform.node(), elapsedTime))
 
+    sys.stdout.flush()
+    
     return None
 
 if __name__ == "__main__":
