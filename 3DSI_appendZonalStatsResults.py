@@ -158,8 +158,11 @@ def main(args):
         c+=1
         print "\n{}/{}:".format(c, len(shpList))
         
-        # A: Update to large output .csv:
+        # A: Update to large output .csv if one exists:
         inCsv = inShp.replace('.shp', '.csv')
+        
+        if not os.path.isfile(inCsv): continue # Skip if no .csv (ie zero features in shp)
+    
         df = pd.DataFrame.from_csv(inCsv)
         updateOutputCsv(varsDict['outCsv'], df)
     print "Finished writing .csv\n========================================\n"
