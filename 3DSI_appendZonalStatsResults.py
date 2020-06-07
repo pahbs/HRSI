@@ -125,7 +125,7 @@ def updateOutputCsv(outCsv, df):
     return None
 
 def main(args):
-    import pdb; pdb.set_trace()
+
     # Unpack and validate arguments
     stackType, zonalType, stackRange = unpackValidateArgs(args)
     
