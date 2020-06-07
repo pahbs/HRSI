@@ -59,9 +59,9 @@ def getVarsDict(stackType, zonalType):
         searchDir = os.path.join(mainDir, '{}/{}/*/*zonalStats.shp'.format(zonalType, stackType))
         os.system('{} > {}'.format(searchDir, inputList))
        
-        
-    outCsv = os.path.join(mainDir, '_zonalStatsGdb',
-                         '{}__{}__ZonalStats.csv'.format(zonalType, stackType))
+    # For now right to main ZS dir
+    outCsv = os.path.join(mainDir,
+            '{}__{}__ZonalStats.csv'.format(zonalType, stackType))
     
     varsDict = {'inList': inputList, 'outCsv': outCsv}
     
@@ -145,10 +145,13 @@ def main(args):
     # To record feature count
     featureCount = os.path.join(mainDir, '_timing', 
                 '{}_{}__featureCount.csv'.format(zonalType, stackType))
+    if not os.path.isfile(featureCount):
+        with open(featureCount, 'w') as bc:
+            bc.write('zonalStatShp,basename,nFeatures\n')
 
-    # Iterate through stacks and call
-    print "\nProcessing {} zonalStats outputs...".format(len(shpList))
-    
+    # PART A: Iterate through csv's and write to big output .csv
+    print "\nProcessing {} zonalStats outputs to write .csv {}...". \
+                            format(len(shpList), varsDict['outCsv'])
     c = 0
     for inShp in shpList:
         
@@ -159,7 +162,17 @@ def main(args):
         inCsv = inShp.replace('.shp', '.csv')
         df = pd.DataFrame.from_csv(inCsv)
         updateOutputCsv(varsDict['outCsv'], df)
+    print "Finished writing .csv\n========================================\n"
+    
+    # PART B: Iterate through shp's and write to big output gdb/.gpkg
+    print "\nProcessing {} zonalStats outputs to write .gdb {}...". \
+                                        format(len(shpList), outGdb)
+    c = 0
+    for inShp in shpList:
         
+        c+=1
+        print "\n{}/{}:".format(c, len(shpList))
+              
         # B. Append to large output .gdb
         zs = FeatureClass(inShp)
         nFeatures = zs.nFeatures
@@ -170,9 +183,6 @@ def main(args):
         # C. Write number of features for shapefile zone / 
         #       stackName combo to csv since timing failed
         bname = os.path.basename(inShp).strip('__zonalStats.shp')
-        if not os.path.isfile(featureCount):
-            with open(featureCount, 'w') as bc:
-                bc.write('zonalStatShp,basename,nFeatures\n')
         with open(featureCount, 'a') as bc:
             bc.write('{},{},{},{},{}\n'.format(inShp, bname, nFeatures))
 
