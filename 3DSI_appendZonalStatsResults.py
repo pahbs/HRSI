@@ -114,7 +114,7 @@ def unpackValidateArgs(args):
 def updateOutputCsv(outCsv, df):
     # Append a dataframe to an output CSV - assumes columns are the same
 
-    print "\nUpdating the big output csv {}".format(outCsv)
+    #print "\nUpdating the big output csv {}".format(outCsv)
     
     hdr = False # Only add the header if the file does not exist
     if not os.path.isfile(outCsv):
@@ -152,11 +152,11 @@ def main(args):
     # PART A: Iterate through csv's and write to big output .csv
     print "\nProcessing {} zonalStats outputs to write .csv {}...". \
                             format(len(shpList), varsDict['outCsv'])
-    c = 0
+    #c = 0
     for inShp in shpList:
         
-        c+=1
-        print "\n{}/{}:".format(c, len(shpList))
+        #c+=1
+        #print "\n{}/{}:".format(c, len(shpList))
         
         # A: Update to large output .csv if one exists:
         inCsv = inShp.replace('.shp', '.csv')
@@ -165,7 +165,9 @@ def main(args):
     
         df = pd.DataFrame.from_csv(inCsv)
         updateOutputCsv(varsDict['outCsv'], df)
-    print "Finished writing .csv\n========================================\n"
+        
+    print "Finished writing .csv\n========================================"
+    
     
     # PART B: Iterate through shp's and write to big output gdb/.gpkg
     print "\nProcessing {} zonalStats outputs to write .gdb {}...". \
@@ -187,7 +189,7 @@ def main(args):
         #       stackName combo to csv since timing failed
         bname = os.path.basename(inShp).strip('__zonalStats.shp')
         with open(featureCount, 'a') as bc:
-            bc.write('{},{},{},{},{}\n'.format(inShp, bname, nFeatures))
+            bc.write('{},{},{}\n'.format(inShp, bname, nFeatures))
 
 
 
