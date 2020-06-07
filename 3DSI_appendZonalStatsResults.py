@@ -125,7 +125,7 @@ def updateOutputCsv(outCsv, df):
     return None
 
 def main(args):
-
+    import pdb; pdb.set_trace()
     # Unpack and validate arguments
     stackType, zonalType, stackRange = unpackValidateArgs(args)
     
@@ -145,8 +145,6 @@ def main(args):
     # To record feature count
     featureCount = os.path.join(mainDir, '_timing', 
                 '{}_{}__featureCount.csv'.format(zonalType, stackType))
-    
-    import pdb; pdb.set_trace()
 
     # Iterate through stacks and call
     print "\nProcessing {} zonalStats outputs...".format(len(shpList))
