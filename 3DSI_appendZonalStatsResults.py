@@ -57,7 +57,7 @@ def getVarsDict(stackType, zonalType):
     # if inputList does not exist, make your own
     if not os.path.isfile(inputList):
         searchDir = os.path.join(mainDir, '{}/{}/*/*zonalStats.shp'.format(zonalType, stackType))
-        os.system('{} > {}'.format(searchDir, inputList))
+        os.system('ls {} > {}'.format(searchDir, inputList))
        
     # For now right to main ZS dir
     outCsv = os.path.join(mainDir,
