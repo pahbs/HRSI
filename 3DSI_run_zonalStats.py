@@ -124,7 +124,7 @@ def main(args):
 
     if runPar: # If running in parallel
         
-        # Get list of output stacks that we are expecting based off stackList
+        # Get list of output shp's that we are expecting based off stackList
         shps = [os.path.join(mainDir, zonalType, stackType, RasterStack(stack).stackName, 
                 '{}__{}__zonalStats.shp'.format(zonalType, RasterStack(stack).stackName)) for stack in stackList]
 
@@ -144,12 +144,12 @@ def main(args):
 
         os.system(cmd)       
 
-        # And update node-specific GDB 
+        # And update node-specific GDB if shp exists
         print "\n\nCreating {} with completed shapefiles ({})...".format(outGdb, time.strftime("%m-%d-%y %I:%M:%S"))   
         for shp in shps:
             if os.path.isfile(shp):
                 fc = FeatureClass(shp)
-                fc.addToFeatureClass(outGdb)        
+                if fc.nFeatures > 0: fc.addToFeatureClass(outGdb)        
                 
     # Do not run in parallel
     else:   
@@ -163,10 +163,10 @@ def main(args):
             c+=1
             print "\n{}/{}:".format(c, len(stackList))
             
-            # Check stack's outputs, and skip if it exists and overwrite is False
+            # Check stack's output csv's, and skip if it exists and overwrite is False
             rs = RasterStack(stack)
             check = os.path.join(mainDir, zonalType, stackType, rs.stackName,
-                        '{}__{}__zonalStats.shp'.format(zonalType, rs.stackName))
+                        '{}__{}__zonalStats.csv'.format(zonalType, rs.stackName))
             
             if not overwrite:
                 if os.path.isfile(check):

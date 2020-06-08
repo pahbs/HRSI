@@ -370,9 +370,7 @@ def main(args):
         writing to the output gdb. For now, just write to a node-specific 
         output GPKG and merge by hand when all are done
     """
-    #6/5 already defined outGdb
-    #outGdb = outCsv.replace('.csv', '-{}.gpkg'.format(platform.node()))
-    
+   
     # Start stack-specific log if doing so
     if logOut: 
         logFile = stackCsv.replace('.csv', '__Log.txt')
@@ -395,7 +393,7 @@ def main(args):
         return None
                
     # 1. Clip input zonal shp to raster extent. Output proj = that of stack  
-    # 6/5 Try filterin src data in clip
+    # 6/5 Try filtering src data in clip
     #tableName = inZones.baseName
     #sqlQry = 'SELECT * FROM {} WHERE {};'.format(tableName, filterStr.replace('!=', '<>'))
     
