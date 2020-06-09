@@ -141,7 +141,7 @@ class ZonalFeatureClass(FeatureClass):
     #  return a query that avoids SQL error from "FID IN (<largeTuple>)"
     #  List of FIDs will be split into chunks separated by OR
     #-------------------------------------------------------------------------- 
-    def getFidQuery(FIDs, maxFeatures = 4800):
+    def getFidQuery(self, FIDs, maxFeatures = 4800):
         
         nFID = len(FIDs)
         print "nFID", nFID
