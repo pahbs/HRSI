@@ -103,7 +103,7 @@ class ZonalFeatureClass(FeatureClass):
             
         else:
             query = "FID IN {}".format(tuple(keepFIDs))
-
+        import pdb; pdb.set_trace()
         """ In the event that there are too many features to Set Filter with, 
         run pair twice with this following block uncommented, and manually 
         setting keepFIDs to A or B depending on which iteration you're on:
@@ -128,6 +128,11 @@ class ZonalFeatureClass(FeatureClass):
         ds = layer = dsOut = layerOut = feature = None
         
         return outShp
+
+    #--------------------------------------------------------------------------
+    # iterSetFilterAttribute()
+    #-------------------------------------------------------------------------- 
+    #def iterSetFilterAttribute():
 
     #--------------------------------------------------------------------------
     # filterAttributes()
