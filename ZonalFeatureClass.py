@@ -161,14 +161,13 @@ class ZonalFeatureClass(FeatureClass):
                 if i == nIter-1: # if in the last iteration
                     b = nFID
                     
-                queryFIDs = FIDs[a:b-1]
-                print "i, nFIDs", i, len(queryFIDs)
+                queryFIDs = FIDs[a:b]
                 query += ' {} OR FID IN'.format(tuple(queryFIDs))
                 
                 a += maxFeatures # Get bounds for next iteration
                 b += maxFeatures
                 
-                query = query.rstrip(' OR FID IN') 
+            query = query.rstrip(' OR FID IN') 
             
         else:
             query = "FID IN {}".format(tuple(FIDs))    
