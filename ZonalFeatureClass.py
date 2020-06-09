@@ -52,7 +52,7 @@ class ZonalFeatureClass(FeatureClass):
     # applyNoDataMask()
     #--------------------------------------------------------------------------    
     def applyNoDataMask(self, mask, transEpsg = None, outShp = None):
-
+        
         # Expecting mask to be 0 and 1, with 1 where we want to remove data
         # This is specific to 3DSI and therefore is not kept in FeatureClass 
         
@@ -101,8 +101,14 @@ class ZonalFeatureClass(FeatureClass):
         if len(keepFIDs) == 1: # tuple(listWithOneItem) wont work in Set Filter
             query = "FID = {}".format(keepFIDs[0])
             
-        else:
-            query = "FID IN {}".format(tuple(keepFIDs))
+        #if len(keepFIDs) > maxQueryFeat: # If too many features, split query
+            #query = self.iterQuery(keepFIDs, maxQueryFeat)
+            
+        else: # If we have more than 1 item, call getFidQuery
+            #query = "FID IN {}".format(tuple(keepFIDs))
+            query = self.getFidQuery(keepFIDs)
+            
+            
         import pdb; pdb.set_trace()
         """ In the event that there are too many features to Set Filter with, 
         run pair twice with this following block uncommented, and manually 
@@ -130,9 +136,43 @@ class ZonalFeatureClass(FeatureClass):
         return outShp
 
     #--------------------------------------------------------------------------
-    # iterSetFilterAttribute()
+    # getFidQuery()
+    #  Get the SQL query from a list of FIDs. For large FID sets,
+    #  return a query that avoids SQL error from "FID IN (<largeTuple>)"
+    #  List of FIDs will be split into chunks separated by OR
     #-------------------------------------------------------------------------- 
-    #def iterSetFilterAttribute():
+    def getFidQuery(FIDs, maxFeatures = 4800):
+        
+        nFID = len(FIDs)
+        print "nFID", nFID
+        if nFID > maxFeatures: # Then we must combine multiple smaller queries
+            
+            import math
+            nIter = int(math.ceil(nFID/float(maxFeatures)))
+
+            query = 'FID IN'
+            
+            a = 0
+            b = maxFeatures # initial bounds for first iter (0, maxFeat)
+            
+            for i in range(nIter):
+                
+                if i == nIter-1: # if in the last iteration
+                    b = nFID
+                    
+                queryFIDs = FIDs[a:b-1]
+                print "i, nFIDs", i, len(queryFIDs)
+                query += ' {} OR FID IN'.format(tuple(queryFIDs))
+                
+                a += maxFeatures # Get bounds for next iteration
+                b += maxFeatures
+                
+                query = query.rstrip(' OR FID IN') 
+            
+        else:
+            query = "FID IN {}".format(tuple(FIDs))    
+    
+        return query
 
     #--------------------------------------------------------------------------
     # filterAttributes()
