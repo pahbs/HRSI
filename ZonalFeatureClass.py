@@ -101,24 +101,8 @@ class ZonalFeatureClass(FeatureClass):
         if len(keepFIDs) == 1: # tuple(listWithOneItem) wont work in Set Filter
             query = "FID = {}".format(keepFIDs[0])
             
-        #if len(keepFIDs) > maxQueryFeat: # If too many features, split query
-            #query = self.iterQuery(keepFIDs, maxQueryFeat)
-                    
         else: # If we have more than 1 item, call getFidQuery
-            #query = "FID IN {}".format(tuple(keepFIDs))
-            import pdb; pdb.set_trace()
             query = self.getFidQuery(keepFIDs)
-            
-            
-
-        """ In the event that there are too many features to Set Filter with, 
-        run pair twice with this following block uncommented, and manually 
-        setting keepFIDs to A or B depending on which iteration you're on:
-        halfway = len(keepFIDs)/2 # if len is odd, 1st list will have 1 more item
-        #keepFIDs = keepFIDs[:halfway] # On first iteration
-        keepFIDs = keepFIDs[halfway:] # On second   
-        query = "FID IN {}".format(tuple(keepFIDs)) # redo query
-        """
         
         # Filter and write the features we want to keep to new output DS:
         ## Pass ID's to a SQL query as a tuple, i.e. "(1, 2, 3, ...)"
@@ -145,7 +129,7 @@ class ZonalFeatureClass(FeatureClass):
     def getFidQuery(self, FIDs, maxFeatures = 4800):
         
         nFID = len(FIDs)
-        print "nFID", nFID
+        
         if nFID > maxFeatures: # Then we must combine multiple smaller queries
             
             import math

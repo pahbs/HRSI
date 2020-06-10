@@ -411,15 +411,20 @@ def main(args):
     if not checkZfcResults(zones, "clipping to stack extent"): 
         return None
 
+    # 6/9 Uncomment to filter on attributes
+    print "\nNot running attribute or NoData filter steps"
+    """
     # 2. Filter footprints based on attributes - 6/5 maybe don't need this if we get sql to work for ogr2ogr
-    print '\n2. Filtering on attributes using statement = "{}"...'.format(filterStr)
-    
-    filterShp = zones.filterAttributes(filterStr)
+    print '\n2. Filtering on attributes using statement = "{}"...'.format(filterStr)   
 
+    filterShp = zones.filterAttributes(filterStr)
     zones = ZonalFeatureClass(filterShp)
     if not checkZfcResults(zones, "filtering on attributes"): 
         return None
-    
+    """
+
+    # 6/9 Uncomment to filter under NoDataMask
+    """
     # 3. Remove footprints under noData mask 
     noDataMask = stack.noDataLayer()
     rasterMask = RasterStack(noDataMask)
@@ -436,11 +441,13 @@ def main(args):
     if not stackShp: # Method returns None if no points remain
         print "\nThere were 0 features after masking ND vals. Exiting ({})".format(time.strftime("%m-%d-%y %I:%M:%S"))
         return None
-             
-    zones = ZonalFeatureClass(stackShp)
-    if not checkZfcResults(zones, "masking out NoData values"):
-        return None
+
+    # Redundant, yes?             
+    #zones = ZonalFeatureClass(stackShp)
+    #if not checkZfcResults(zones, "masking out NoData values"):
+    #    return None
     # Now zones is the filtered fc obj, will eventually have the stats added as attributes
+    """
     
     # Get stack key dictionary    
     layerDict = buildLayerDict(stack) # {layerNumber: [layerName, [statistics]]}
