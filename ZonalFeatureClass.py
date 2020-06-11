@@ -74,9 +74,10 @@ class ZonalFeatureClass(FeatureClass):
         else:
             outSrs.ImportFromEPSG(int(self.epsg())) # If transformation EPSG not supplied, keep coords as is
 
-        # 6/11 New filtering method - Add column to for rows we want to keep 
-        fldDef = ogr.FieldDefn('keep', ogr.OFTString)
-        layer.CreateField(fldDef)
+        # 6/11 New filtering method - Add column to for rows we want to keep
+        if 'keep' not in self.fieldNames():
+            fldDef = ogr.FieldDefn('keep', ogr.OFTString)
+            layer.CreateField(fldDef)
          
         # 6/11 - just count keep features, do no need FIDs
         #keepFIDs = []
@@ -94,6 +95,7 @@ class ZonalFeatureClass(FeatureClass):
             z = zonal_stats(wktPoly, mask, stats="mean")
             out = z[0]['mean']            
             if out >= 0.6 or out == None: # If 60% of pixels or more are NoData, skip
+                feature.SetField('keep', 'no')
                 continue
             
             # 6/11 - Else, set the new keep column to yes to filter later
