@@ -485,7 +485,6 @@ def main(args):
     updateOutputCsv(outCsv, zonalStatsDf)
     
     if outGdb:
-        import pdb; pdb.set_trace()
         fc = ZonalFeatureClass(stackShp) # Update GDB now a method in FC.py
         fc.addToFeatureClass(outGdb)
 
