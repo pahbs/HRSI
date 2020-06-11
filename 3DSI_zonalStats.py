@@ -258,7 +258,14 @@ def logOutput(logFile):
     os.dup2(se.fileno(), sys.stderr.fileno())
     
     return None
+
+def removeExtraColumns(df, col):
+    
+    if col in df.columns: 
+        df.drop(col, axis=1, inplace=True)
         
+    return df
+   
 def updateOutputCsv(outCsv, df):
     # Append a dataframe to an output CSV - assumes columns are the same
 
@@ -453,11 +460,11 @@ def main(args):
     # 5. Complete the ZS DF by:
     #    adding stackName col, sunAngle if need be
     #    replacing None vals
-    #    removing "keep" col from filtering step if it exists
+    #    removing columns if they exist: keep,SHAPE_Leng,SHAPE_Area
     zonalStatsDf = zonalStatsDf.fillna(stack.noDataValue)
     zonalStatsDf['stackName'] = [stackName for i in range(len(zonalStatsDf))]
-    if 'keep' in zonalStatsDf.columns: 
-        zonalStatsDf.drop('keep', axis=1, inplace=True)
+    for col in ['keep', 'SHAPE_Leng', 'SHAPE_Area']: 
+        zonalStatsDf = removeExtraColumns(zonalStatsDf, col)
     
     # Then add the zonal statistics columns from df to shp
     stackShp = addStatsToShp(zonalStatsDf, stackShp)
