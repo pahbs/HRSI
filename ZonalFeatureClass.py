@@ -73,7 +73,11 @@ class ZonalFeatureClass(FeatureClass):
             outSrs.ImportFromEPSG(int(transEpsg))
         else:
             outSrs.ImportFromEPSG(int(self.epsg())) # If transformation EPSG not supplied, keep coords as is
-        
+
+        # 6/11 Add column to for rows we want to keep 
+        fldDef = ogr.FieldDefn('keep', ogr.OFTString)
+        layer.CreateField(fldDef)
+         
         # Collect list of FIDs to keep
         keepFIDs = []
         for feature in layer:
@@ -92,18 +96,25 @@ class ZonalFeatureClass(FeatureClass):
             if out >= 0.6 or out == None: # If 60% of pixels or more are NoData, skip
                 continue
             
+            # 6/11, instead of keepFIDs, try setting the new keep column to yes
+            feature.SetField('keep', 'yes')
+            layer.SetFeature(feature)
+            
             # Else, add FID to list to keep
             keepFIDs.append(feature.GetFID())
-
+        
         if len(keepFIDs) == 0: # If there are no points remaining, return None
             return None
-        
+        """        
         if len(keepFIDs) == 1: # tuple(listWithOneItem) wont work in Set Filter
             query = "FID = {}".format(keepFIDs[0])
             
         else: # If we have more than 1 item, call getFidQuery
             query = self.getFidQuery(keepFIDs)
-        
+        """
+        import pdb; pdb.set_trace()
+        # 6/11 try new query with keep column:
+        query = "keep = 'yes'"        
         # Filter and write the features we want to keep to new output DS:
         ## Pass ID's to a SQL query as a tuple, i.e. "(1, 2, 3, ...)"
         layer.SetAttributeFilter(query)

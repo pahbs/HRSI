@@ -380,6 +380,8 @@ def main(args):
     print "BEGIN: {}\n".format(time.strftime("%m-%d-%y %I:%M:%S"))
     print "Input zonal feature class: {}".format(inZonalFc)
     print "Input raster stack: {}".format(inRaster)
+    print "Output stack .shp: {}".format(stackShp)
+    print "Output aggregate: {}".format(outGdb)
     print " n layers = {}".format(stack.nLayers)
 
     # 6/5 Get filter depending on zonal type. Try to weed out bad data on front end
@@ -414,7 +416,7 @@ def main(args):
     # 6/9 Uncomment to filter on attributes
     print "\nNot running attribute or NoData filter steps"
     """
-    # 2. Filter footprints based on attributes - 6/5 maybe don't need this if we get sql to work for ogr2ogr
+    # 2. Filter footprints based on attributes - already did this on the front end to .gdb
     print '\n2. Filtering on attributes using statement = "{}"...'.format(filterStr)   
 
     filterShp = zones.filterAttributes(filterStr)
@@ -424,7 +426,7 @@ def main(args):
     """
 
     # 6/9 Uncomment to filter under NoDataMask
-    """
+    
     # 3. Remove footprints under noData mask 
     noDataMask = stack.noDataLayer()
     rasterMask = RasterStack(noDataMask)
@@ -441,14 +443,15 @@ def main(args):
     if not stackShp: # Method returns None if no points remain
         print "\nThere were 0 features after masking ND vals. Exiting ({})".format(time.strftime("%m-%d-%y %I:%M:%S"))
         return None
-
+    """
     # Redundant, yes?             
     #zones = ZonalFeatureClass(stackShp)
     #if not checkZfcResults(zones, "masking out NoData values"):
     #    return None
     # Now zones is the filtered fc obj, will eventually have the stats added as attributes
     """
-    
+     # if skipping, need to copy the clipped shp to stackShp here before continuing
+     
     # Get stack key dictionary    
     layerDict = buildLayerDict(stack) # {layerNumber: [layerName, [statistics]]}
 
