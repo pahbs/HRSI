@@ -387,8 +387,9 @@ def main(args):
     print "BEGIN: {}\n".format(time.strftime("%m-%d-%y %I:%M:%S"))
     print "Input zonal feature class: {}".format(inZonalFc)
     print "Input raster stack: {}".format(inRaster)
-    print "Output stack .shp: {}".format(stackShp)
-    print "Output aggregate: {}".format(outGdb)
+    print "Output stack .csv: {}".format(stackCsv)
+    print "Output aggregate fc: {}".format(outGdb)
+    print "Output aggregate csv: {}".format(outCsv)
     print " n layers = {}".format(stack.nLayers)
 
     # 6/5 Get filter depending on zonal type. Try to weed out bad data on front end
