@@ -486,7 +486,7 @@ def main(args):
 
     if outGdb:
         fc = ZonalFeatureClass(stackShp) # Update GDB now a method in FC.py
-        fc.addToFeatureClass(outGdb, moreArgs = '-unsetFID')
+        fc.addToFeatureClass(outGdb)#, moreArgs = '-unsetFID')
 
     elapsedTime = round((time.time()-start)/60, 4)
     print "\nEND: {}\n".format(time.strftime("%m-%d-%y %I:%M:%S"))
