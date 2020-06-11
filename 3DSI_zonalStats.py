@@ -460,11 +460,13 @@ def main(args):
     # 5. Complete the ZS DF by:
     #    adding stackName col, sunAngle if need be
     #    replacing None vals
-    #    removing columns if they exist: keep,SHAPE_Leng,SHAPE_Area
+    #    *removing columns if they exist: keep,SHAPE_Leng,SHAPE_Area
     zonalStatsDf = zonalStatsDf.fillna(stack.noDataValue)
     zonalStatsDf['stackName'] = [stackName for i in range(len(zonalStatsDf))]
-    for col in ['keep', 'SHAPE_Leng', 'SHAPE_Area']: 
-        zonalStatsDf = removeExtraColumns(zonalStatsDf, col)
+    # *Do not do this, because it will result in different fields for 
+    # individual shp vs larger gdb/csv. Until I can figure out better solution
+    #for col in ['keep', 'SHAPE_Leng', 'SHAPE_Area']: 
+        #zonalStatsDf = removeExtraColumns(zonalStatsDf, col)
     
     # Then add the zonal statistics columns from df to shp
     stackShp = addStatsToShp(zonalStatsDf, stackShp)
