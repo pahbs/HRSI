@@ -406,7 +406,7 @@ def main(args):
     # 6/5 Try filtering src data in clip
     #tableName = inZones.baseName
     #sqlQry = 'SELECT * FROM {} WHERE {};'.format(tableName, filterStr.replace('!=', '<>'))
-    import pdb;pdb.set_trace()    
+   
     clipZonal = os.path.join(outDir, '{}__{}.shp'.format(zonalType, stackName))
     if not os.path.isfile(clipZonal):
         print "\n1. Clipping input feature class to extent..."
@@ -486,7 +486,7 @@ def main(args):
 
     if outGdb:
         fc = ZonalFeatureClass(stackShp) # Update GDB now a method in FC.py
-        fc.addToFeatureClass(outGdb)
+        fc.addToFeatureClass(outGdb, moreArgs = '-unsetFID')
 
     elapsedTime = round((time.time()-start)/60, 4)
     print "\nEND: {}\n".format(time.strftime("%m-%d-%y %I:%M:%S"))
