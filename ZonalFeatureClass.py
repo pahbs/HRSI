@@ -74,15 +74,15 @@ class ZonalFeatureClass(FeatureClass):
         else:
             outSrs.ImportFromEPSG(int(self.epsg())) # If transformation EPSG not supplied, keep coords as is
 
-        # 6/11 Add column to for rows we want to keep 
+        # 6/11 New filtering method - Add column to for rows we want to keep 
         fldDef = ogr.FieldDefn('keep', ogr.OFTString)
         layer.CreateField(fldDef)
          
-        # Collect list of FIDs to keep
-        keepFIDs = []
+        # 6/11 - just count keep features, do no need FIDs
+        #keepFIDs = []
+        keepFeat = 0 
         for feature in layer:
 
-            # OPTION A
             # Get polygon geometry and transform to outSrs just in case
             geom = feature.GetGeometryRef()
             geom.TransformTo(outSrs)
@@ -96,15 +96,17 @@ class ZonalFeatureClass(FeatureClass):
             if out >= 0.6 or out == None: # If 60% of pixels or more are NoData, skip
                 continue
             
-            # 6/11, instead of keepFIDs, try setting the new keep column to yes
+            # 6/11 - Else, set the new keep column to yes to filter later
             feature.SetField('keep', 'yes')
             layer.SetFeature(feature)
             
-            # Else, add FID to list to keep
-            keepFIDs.append(feature.GetFID())
+            #keepFIDs.append(feature.GetFID())
+            keepFeat += 1
         
-        if len(keepFIDs) == 0: # If there are no points remaining, return None
-            return None
+        #if len(keepFeat) == 0: # If there are no points remaining, return None
+            #return None
+        
+        # 6/11 - No longer doing filtering this way
         """        
         if len(keepFIDs) == 1: # tuple(listWithOneItem) wont work in Set Filter
             query = "FID = {}".format(keepFIDs[0])
@@ -112,11 +114,9 @@ class ZonalFeatureClass(FeatureClass):
         else: # If we have more than 1 item, call getFidQuery
             query = self.getFidQuery(keepFIDs)
         """
-        import pdb; pdb.set_trace()
-        # 6/11 try new query with keep column:
+
+        # 6/11 New filtering method
         query = "keep = 'yes'"        
-        # Filter and write the features we want to keep to new output DS:
-        ## Pass ID's to a SQL query as a tuple, i.e. "(1, 2, 3, ...)"
         layer.SetAttributeFilter(query)
 
         dsOut = drv.CreateDataSource(outShp)
@@ -136,6 +136,7 @@ class ZonalFeatureClass(FeatureClass):
     #  Get the SQL query from a list of FIDs. For large FID sets,
     #  return a query that avoids SQL error from "FID IN (<largeTuple>)"
     #  List of FIDs will be split into chunks separated by OR
+    #  6/11 - no longer need this
     #-------------------------------------------------------------------------- 
     def getFidQuery(self, FIDs, maxFeatures = 4800):
         

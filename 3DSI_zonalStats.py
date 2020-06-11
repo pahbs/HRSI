@@ -414,7 +414,7 @@ def main(args):
         return None
 
     # 6/9 Uncomment to filter on attributes
-    print "\nNot running attribute or NoData filter steps"
+    print "\n2. Not running attribute or NoData filter steps"
     """
     # 2. Filter footprints based on attributes - already did this on the front end to .gdb
     print '\n2. Filtering on attributes using statement = "{}"...'.format(filterStr)   
@@ -440,16 +440,16 @@ def main(args):
     stackShp = zones.applyNoDataMask(noDataMask, transEpsg = transEpsg,
                                                              outShp = stackShp)
 
-    if not stackShp: # Method returns None if no points remain
-        print "\nThere were 0 features after masking ND vals. Exiting ({})".format(time.strftime("%m-%d-%y %I:%M:%S"))
-        return None
-    """
+#    if not stackShp: # Method returns None if no points remain
+ #       print "\nThere were 0 features after masking ND vals. Exiting ({})".format(time.strftime("%m-%d-%y %I:%M:%S"))
+  #      return None
+
     # Redundant, yes?             
-    #zones = ZonalFeatureClass(stackShp)
-    #if not checkZfcResults(zones, "masking out NoData values"):
-    #    return None
+    zones = ZonalFeatureClass(stackShp)
+    if not checkZfcResults(zones, "masking out NoData values"):
+        return None
     # Now zones is the filtered fc obj, will eventually have the stats added as attributes
-    """
+
      # if skipping, need to copy the clipped shp to stackShp here before continuing
      
     # Get stack key dictionary    
