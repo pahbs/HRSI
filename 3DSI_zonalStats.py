@@ -424,8 +424,6 @@ def main(args):
     if not checkZfcResults(zones, "filtering on attributes"): 
         return None
     """
-
-    # 6/9 Uncomment to filter under NoDataMask
     
     # 3. Remove footprints under noData mask 
     noDataMask = stack.noDataLayer()
@@ -439,18 +437,11 @@ def main(args):
     print "\n3. Masking out NoData values using {}...".format(noDataMask)        
     stackShp = zones.applyNoDataMask(noDataMask, transEpsg = transEpsg,
                                                              outShp = stackShp)
-
-#    if not stackShp: # Method returns None if no points remain
- #       print "\nThere were 0 features after masking ND vals. Exiting ({})".format(time.strftime("%m-%d-%y %I:%M:%S"))
-  #      return None
-    import pdb; pdb.set_trace()
-    # Redundant, yes?             
+           
     zones = ZonalFeatureClass(stackShp)
     if not checkZfcResults(zones, "masking out NoData values"):
         return None
     # Now zones is the filtered fc obj, will eventually have the stats added as attributes
-
-     # if skipping, need to copy the clipped shp to stackShp here before continuing
      
     # Get stack key dictionary    
     layerDict = buildLayerDict(stack) # {layerNumber: [layerName, [statistics]]}
@@ -458,7 +449,8 @@ def main(args):
     # 4. Call zonal stats and return a pandas dataframe    
     print "\n4. Running zonal stats for {} layers".format(len(layerDict))
     zonalStatsDf = callZonalStats(stack.filePath, zones.filePath, layerDict)
-    
+
+    import pdb; pdb.set_trace()    
     # 5. Complete the ZS DF by:
     #    adding stackName col, sunAngle if need be and replacing None vals
     zonalStatsDf = zonalStatsDf.fillna(stack.noDataValue)

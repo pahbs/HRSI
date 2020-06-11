@@ -102,12 +102,12 @@ class ZonalFeatureClass(FeatureClass):
             
             #keepFIDs.append(feature.GetFID())
             keepFeat += 1
-        
-        #if len(keepFeat) == 0: # If there are no points remaining, return None
-            #return None
-        
+
         # 6/11 - No longer doing filtering this way
-        """        
+        """         
+        #if len(keepFIDs) == 0: # If there are no points remaining, return None
+            #return None
+       
         if len(keepFIDs) == 1: # tuple(listWithOneItem) wont work in Set Filter
             query = "FID = {}".format(keepFIDs[0])
             
@@ -116,7 +116,7 @@ class ZonalFeatureClass(FeatureClass):
         """
 
         # 6/11 New filtering method
-        query = "keep = 'no'"   # for testing purposes      
+        query = "keep = 'yes'"    
         layer.SetAttributeFilter(query)
 
         dsOut = drv.CreateDataSource(outShp)
