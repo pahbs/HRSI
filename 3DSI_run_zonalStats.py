@@ -126,7 +126,8 @@ def main(args):
         
         # Get list of output shp's that we are expecting based off stackList
         shps = [os.path.join(mainDir, zonalType, stackType, RasterStack(stack).stackName, 
-                '{}__{}__zonalStats.shp'.format(zonalType, RasterStack(stack).stackName)) for stack in stackList]
+                '{}__{}__zonalStats.shp'.format(zonalType, RasterStack(stack).stackName)) 
+                                                        for stack in stackList]
 
         # Prepare inputs for parallel call:
         call = "lscpu | awk '/^Socket.s.:/ {sockets=$NF} END {print sockets}'"
@@ -140,12 +141,14 @@ def main(args):
         # Do not supply output GDB, just supply .csv
         parCall = '{} -rs '.format(runScript) + '{1} -z {2} -o {3} -log'
         cmd = "parallel --progress -j {} --delay 1 '{}' ::: {} ::: {} ::: {}". \
-                format(ncpu, parCall, parList, varsDict['inZonal'], varsDict['outCsv'])
+                format(ncpu, parCall, parList, varsDict['inZonal'], 
+                                                           varsDict['outCsv'])
 
         os.system(cmd)       
 
         # And update node-specific GDB if shp exists
-        print "\n\nCreating {} with completed shapefiles ({})...".format(outGdb, time.strftime("%m-%d-%y %I:%M:%S"))   
+        print "\n\nCreating {} with completed shapefiles ({})...".format(outGdb, 
+                                            time.strftime("%m-%d-%y %I:%M:%S"))   
         for shp in shps:
             if os.path.isfile(shp):
                 fc = FeatureClass(shp)
