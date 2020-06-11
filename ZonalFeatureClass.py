@@ -64,7 +64,7 @@ class ZonalFeatureClass(FeatureClass):
             outShp = self.filePath.replace(self.extension, '__filtered-ND.shp')
         
         drv = ogr.GetDriverByName("ESRI Shapefile")
-        ds = drv.Open(self.filePath)
+        ds = drv.Open(self.filePath, 1)
         layer = ds.GetLayer()
      
         # This will work even if not needed. If needed and not supplied, could fail
