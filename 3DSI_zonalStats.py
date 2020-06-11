@@ -422,7 +422,7 @@ def main(args):
         return None
 
     # 6/9 Uncomment to filter on attributes
-    print "\n2. Not running attribute or NoData filter steps"
+    print "\n2. Not running attribute filter step"
     """
     # 2. Filter footprints based on attributes - already did this on the front end to .gdb
     print '\n2. Filtering on attributes using statement = "{}"...'.format(filterStr)   
@@ -485,6 +485,7 @@ def main(args):
     updateOutputCsv(outCsv, zonalStatsDf)
     
     if outGdb:
+        import pdb; pdb.set_trace()
         fc = ZonalFeatureClass(stackShp) # Update GDB now a method in FC.py
         fc.addToFeatureClass(outGdb)
 

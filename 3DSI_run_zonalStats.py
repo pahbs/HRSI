@@ -120,7 +120,7 @@ def main(args):
     stackList = getStackList(varsDict['inList'], stackRange)
     
     # Get node-specific output .gdb
-    outGdb = varsDict['outCsv'].replace('.csv', '-{}.gpkg'.format(platform.node()))
+    outGdb = varsDict['outCsv'].replace('.csv', '-{}.gdb'.format(platform.node()))
 
     if runPar: # If running in parallel
         
