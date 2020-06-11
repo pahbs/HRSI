@@ -449,12 +449,17 @@ def main(args):
     # 4. Call zonal stats and return a pandas dataframe    
     print "\n4. Running zonal stats for {} layers".format(len(layerDict))
     zonalStatsDf = callZonalStats(stack.filePath, zones.filePath, layerDict)
-
-    import pdb; pdb.set_trace()    
+   
     # 5. Complete the ZS DF by:
-    #    adding stackName col, sunAngle if need be and replacing None vals
+    #    adding stackName col, sunAngle if need be
+    #    replacing None vals
+    #    removing "keep" col from filtering step if it exists
     zonalStatsDf = zonalStatsDf.fillna(stack.noDataValue)
     zonalStatsDf['stackName'] = [stackName for i in range(len(zonalStatsDf))]
+    if 'keep' in zonalStatsDf.columns: 
+        zonalStatsDf.drop('keep', axis=1, inplace=True)
+    
+    # Then add the zonal statistics columns from df to shp
     stackShp = addStatsToShp(zonalStatsDf, stackShp)
 
     # If there is an xml layer for stack, get sun angle and add as column to df
