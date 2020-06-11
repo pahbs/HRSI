@@ -443,7 +443,7 @@ def main(args):
 #    if not stackShp: # Method returns None if no points remain
  #       print "\nThere were 0 features after masking ND vals. Exiting ({})".format(time.strftime("%m-%d-%y %I:%M:%S"))
   #      return None
-
+    import pdb; pdb.set_trace()
     # Redundant, yes?             
     zones = ZonalFeatureClass(stackShp)
     if not checkZfcResults(zones, "masking out NoData values"):

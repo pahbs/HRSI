@@ -116,7 +116,7 @@ class ZonalFeatureClass(FeatureClass):
         """
 
         # 6/11 New filtering method
-        query = "keep = 'yes'"        
+        query = "keep = 'no'"   # for testing purposes      
         layer.SetAttributeFilter(query)
 
         dsOut = drv.CreateDataSource(outShp)
