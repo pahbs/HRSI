@@ -19,7 +19,8 @@ Process:
       
     REMOVING parallel functionality because:
       We still would not be able to write to one .gdb in parallel
-      And writing to the big .csv is risky, more so here where there is much less to do vs in ZS, writes were more spaced out
+      And writing to the big .csv is risky, more so here where there is much 
+      less to do vs in ZS, writes were more spaced out
         
         
 """
@@ -67,20 +68,22 @@ def getVarsDict(stackType, zonalType):
     
     return varsDict
 
-def getStackList(inList, stackRange):
+def getShpList(inList, stackRange):
+    
+    # Get List of shapefiles from text list [ls *zonalStats.shp > list.txt]
 
     with open (inList, 'r') as l:
-        stacks = [x.strip('\r\n') for x in l.readlines()]
+        shps = [x.strip('\r\n') for x in l.readlines()]
 
     # TO-DO try statement here and reject stackRange input
     if stackRange: 
         S, E = stackRange
-        stackList = stacks[ int(S)-1 : int(E) ]
+        shpList = shps[ int(S)-1 : int(E) ]
         
     else: # If range is None, run all stacks
-        stackList = stacks
+        shpList = shps
         
-    return stackList
+    return shpList
 
 # Unpack and validate input arguments
 def unpackValidateArgs(args):
@@ -133,7 +136,7 @@ def main(args):
     varsDict = getVarsDict(stackType, zonalType) 
     
     # Get list of zonalStats.shp to iterate
-    shpList = getStackList(varsDict['inList'], stackRange)
+    shpList = getShpList(varsDict['inList'], stackRange)
     
     # If running distributively (i.e. with a range): Get node-specific output .gdb/.gpkg
     if stackRange:
@@ -144,7 +147,7 @@ def main(args):
 
     # To record feature count
     featureCount = os.path.join(mainDir, '_timing', 
-                '{}_{}__featureCount.csv'.format(zonalType, stackType))
+                '{}_{}__appendFeatureCount.csv'.format(zonalType, stackType))
     if not os.path.isfile(featureCount):
         with open(featureCount, 'w') as bc:
             bc.write('zonalStatShp,basename,nFeatures\n')
