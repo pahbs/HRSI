@@ -171,7 +171,7 @@ def main(args):
         
     print "Finished writing .csv\n========================================"
     
-    
+    """    
     # PART B: Iterate through shp's and write to big output gdb/.gpkg
     print "\nProcessing {} zonalStats outputs to write .gdb {}...". \
                                         format(len(shpList), outGdb)
@@ -193,7 +193,7 @@ def main(args):
         bname = os.path.basename(inShp).strip('__zonalStats.shp')
         with open(featureCount, 'a') as bc:
             bc.write('{},{},{}\n'.format(inShp, bname, nFeatures))
-
+    """
 
 
 
