@@ -94,7 +94,7 @@ class ZonalFeatureClass(FeatureClass):
             # Get info from mask underneath feature
             z = zonal_stats(wktPoly, mask, stats="mean")
             out = z[0]['mean']            
-            if out >= 0.6 or out == None: # If 60% of pixels or more are NoData, skip
+            if out >= 0.99 or out == None: # If 99% of pixels or more are NoData, skip
                 feature.SetField('keep', 'no')
                 continue
             
