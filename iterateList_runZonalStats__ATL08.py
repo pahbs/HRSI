@@ -1,12 +1,7 @@
 """
- 3/21/2019: copied from iterateDir_runZonalStats
- instead of iterating through a list of directories, this one iterates through a text list
- can combine these later somehow if need be but for now easiest to do them separate
-
- process is similar except will split the text list like we do with scene lists and others to get them running on multiple nodes
- 
- # CURRENT (1/21/2020):
- Running for SGM stacks, using Will's text file /att/gpfsfs/briskfs01/ppl/pmontesa/userfs02/projects/3dsi/stacks/Out_SGM/completed_stack_files.txt
+ 3/21/2019: copied from iterateList_runZonalStats
+     used temporarily for ATL08 until ZS rewrite is done
+ # CURRENT (3/25):
 """
 
 import os, sys
@@ -17,22 +12,24 @@ lineS = sys.argv[1] # line start
 lineE = sys.argv[2] # enter like 1 20   21 30, etc
 
 # CHANGE:
-name = 'SGM' # for naming output dir and db/csv
-outdir_base = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/Stacks_{}'.format(name)
-inList = os.path.join(outdir_base, 'inputList.txt') # get list of stacks to run based on input
+name = 'LVIS' # for naming output dir and db/csv
+outdir_base = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/oldCode_zonalStats/{}'.format(name)
+inList = os.path.join(outdir_base, '_inputList.txt') # get list of stacks to run based on input
 #inList = '/att/gpfsfs/briskfs01/ppl/pmontesa/userfs02/projects/3dsi/stacks/Out_SGM/completed_stack_files.txt'
 
 # set up some parameters
-runScript = '/att/home/mwooten3/code/HRSI/run_GLAS_zonal_database.py'
-outDir = os.path.join(outdir_base, 'outputs')
-shpDir = os.path.join(outdir_base, 'shp')
-logDir = os.path.join(outdir_base, 'logs')
-for d in [outDir, shpDir, logDir]: # for extra measure
-    os.system('mkdir -p {}'.format(d))
+#runScript = '/att/home/mwooten3/code/HRSI/run_GLAS_zonal_database.py'
+runScript = '/att/home/mwooten3/code/HRSI/GLAS_zonalStats_to_database.py'
+
+#outDir = os.path.join(outdir_base, 'outputs')
+#shpDir = os.path.join(outdir_base, 'shp')
+logDir = os.path.join(outdir_base, '_logs')
+#for d in [outDir, shpDir, logDir]: # for extra measure
+os.system('mkdir -p {}'.format(logDir))
 
 # where all outputs for the run will go
-mainDb = os.path.join(outdir_base, 'Stacks_{}__zonalStats_15m.csv'.format(name))
-
+mainDb = os.path.join(outdir_base, 'ATL08-{}__zonalStats_15m.csv'.format(name))
+ATLgdb = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ATL08.gdb'
 
 with open (inList, 'r') as il:
     inStacks_all = [x.strip('\r\n') for x in il.readlines()] # _all stacks in list
@@ -46,14 +43,20 @@ for stack in inStacks:
     c+=1
 
     bname = os.path.basename(stack).strip(os.path.splitext(stack)[1]).strip('_stack')
-
+    logFile = os.path.join(logDir, 'ATL08-{}_{}__Log.txt'.format(name, bname))
+    outDir = os.path.join(outdir_base, bname)
+    os.system('mkdir -p {}'.format(outDir))
+    
     # skip files whose .shx file (last file to be created) already exists
     if not overwrite:
         if os.path.isfile(os.path.join(outDir, '{}__stats.shx'.format(bname))):
             print "\nOutputs for {} already exist\n".format(bname)
             continue
 
-    comm = 'python {} {} -shpDir {} -outDir {} -logDir {}'.format(runScript, stack, shpDir, outDir, logDir)
+    # call ex. for ATL08:
+    #python GLAS_zonalStats_to_database.py <vrt> <gdb> '' <outDir> '' <logfile> <db>
+
+    comm = "python {} {} {} ' ' {} ' ' {}".format(runScript, stack, ATLgdb, outDir, logFile, mainDb)
     if mainDb:
         comm += ' -mainDatabasePrefix {}'.format(mainDb)
 

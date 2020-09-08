@@ -5,6 +5,7 @@ from osgeo import gdal, ogr
 import GLAS_functions as functions
 from GLAS_functions import Parameters as params
 import shutil
+import tempfile
 
 """
 This script takes as input a zone polygon (buffered GLAS shots) and raster stack from which statistics will be retrived and writes them + attributes to an ouput csv
@@ -13,6 +14,51 @@ Could work standalone if you provide the following command line inputs:
     outputShapefile is set to True. can turn it off by explictly calling outputShapefile = False.
     * = Required parameter
 """
+
+# Added 3/24 for temp ATL08 processing
+def clipZonalToExtent(zonalFc, inRast, outdir, rastname):
+    
+    # extent should be (xmin, ymin, xmax, ymax)
+    extent = ' '.join(map(str,functions.get_gcs_extent(inRast)))
+    
+    # Unpack extent
+    #() = extent # or will ' '.join(extent) work in format?
+    clip = os.path.join(outdir, 'ATL08__{}.shp'.format(rastname))
+    
+    cmd = 'ogr2ogr -spat {} -clipsrc {} '.format(extent, extent) + \
+                    '-f "ESRI Shapefile" {} {}'.format(clip, zonalFc)
+                    
+    print cmd
+
+    os.system(cmd)
+
+    """
+    cmd = 'ogr2ogr'                        + \
+      ' -clipsrc'                      + \
+#      ' ' + str(ulx)                   + \
+#      ' ' + str(lry)                   + \
+#      ' ' + str(lrx)                   + \
+#      ' ' + str(uly)                   + \
+      ' -f "ESRI Shapefile"'           + \
+      ' "' + clipFile   + '"'          + \
+      ' "' + zonalFc + '"'
+    """
+    
+    return clip#os.path.join(clip, 'ATL08.shp')
+
+# Added 3/24 for temp ATL08 processing
+def getNumberFeatures(inShp):
+    
+    driver = ogr.GetDriverByName('ESRI Shapefile')
+    ds = driver.Open(inShp, 0)
+    
+    layer = ds.GetLayer()
+    featureCount = layer.GetFeatureCount()
+
+#    print featureCount
+#    print type(featureCount)
+
+    return featureCount
 
 def get_pathrows(lat, lon):
     import get_wrs
@@ -123,7 +169,30 @@ def add_to_db(outDbCsv, outDbShp, inCsv): # given an input csv we wanna add, add
 
 def main(input_raster, input_polygon, bufferSize, outDir, zstats = params.default_zstats, logFile = None, mainDatabasePrefix = params.default_mainDatabase, addWrs2 = True, outputShapefile = True):
 
+    if logFile:
+        print "See {} for log".format(logFile)
+        so = se = open(logFile, 'a', 0) # open our log file
+        sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0) # re-open stdout without buffering
+        os.dup2(so.fileno(), sys.stdout.fileno()) # redirect stdout and stderr to the log file opened above
+        os.dup2(se.fileno(), sys.stderr.fileno())
+        
     print "Begin running zonal stats: {}\n".format(datetime.datetime.now().strftime("%m%d%Y-%H%M"))
+    
+    # Added 3/24 - clip ATL08 gdb to shp using extent of raster stack
+    # will be doing this for GLAS as well moving forward
+    if os.path.basename(input_polygon).startswith('ATL'):
+        rastName = os.path.basename(input_raster).strip('_stack.vrt')
+        
+#        outDir = os.path.join(outDirBase, 'ATL08', rastName)
+#        print outDir
+    
+        input_polygon = clipZonalToExtent(input_polygon, input_raster, outDir, rastName)  
+        print "Using {} as zonal fc\n".format(input_polygon)
+    
+        # Added 3/25
+        if getNumberFeatures(input_polygon) == 0:
+            print "There are no features in ATL08 for {}".format(input_polygon)
+            return None
 
     # set up the output csv/shp
     if not mainDatabasePrefix.endswith('.csv') and not mainDatabasePrefix.endswith('.shp'):
@@ -162,13 +231,6 @@ def main(input_raster, input_polygon, bufferSize, outDir, zstats = params.defaul
         # if ecoregionLayer is in stack list:
             #addEcoregion = True
             #store ecoregion layer number
-
-    if logFile:
-        print "See {} for log".format(logFile)
-        so = se = open(logFile, 'a', 0) # open our log file
-        sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0) # re-open stdout without buffering
-        os.dup2(so.fileno(), sys.stdout.fileno()) # redirect stdout and stderr to the log file opened above
-        os.dup2(se.fileno(), sys.stderr.fileno())
 
     outCsvFile = os.path.join(outDir, '{}__stats.csv'.format(stackName))
     if os.path.isfile(outCsvFile): os.remove(outCsvFile)
