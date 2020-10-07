@@ -410,6 +410,7 @@ def main(args):
     clipZonal = os.path.join(outDir, '{}__{}.shp'.format(zonalType, stackName))
     if not os.path.isfile(clipZonal):
         print "\n1. Clipping input feature class to extent..."
+        import pdb; pdb.set_trace()
         inZones.clipToExtent(stackExtent, stackEpsg, stackEpsg, 
                              clipZonal)#, sqlQry)
     else: print "\n1. Clipped feature class {} already exists...".format(clipZonal)
