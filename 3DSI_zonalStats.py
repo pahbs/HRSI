@@ -442,10 +442,20 @@ def main(args):
     if int(rasterMask.epsg()) != int(zones.epsg()):
         transEpsg = rasterMask.epsg() # Need to transform coords to that of mask
 
-    print "\n3. Masking out NoData values using {}...".format(noDataMask)        
-    stackShp = zones.applyNoDataMask(noDataMask, transEpsg = transEpsg,
+    # Mask out NoDataValues if there is a noDataMask. 
+    if noDataMask:
+        print "\n3. Masking out NoData values using {}...".format(noDataMask)        
+        stackShp = zones.applyNoDataMask(noDataMask, transEpsg = transEpsg,
                                                              outShp = stackShp)
+        
+    # If there is not, copy the clipped .shp to our output .shp 
+    else:
+        print "\n3. No NoDataMask. Not making out NoData values." 
+        cmd = 'ogr2ogr -f "ESRI Shapefile" {} {}'.format(stackShp, clipZonal)
+        print cmd #TEMP 10/7
+        os.system(cmd)
            
+        
     zones = ZonalFeatureClass(stackShp)
     if not checkZfcResults(zones, "masking out NoData values"):
         return None

@@ -42,7 +42,7 @@ class RasterStack(Raster):
             raise RuntimeError('{} is not a VRT or TIF file'.format(filePath))
         """
         
-        self.stackName = self.baseName.strip('_stack')         
+        self.stackName = self.baseName.strip('_stack')     
 
     #--------------------------------------------------------------------------
     # noDataLayer()
@@ -97,6 +97,9 @@ class RasterStack(Raster):
         
         elif 'out_gliht' in self.baseDir:
             return 'GLiHT'
+        
+        elif 'esta_year' in self.baseDir:
+            return 'Landsat'
         
         else:
             return None
