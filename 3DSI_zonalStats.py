@@ -410,7 +410,6 @@ def main(args):
     clipZonal = os.path.join(outDir, '{}__{}.shp'.format(zonalType, stackName))
     if not os.path.isfile(clipZonal):
         print "\n1. Clipping input feature class to extent..."
-        import pdb; pdb.set_trace()
         inZones.clipToExtent(stackExtent, stackEpsg, stackEpsg, 
                              clipZonal)#, sqlQry)
     else: print "\n1. Clipped feature class {} already exists...".format(clipZonal)
@@ -464,10 +463,10 @@ def main(args):
     if not checkZfcResults(zones, "masking out NoData values"):
         return None
     # Now zones is the filtered fc obj, will eventually have the stats added as attributes
-     
+    import pdb; pdb.set_trace()
     # Get stack key dictionary    
     layerDict = buildLayerDict(stack) # {layerNumber: [layerName, [statistics]]}
-
+    
     # 4. Call zonal stats and return a pandas dataframe    
     print "\n4. Running zonal stats for {} layers".format(len(layerDict))
     zonalStatsDf = callZonalStats(stack.filePath, zones.filePath, layerDict)
