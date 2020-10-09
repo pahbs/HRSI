@@ -65,7 +65,7 @@ def addBufferToOutput(rowDict, layer, bufferDist):
     pointGeom.AddPoint(lon, lat)
     
     # Convert point to meter proj
-    utmEpsg = SpatialHelper().determineUtmEpsg(pointGeom, layerEpsg)
+    utmEpsg = SpatialHelper().determineUtmEpsgFromShape(pointGeom, layerEpsg)
     pointProj = SpatialHelper().reprojectShape(pointGeom, layerEpsg, utmEpsg)
     
     # Get buffered polygon geometry from projected point

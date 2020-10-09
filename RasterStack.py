@@ -101,6 +101,9 @@ class RasterStack(Raster):
         elif 'esta_year' in self.baseDir:
             return 'Landsat'
         
+        elif 'TDM1_DEM' in self.baseDir:
+            return 'tandemx'
+        
         else:
             return None
         
