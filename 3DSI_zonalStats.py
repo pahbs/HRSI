@@ -144,7 +144,16 @@ def buildLayerDict(stackObject):
     # subset for testing
     #return {key: layerDict[key] for key in range(9,11)}
 
-def callZonalStats(raster, vector, layerDict, addPathRows = False):
+def callZonalStats(rasterObj, vectorObj, layerDict, addPathRows = False):
+    
+    raster = rasterObj.filePath
+    vector = vectorObj.filePath
+    
+    # Determine if stack type is tandemx or not
+    # If it is, use all_touched = True
+    allTouched = False
+    if rasterObj.stackType() == 'tandemx':
+        allTouched = True
 
     print " Input Raster: {}".format(raster)
     print " Input Vector: {}".format(vector)
@@ -164,11 +173,12 @@ def callZonalStats(raster, vector, layerDict, addPathRows = False):
             statsList.remove("nmad")
             zonalStatsDict = zonal_stats(vector, raster, 
                         stats=' '.join(statsList), add_stats={'nmad':getNmad}, 
-                        geojson_out=True, band=layerN)
+                        geojson_out=True, all_touched = allTouched, band=layerN)
             statsList.append("nmad")
         else:
             zonalStatsDict = zonal_stats(vector, raster, 
-                        stats=' '.join(statsList), geojson_out=True, band=layerN)
+                        stats=' '.join(statsList), geojson_out=True, 
+                        all_touched = allTouched, band=layerN)
 
         if firstLayer: # build the dataframe with just the attributes
 
@@ -463,13 +473,13 @@ def main(args):
     if not checkZfcResults(zones, "masking out NoData values"):
         return None
     # Now zones is the filtered fc obj, will eventually have the stats added as attributes
-    import pdb; pdb.set_trace()
+
     # Get stack key dictionary    
     layerDict = buildLayerDict(stack) # {layerNumber: [layerName, [statistics]]}
     
     # 4. Call zonal stats and return a pandas dataframe    
     print "\n4. Running zonal stats for {} layers".format(len(layerDict))
-    zonalStatsDf = callZonalStats(stack.filePath, zones.filePath, layerDict)
+    zonalStatsDf = callZonalStats(stack, zones, layerDict)
    
     # 5. Complete the ZS DF by:
     #    adding stackName col, sunAngle if need be
