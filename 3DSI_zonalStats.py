@@ -436,22 +436,25 @@ def main(args):
     
     # 3. Remove footprints under noData mask 
     noDataMask = stack.noDataLayer()
-    rasterMask = RasterStack(noDataMask)
-
-    # If noDataMask is NOT in same projection as zonal fc, supply correct EPSG
-    transEpsg = None
-    if int(rasterMask.epsg()) != int(zones.epsg()):
-        transEpsg = rasterMask.epsg() # Need to transform coords to that of mask
 
     # Mask out NoDataValues if there is a noDataMask. 
     if noDataMask:
-        print "\n3. Masking out NoData values using {}...".format(noDataMask)        
+        
+        print "\n3. Masking out NoData values using {}...".format(noDataMask) 
+        rasterMask = RasterStack(noDataMask)
+
+        # If noDataMask is NOT in same projection as zonal fc, supply correct EPSG
+        transEpsg = None
+        if int(rasterMask.epsg()) != int(zones.epsg()):
+            transEpsg = rasterMask.epsg() # Need to transform coords to that of mask
+        
+       
         stackShp = zones.applyNoDataMask(noDataMask, transEpsg = transEpsg,
                                                              outShp = stackShp)
         
-    # If there is not, copy the clipped .shp to our output .shp 
+    # If there is not, just copy the clipped .shp to our output .shp 
     else:
-        print "\n3. No NoDataMask. Not making out NoData values." 
+        print "\n3. No NoDataMask. Not masking out NoData values." 
         cmd = 'ogr2ogr -f "ESRI Shapefile" {} {}'.format(stackShp, clipZonal)
         print cmd #TEMP 10/7
         os.system(cmd)
