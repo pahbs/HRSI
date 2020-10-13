@@ -102,7 +102,7 @@ class RasterStack(Raster):
             return 'Landsat'
         
         elif 'TDM1_DEM' in self.baseDir:
-            return 'tandemx'
+            return 'Tandemx'
         
         else:
             return None

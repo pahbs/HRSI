@@ -149,10 +149,10 @@ def callZonalStats(rasterObj, vectorObj, layerDict, addPathRows = False):
     raster = rasterObj.filePath
     vector = vectorObj.filePath
     
-    # Determine if stack type is tandemx or not
+    # Determine if stack type is tandemx/Landsat or not
     # If it is, use all_touched = True
     allTouched = False
-    if rasterObj.stackType() == 'tandemx':
+    if rasterObj.stackType() == 'Tandemx':
         allTouched = True
 
     print " Input Raster: {}".format(raster)

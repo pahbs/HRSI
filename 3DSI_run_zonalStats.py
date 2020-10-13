@@ -29,13 +29,15 @@ overwrite = False
 mainDir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ZonalStats'
 runScript = '/home/mwooten3/code/HRSI/3DSI_zonalStats.py'
 
-validStackTypes = ['SGM', 'LVIS', 'GLiHT']
+validStackTypes = ['SGM', 'LVIS', 'GLiHT', 'Landsat', 'Tandemx']
 validZonalTypes = ['ATL08', 'GLAS']
 
-""" Dirs as of 4/15/2020
+""" Dirs as of 10/13/2020
     SGM: /att/gpfsfs/briskfs01/ppl/pmontesa/userfs02/projects/3dsi/stacks/Out_SGM/
-    LVIS: /att/gpfsfs/briskfs01/ppl/pmontesa/userfs02/projects/3dsi/stacks/out_lvis/
+    LVIS: /att/gpfsfs/briskfs01/ppl/pmontesa/userfs02/projects/3dsi/stacks/out_lvis/ # these were updated to 15m stacks but location is same
     GLiHT: /att/gpfsfs/briskfs01/ppl/pmontesa/userfs02/projects/3dsi/stacks/out_gliht/
+    Landsat: /att/gpfsfs/briskfs01/ppl/pmontesa/userfs02/data/standage/boreal_na/tile_stacks
+    tandemx: /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/tandemx_stacks
 """
 
 def getVarsDict(stackType, zonalType):
