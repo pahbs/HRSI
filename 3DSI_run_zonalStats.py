@@ -37,7 +37,7 @@ validZonalTypes = ['ATL08', 'GLAS']
     LVIS: /att/gpfsfs/briskfs01/ppl/pmontesa/userfs02/projects/3dsi/stacks/out_lvis/ # these were updated to 15m stacks but location is same
     GLiHT: /att/gpfsfs/briskfs01/ppl/pmontesa/userfs02/projects/3dsi/stacks/out_gliht/
     Landsat: /att/gpfsfs/briskfs01/ppl/pmontesa/userfs02/data/standage/boreal_na/tile_stacks
-    tandemx: /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/tandemx_stacks
+    tandemx: /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/Tandemx_stacks
 """
 
 def getVarsDict(stackType, zonalType):
