@@ -157,6 +157,7 @@ def callZonalStats(rasterObj, vectorObj, layerDict, addPathRows = False):
 
     print " Input Raster: {}".format(raster)
     print " Input Vector: {}".format(vector)
+    print "  all_touched = {}".format(allTouched)
     
     # Iterate through layers, run zonal stats and build dataframe
     firstLayer = True
