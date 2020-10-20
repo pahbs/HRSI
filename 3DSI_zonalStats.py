@@ -437,9 +437,9 @@ def main(args):
     #    (10/20/2020): If filterStr is not None, filter on attributes
     if filterStr: # aka zonal type = GLAS
         print '\n2. Filtering on attributes using statement = "{}"...'.format(filterStr)
-        filterShp = zones.filterAttributes(filterStr)
+        clipZonal = zones.filterAttributes(filterStr, outShp = clipZonal)
         
-        zones = ZonalFeatureClass(filterShp)
+        zones = ZonalFeatureClass(clipZonal)
         if not checkZfcResults(zones, "filtering on attributes"): 
             return None
         
