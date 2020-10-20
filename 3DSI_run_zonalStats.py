@@ -37,7 +37,7 @@ validZonalTypes = ['ATL08', 'GLAS']
     LVIS: /att/gpfsfs/briskfs01/ppl/pmontesa/userfs02/projects/3dsi/stacks/out_lvis/ # these were updated to 15m stacks but location is same
     GLiHT: /att/gpfsfs/briskfs01/ppl/pmontesa/userfs02/projects/3dsi/stacks/out_gliht/
     Landsat: /att/gpfsfs/briskfs01/ppl/pmontesa/userfs02/data/standage/boreal_na/tile_stacks
-    tandemx: /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/Tandemx_stacks
+    Tandemx: /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/Tandemx_stacks
 """
 
 def getVarsDict(stackType, zonalType):
@@ -57,7 +57,7 @@ def getVarsDict(stackType, zonalType):
         #inputZonal = os.path.join(mainDir, '_zonalGdb', 'ATL08_na.gdb')
         inputZonal = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08_na_v003.gdb'
     elif zonalType == 'GLAS':
-        inputZonal = '' # ?????        
+        inputZonal = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_naBoreal.gdb'        
         
     outCsv = os.path.join(mainDir, '_zonalStatsGdb',
                          '{}__{}__ZonalStats.csv'.format(zonalType, stackType))
