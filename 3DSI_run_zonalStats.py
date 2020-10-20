@@ -191,7 +191,7 @@ if __name__ == "__main__":
     parser.add_argument("zonalType", type=str,
                                 help="Zonal type (ATL08 or GLAS)")    
     parser.add_argument("stackType", type=str, 
-                                help="Stack type (SGM, LVIS, or GLiHT)")
+                                help="Stack type (SGM, LVIS, GLiHT, Landsat, Tandemx)")
     parser.add_argument("-r", "--range", type=str,
                                 help="Range for stack iteration (i.e. 1-20)")
     parser.add_argument("-par", "--parallel", action='store_true', help="Run in parallel")

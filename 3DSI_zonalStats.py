@@ -403,14 +403,15 @@ def main(args):
     print "Output aggregate csv: {}".format(outCsv)
     print " n layers = {}".format(stack.nLayers)
 
-    # 6/5 Get filter depending on zonal type. Try to weed out bad data on front end
-    # also use this in step 2, but may get rid of that later
+    # 10/20/20: 
+    #   ATL08 .gdb has already been filtered on can_open, so do not filter 
+    #   GLAS .gdb has been filtered on everything *except* wflen, so filter on wflen
     if zonalType == 'ATL08':
-        filterStr = "can_open != {}".format(float(340282346638999984013312))       
+        filterStr = None #"can_open != {}".format(float(340282346638999984013312))       
     elif zonalType == 'GLAS':
-        filterStr = '' # ??????        
+        filterStr = 'wflen < 50'        
     else:
-        print "zonal type {} not recognized".format(zonalType)
+        print "Zonal type {} not recognized".format(zonalType)
         return None
                
     # 1. Clip input zonal shp to raster extent. Output proj = that of stack  
@@ -432,18 +433,19 @@ def main(args):
     if not checkZfcResults(zones, "clipping to stack extent"): 
         return None
 
-    # 6/9 Uncomment to filter on attributes
-    print "\n2. Not running attribute filter step"
-    """
-    # 2. Filter footprints based on attributes - already did this on the front end to .gdb
-    print '\n2. Filtering on attributes using statement = "{}"...'.format(filterStr)   
-
-    filterShp = zones.filterAttributes(filterStr)
-    zones = ZonalFeatureClass(filterShp)
-    if not checkZfcResults(zones, "filtering on attributes"): 
-        return None
-    """
-    
+    # 2. Filter footprints based on attributes - filter GLAS, not ATL08
+    #    (10/20/2020): If filterStr is not None, filter on attributes
+    if filterStr: # aka zonal type = GLAS
+        print '\n2. Filtering on attributes using statement = "{}"...'.format(filterStr)
+        filterShp = zones.filterAttributes(filterStr)
+        
+        zones = ZonalFeatureClass(filterShp)
+        if not checkZfcResults(zones, "filtering on attributes"): 
+            return None
+        
+    else: # filterStr is None, aka zonal type = ATL08
+        print "\n2. Not running attribute filter step"
+            
     # 3. Remove footprints under noData mask 
     noDataMask = stack.noDataLayer()
 
