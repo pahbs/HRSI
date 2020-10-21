@@ -468,7 +468,7 @@ def main(args):
     # If there is not, just copy the clipped .shp to our output .shp 
     else:
         print "\n3. No NoDataMask. Not masking out NoData values." 
-        cmd = 'ogr2ogr -f "ESRI Shapefile" {} {}'.format(stackShp, clipZonal)
+        cmd = 'ogr2ogr -f "ESRI Shapefile" {} {}'.format(stackShp, zones.filePath)
         print cmd #TEMP 10/7
         os.system(cmd)
            
