@@ -437,14 +437,15 @@ def main(args):
     #    (10/20/2020): If filterStr is not None, filter on attributes
     if filterStr: # aka zonal type = GLAS
         print '\n2. Filtering on attributes using statement = "{}"...'.format(filterStr)
-        clipZonal = zones.filterAttributes(filterStr, outShp = clipZonal)
+        filterShp = zones.filterAttributes(filterStr)
         
-        zones = ZonalFeatureClass(clipZonal)
+        zones = ZonalFeatureClass(filterShp)
         if not checkZfcResults(zones, "filtering on attributes"): 
             return None
         
     else: # filterStr is None, aka zonal type = ATL08
         print "\n2. Not running attribute filter step"
+        # zones is still the clipZonal
             
     # 3. Remove footprints under noData mask 
     noDataMask = stack.noDataLayer()
