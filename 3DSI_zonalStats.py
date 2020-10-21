@@ -428,7 +428,6 @@ def main(args):
     
     # now zones is the clipped input ZFC object:
     zones = ZonalFeatureClass(clipZonal)
-    import pdb; pdb.set_trace()
     # if checkResults == None, there are no features to work with
     if not checkZfcResults(zones, "clipping to stack extent"): 
         return None
@@ -442,10 +441,11 @@ def main(args):
         zones = ZonalFeatureClass(filterShp)
         if not checkZfcResults(zones, "filtering on attributes"): 
             return None
+        # zones is filtered shp
         
     else: # filterStr is None, aka zonal type = ATL08
         print "\n2. Not running attribute filter step"
-        # zones is still the clipZonal
+        # zones is still the clipZonal shp
             
     # 3. Remove footprints under noData mask 
     noDataMask = stack.noDataLayer()
@@ -462,14 +462,14 @@ def main(args):
             transEpsg = rasterMask.epsg() # Need to transform coords to that of mask
         
        
-        stackShp = zones.applyNoDataMask(noDataMask, transEpsg = transEpsg,
+        zones.applyNoDataMask(noDataMask, transEpsg = transEpsg,
                                                              outShp = stackShp)
         
     # If there is not, just copy the clipped .shp to our output .shp 
     else:
         print "\n3. No NoDataMask. Not masking out NoData values." 
         cmd = 'ogr2ogr -f "ESRI Shapefile" {} {}'.format(stackShp, zones.filePath)
-        print cmd #TEMP 10/7
+        print ' ', cmd #TEMP 10/7
         os.system(cmd)
            
         
