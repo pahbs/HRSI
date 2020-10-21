@@ -428,7 +428,7 @@ def main(args):
     
     # now zones is the clipped input ZFC object:
     zones = ZonalFeatureClass(clipZonal)
-    
+    import pdb; pdb.set_trace()
     # if checkResults == None, there are no features to work with
     if not checkZfcResults(zones, "clipping to stack extent"): 
         return None
