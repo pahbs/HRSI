@@ -83,6 +83,10 @@ class ZonalFeatureClass(FeatureClass):
         #keepFIDs = []
         keepFeat = 0 
         for feature in layer:
+            
+            if str(feature.GetField("uniqueID")) ==	'142872219': #TEMP
+                import pdb; pdb.set_trace()
+
 
             # Get polygon geometry and transform to outSrs just in case
             geom = feature.GetGeometryRef()
