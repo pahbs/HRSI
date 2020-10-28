@@ -84,15 +84,11 @@ class ZonalFeatureClass(FeatureClass):
         allTouched = False
         if Raster(mask).resolution() >= 30:
             allTouched = True
-         
+        import pdb; pdb.set_trace()
         # 6/11 - just count keep features, do no need FIDs
         #keepFIDs = []
         keepFeat = 0 
         for feature in layer:
-            
-            if str(feature.GetField("uniqueID")) ==	'142872219': #TEMP
-                import pdb; pdb.set_trace()
-
 
             # Get polygon geometry and transform to outSrs just in case
             geom = feature.GetGeometryRef()
