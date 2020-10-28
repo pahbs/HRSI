@@ -450,7 +450,7 @@ def main(args):
             
     # 3. Remove footprints under noData mask 
     noDataMask = stack.noDataLayer()
-    noDataMask = None #TEMP
+
     # Mask out NoDataValues if there is a noDataMask. 
     if noDataMask:
         
