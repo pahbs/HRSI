@@ -84,7 +84,7 @@ class ZonalFeatureClass(FeatureClass):
         allTouched = False
         if Raster(mask).resolution() >= 30:
             allTouched = True
-        import pdb; pdb.set_trace()
+
         # 6/11 - just count keep features, do no need FIDs
         #keepFIDs = []
         keepFeat = 0 
@@ -126,7 +126,7 @@ class ZonalFeatureClass(FeatureClass):
         # 6/11 New filtering method
         query = "keep = 'yes'"    
         layer.SetAttributeFilter(query)
-
+        import pdb; pdb.set_trace()
         dsOut = drv.CreateDataSource(outShp)
         layerOutName = os.path.basename(outShp).replace('.shp', '')
         layerOut = dsOut.CopyLayer(layer, layerOutName)
