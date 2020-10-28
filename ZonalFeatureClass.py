@@ -126,7 +126,6 @@ class ZonalFeatureClass(FeatureClass):
         # 6/11 New filtering method
         query = "keep = 'yes'"    
         layer.SetAttributeFilter(query)
-        import pdb; pdb.set_trace()
         dsOut = drv.CreateDataSource(outShp)
         layerOutName = os.path.basename(outShp).replace('.shp', '')
         layerOut = dsOut.CopyLayer(layer, layerOutName)
@@ -136,6 +135,10 @@ class ZonalFeatureClass(FeatureClass):
             return self.filePath
         
         ds = layer = dsOut = layerOut = feature = None
+        
+        # 10/28: Try to remove 'keep' field
+        fc = FeatureClass(outShp)
+        fc.removeField('keep')
         
         return outShp
 
