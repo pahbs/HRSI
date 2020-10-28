@@ -26,6 +26,7 @@ from rasterstats import zonal_stats
 
 from FeatureClass import FeatureClass
 
+from Raster import Raster
 #------------------------------------------------------------------------------
 # class ZonalFeatureClass
 #------------------------------------------------------------------------------
@@ -78,6 +79,11 @@ class ZonalFeatureClass(FeatureClass):
         if 'keep' not in self.fieldNames():
             fldDef = ogr.FieldDefn('keep', ogr.OFTString)
             layer.CreateField(fldDef)
+            
+        # 10/28: If mask has coarse resolution, use allTouched = True
+        allTouched = False
+        if Raster(mask).resolution() >= 30:
+            allTouched = True
          
         # 6/11 - just count keep features, do no need FIDs
         #keepFIDs = []
@@ -96,7 +102,7 @@ class ZonalFeatureClass(FeatureClass):
             wktPoly = geom.ExportToIsoWkt()
 
             # Get info from mask underneath feature
-            z = zonal_stats(wktPoly, mask, stats="mean")
+            z = zonal_stats(wktPoly, mask, stats="mean", all_touched = allTouched)
             out = z[0]['mean']            
             if out >= 0.99 or out == None: # If 99% of pixels or more are NoData, skip
                 feature.SetField('keep', 'no')
