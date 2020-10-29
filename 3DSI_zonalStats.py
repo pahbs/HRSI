@@ -207,6 +207,9 @@ def callZonalStats(rasterObj, vectorObj, layerDict, addPathRows = False):
             
             zonalStatsDf[outCol] = [zonalStatsDict[i]['properties'][col] \
                                         for i in range(0, len(zonalStatsDict))]
+            
+    # Lastly, clean up unnecessary columns:
+    import pdb; pdb.set_trace()
     
     return zonalStatsDf
 
