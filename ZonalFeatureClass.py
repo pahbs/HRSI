@@ -82,7 +82,7 @@ class ZonalFeatureClass(FeatureClass):
             
         # 10/28: If mask has coarse resolution, use allTouched = True
         allTouched = False
-        if Raster(mask).resolution() >= 30:
+        if Raster(mask).resolution()[0] >= 30:
             allTouched = True
 
         # 6/11 - just count keep features, do no need FIDs
