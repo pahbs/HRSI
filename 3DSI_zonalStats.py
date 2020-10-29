@@ -209,8 +209,10 @@ def callZonalStats(rasterObj, vectorObj, layerDict, addPathRows = False):
                                         for i in range(0, len(zonalStatsDict))]
             
     # Lastly, clean up unnecessary columns:
-    dropColumns = ['SHAPE_Leng', 'SHAPE_Area', 'SHAPE_Length', 'keep']
-    zonalStatsDf = zonalStatsDf.drop(dropColumns, axis=1, errors='ignore')
+    # This cleans up the .csv but not the shapefile
+    import pdb; pdb.set_trace()
+    #dropColumns = ['SHAPE_Leng', 'SHAPE_Area', 'SHAPE_Length', 'keep']
+    #zonalStatsDf = zonalStatsDf.drop(dropColumns, axis=1, errors='ignore')
     
     return zonalStatsDf
 
@@ -275,12 +277,13 @@ def logOutput(logFile):
     
     return None
 
-def removeExtraColumns(df, col):
+def removeExtraColumns(fc, cols):
     
-    if col in df.columns: 
-        df.drop(col, axis=1, inplace=True)
-        
-    return df
+    for col in cols: 
+        fc.removeField(col)
+    
+    fc = ZonalFeatureClass(fc.filePath) # reinitiate fc object
+    return fc
    
 def updateOutputCsv(outCsv, df):
     # Append a dataframe to an output CSV - assumes columns are the same
@@ -436,6 +439,11 @@ def main(args):
     # if checkResults == None, there are no features to work with
     if not checkZfcResults(zones, "clipping to stack extent"): 
         return None
+    
+    # Clean up the shapefile by removing unnecessary columns
+    import pdb; pdb.set_trace()
+    removeColumns = ['SHAPE_Leng', 'SHAPE_Area', 'SHAPE_Length', 'keep']
+    zones = removeExtraColumns(zones, removeColumns)
 
     # 2. Filter footprints based on attributes - filter GLAS, not ATL08
     #    (10/20/2020): If filterStr is not None, filter on attributes
