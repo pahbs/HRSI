@@ -209,7 +209,8 @@ def callZonalStats(rasterObj, vectorObj, layerDict, addPathRows = False):
                                         for i in range(0, len(zonalStatsDict))]
             
     # Lastly, clean up unnecessary columns:
-    import pdb; pdb.set_trace()
+    dropColumns = ['SHAPE_Leng', 'SHAPE_Area', 'SHAPE_Length', 'keep']
+    zonalStatsDf = zonalStatsDf.drop(dropColumns, axis=1, errors='ignore')
     
     return zonalStatsDf
 
