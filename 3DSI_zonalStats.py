@@ -207,12 +207,6 @@ def callZonalStats(rasterObj, vectorObj, layerDict, addPathRows = False):
             
             zonalStatsDf[outCol] = [zonalStatsDict[i]['properties'][col] \
                                         for i in range(0, len(zonalStatsDict))]
-            
-    # Lastly, clean up unnecessary columns:
-    # This cleans up the .csv but not the shapefile
-    import pdb; pdb.set_trace()
-    #dropColumns = ['SHAPE_Leng', 'SHAPE_Area', 'SHAPE_Length', 'keep']
-    #zonalStatsDf = zonalStatsDf.drop(dropColumns, axis=1, errors='ignore')
     
     return zonalStatsDf
 
@@ -481,11 +475,10 @@ def main(args):
         print ' ', cmd #TEMP 10/7
         os.system(cmd)
 
-    # Before moving on, clean up the zonal shapefile by removing unnecessary columns
-    import pdb; pdb.set_trace()
-    removeColumns = ['SHAPE_Leng', 'SHAPE_Area', 'SHAPE_Length', 'keep']
-    removeExtraColumns(stackShp, removeColumns)
-           
+    ## Before moving on, clean up the zonal shapefile by removing unnecessary columns
+    ## This does not seem to be working, so leave it be for now
+    #removeColumns = ['SHAPE_Leng', 'SHAPE_Area', 'SHAPE_Length', 'keep']
+    #removeExtraColumns(stackShp, removeColumns)
         
     zones = ZonalFeatureClass(stackShp)
     if not checkZfcResults(zones, "masking out NoData values"):
@@ -505,10 +498,6 @@ def main(args):
     #    *removing columns if they exist: keep,SHAPE_Leng,SHAPE_Area
     zonalStatsDf = zonalStatsDf.fillna(stack.noDataValue)
     zonalStatsDf['stackName'] = [stackName for i in range(len(zonalStatsDf))]
-    # *Do not do this, because it will result in different fields for 
-    # individual shp vs larger gdb/csv. Until I can figure out better solution
-    #for col in ['keep', 'SHAPE_Leng', 'SHAPE_Area']: 
-        #zonalStatsDf = removeExtraColumns(zonalStatsDf, col)
     
     # Then add the zonal statistics columns from df to shp
     stackShp = addStatsToShp(zonalStatsDf, stackShp)
