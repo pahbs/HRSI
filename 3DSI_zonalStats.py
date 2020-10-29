@@ -277,13 +277,14 @@ def logOutput(logFile):
     
     return None
 
-def removeExtraColumns(fc, cols):
+def removeExtraColumns(shp, cols):
+    
+    fc = ZonalFeatureClass(shp)
     
     for col in cols: 
         fc.removeField(col)
-    
-    fc = ZonalFeatureClass(fc.filePath) # reinitiate fc object
-    return fc
+
+    return None
    
 def updateOutputCsv(outCsv, df):
     # Append a dataframe to an output CSV - assumes columns are the same
@@ -439,11 +440,6 @@ def main(args):
     # if checkResults == None, there are no features to work with
     if not checkZfcResults(zones, "clipping to stack extent"): 
         return None
-    
-    # Clean up the shapefile by removing unnecessary columns
-    import pdb; pdb.set_trace()
-    removeColumns = ['SHAPE_Leng', 'SHAPE_Area', 'SHAPE_Length', 'keep']
-    zones = removeExtraColumns(zones, removeColumns)
 
     # 2. Filter footprints based on attributes - filter GLAS, not ATL08
     #    (10/20/2020): If filterStr is not None, filter on attributes
@@ -484,6 +480,11 @@ def main(args):
         cmd = 'ogr2ogr -f "ESRI Shapefile" {} {}'.format(stackShp, zones.filePath)
         print ' ', cmd #TEMP 10/7
         os.system(cmd)
+
+    # Before moving on, clean up the zonal shapefile by removing unnecessary columns
+    import pdb; pdb.set_trace()
+    removeColumns = ['SHAPE_Leng', 'SHAPE_Area', 'SHAPE_Length', 'keep']
+    removeExtraColumns(stackShp, removeColumns)
            
         
     zones = ZonalFeatureClass(stackShp)
