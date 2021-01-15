@@ -22,6 +22,8 @@ from FeatureClass import FeatureClass
 Repurposing old h5ToShp script to skip the .h5 to .csv conversion and go 
 straight from .csv to .shp
 
+Also adding beam_type addition to attributes
+
 
 To convert an ATL08 .csv  file to a polygon shp
 
@@ -382,6 +384,7 @@ def main(args):
     utmLonList, utmLatList = latLonToUtmLists(lonArr, latArr, epsg)
    
     # Add more information to attributes/pandas df
+    import pdb; pdb.set_trace()
     addAttributesToDf(pdf, utmLonList, utmLatList, epsg, bname)
     
     # 4. Run Eric's functions to get polygon shp - 5/27 using 11m
