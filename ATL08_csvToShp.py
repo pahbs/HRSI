@@ -218,6 +218,12 @@ Functions to do conversion of lat/lon points in csv to appropriate UTM projectio
 """
 # add UTM coords to pandas dataframe
 def addAttributesToDf(pdf, utmLonList, utmLatList, epsg, bname):
+    
+    # Add beam_type column
+    pdf.loc[( (pdf.orb_orient == 1 ) & (pdf['gt'].str.contains('r')) ), "beam_type"] = 'Strong' 
+    pdf.loc[( (pdf.orb_orient == 1 ) & (pdf['gt'].str.contains('l')) ), "beam_type"] = 'Weak'
+    pdf.loc[( (pdf.orb_orient == 0 ) & (pdf['gt'].str.contains('r')) ), "beam_type"] = 'Weak'
+    pdf.loc[( (pdf.orb_orient == 0 ) & (pdf['gt'].str.contains('l')) ), "beam_type"] = 'Strong'
 
     # Add UTM coordinates
     pdf['utmLon'] = utmLonList
@@ -338,10 +344,10 @@ def main(args):
     # Log output:
     logFile = os.path.join(outLogDir, 'ATL08-csv_to_shp__{}__Log.txt'.format(bname))
     print "See {} for log".format(logFile)
-    #so = se = open(logFile, 'a', 0) # open our log file
-    #sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0) # re-open stdout without buffering
-    #os.dup2(so.fileno(), sys.stdout.fileno()) # redirect stdout and stderr to the log file opened above
-    #os.dup2(se.fileno(), sys.stderr.fileno())
+    so = se = open(logFile, 'a', 0) # open our log file
+    sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0) # re-open stdout without buffering
+    os.dup2(so.fileno(), sys.stdout.fileno()) # redirect stdout and stderr to the log file opened above
+    os.dup2(se.fileno(), sys.stderr.fileno())
 
     print "BEGIN: {}".format(time.strftime("%m-%d-%y %I:%M:%S"))
     print "Continent: {}".format(cont)
@@ -384,7 +390,6 @@ def main(args):
     utmLonList, utmLatList = latLonToUtmLists(lonArr, latArr, epsg)
    
     # Add more information to attributes/pandas df
-    import pdb; pdb.set_trace()
     addAttributesToDf(pdf, utmLonList, utmLatList, epsg, bname)
     
     # 4. Run Eric's functions to get polygon shp - 5/27 using 11m
