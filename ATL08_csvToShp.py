@@ -237,6 +237,15 @@ def addAttributesToDf(pdf, utmLonList, utmLatList, epsg, bname):
     
     return None
 
+# Remove rows from the dataframe
+def filterRows(pdf):
+    
+    nFeatures = 0
+    
+    import pdb; pdb.set_trace()
+    
+    return pdf, nFeatures
+
 # Get largest overlapping UTM zone for a bounding box
 def getUTM(ulx, uly, lrx, lry):
     
@@ -344,10 +353,10 @@ def main(args):
     # Log output:
     logFile = os.path.join(outLogDir, 'ATL08-csv_to_shp__{}__Log.txt'.format(bname))
     print "See {} for log".format(logFile)
-    so = se = open(logFile, 'a', 0) # open our log file
-    sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0) # re-open stdout without buffering
-    os.dup2(so.fileno(), sys.stdout.fileno()) # redirect stdout and stderr to the log file opened above
-    os.dup2(se.fileno(), sys.stderr.fileno())
+    #so = se = open(logFile, 'a', 0) # open our log file
+    #sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0) # re-open stdout without buffering
+    #os.dup2(so.fileno(), sys.stdout.fileno()) # redirect stdout and stderr to the log file opened above
+    #os.dup2(se.fileno(), sys.stderr.fileno())
 
     print "BEGIN: {}".format(time.strftime("%m-%d-%y %I:%M:%S"))
     print "Continent: {}".format(cont)
@@ -374,10 +383,15 @@ def main(args):
         return None
     """
     
-    # 2. Import csv into pandas df and extract lat/lon columns into arrays    
+    # 1. Import csv into pandas df and extract lat/lon columns into arrays    
     pdf = pd.read_csv(inCsv)
     latArr = np.asarray(pdf['lat'])
     lonArr = np.asarray(pdf['lon']) 
+    
+    nInputRows = len(pdf)
+    
+    # 2. Remove NoData rows (h_can = 3.402823e+23)
+    pdf, nFiltered = filterRows(pdf)
     
     # calculategrounddirection() fails if there is only one footprint in csv.
     # Skip if only one footprint:
@@ -395,12 +409,12 @@ def main(args):
     # 4. Run Eric's functions to get polygon shp - 5/27 using 11m
     createShapefiles(utmLonList, utmLatList, 11, 100, int(epsg), pdf, outShp)
     
-    # Get number of features from shp and add to csv
+    # Track info: .csv file, node, number of input .csv features, number of filtered features, number of output .shp features
     trackCsv = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ATL08_{}_v3__featureCount.csv'.format(cont)
     outFc = FeatureClass(outShp)
     
     with open(trackCsv, 'a') as c:
-        c.write('{},{},{}\n'.format(inCsv, platform.node(), outFc.nFeatures))
+        c.write('{},{},{},{},{}\n'.format(inCsv, platform.node(), nInputRows, nFiltered, outFc.nFeatures))
         
     # If output is specified, update the output .gdb (or .gpkg?)
     if outGdb is not None:
