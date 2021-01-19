@@ -141,7 +141,15 @@ def addAttributeColumns(layer, attributeDf):
     return None
 
 # createShapefiles - Eric, with additions from Maggie
-def createShapefiles(xx, yy, width, height, epsg, attributes, outfile):
+# 1/19: Do not actually need to use the xx and yy lists, because those will be 
+# in the attributes DF and the xx lists are from before filtering. As a 
+# compromise, to not interfere too much, create the xx and yy lists from the df
+# instead of sending to function
+def createShapefiles(width, height, epsg, attributes, outfile):
+    
+    xx = np.asarray(attributes.utmLon)
+    yy = np.asarray(attributes.utmLat)
+    # Now xx and yy are only the coords from rows that were not filtered
     
     # Generate list of degrees
     degreelist = calculategrounddirection(xx,yy)
@@ -192,9 +200,10 @@ def createShapefiles(xx, yy, width, height, epsg, attributes, outfile):
         feat.SetField('id', i)
         
         # Assign a row of attributes to attribute columns
-        # pdf.at[i, col] is equivalent of pdf.iloc[[i]][col].values[0]
-        import pdb; pdb.set_trace()
-        for col in attributes.columns:
+        # pdf.at[i, col] is equivalent of pdf.iloc[[i]][col].values[0] but doesn't always work
+        # I believe it does not work if you've removed any data from the df (ie the index no longer starts at 0)
+        # With resetting the index after filtering, this should still work
+        for col in attributes.columns: 
             feat.SetField(col, attributes.at[i, col])
                 
         # Make a geometry, from Shapely object
@@ -243,6 +252,10 @@ def addAttributesToDf(pdf, utmLonList, utmLatList, epsg, bname):
 def filterRows(pdf):
     
     outDf = pdf[pdf.can_open != 3.402823466385289e+38] # Must be written exactly like this
+    
+    # After filtering we need to reset the index in the df
+    # Drop the index column because it's just going to be moot when combined with others
+    outDf.reset_index(drop=True, inplace=True)    
     
     nFiltered = len(pdf) - len(outDf)
     
@@ -419,7 +432,7 @@ def main(args):
     addAttributesToDf(pdf, utmLonList, utmLatList, epsg, bname)
     
     # 4. Remove NoData rows (h_can = 3.402823e+23)
-    pdf, nFiltered = filterRows(pdf)
+    #pdf, nFiltered = filterRows(pdf)
     
     # 5. Edit some columns
     # 1/19: Added this to fix the columns that were encoded improperly and have the b'...' issue
@@ -433,7 +446,7 @@ def main(args):
     outFc = FeatureClass(outShp)
     
     with open(trackCsv, 'a') as c:
-        c.write('{},{},{},{},{}\n'.format(inCsv, platform.node(), nInputRows, nFiltered, outFc.nFeatures))
+        c.write('{},{},{},{}\n'.format(inCsv, platform.node(), nInputRows, outFc.nFeatures))
         
     # 8. If output is specified, update the output .gdb (or .gpkg?)
     if outGdb is not None:
