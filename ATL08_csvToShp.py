@@ -409,19 +409,19 @@ def main(args):
         print "\n CSV {} has only one entry. Skipping".format(inCsv)
         return None 
     
-    # 2. Remove NoData rows (h_can = 3.402823e+23)
-    pdf, nFiltered = filterRows(pdf)
-    
-    # 3. Edit some columns
-    # 1/19: Added this to fix the columns that were encoded improperly and have the b'...' issue
-    pdf = fixColumns(pdf)
-    
-    # 4. Convert lat/lon lists to appropriate UTM zone
+    # 2. Convert lat/lon lists to appropriate UTM zone
     epsg = getUTM(np.min(lonArr), np.max(latArr), np.max(lonArr), np.min(latArr))
     utmLonList, utmLatList = latLonToUtmLists(lonArr, latArr, epsg)
    
-    # 5. Add more information to attributes/pandas df
+    # 3. Add more information to attributes/pandas df
     addAttributesToDf(pdf, utmLonList, utmLatList, epsg, bname)
+    
+    # 4. Remove NoData rows (h_can = 3.402823e+23)
+    pdf, nFiltered = filterRows(pdf)
+    
+    # 5. Edit some columns
+    # 1/19: Added this to fix the columns that were encoded improperly and have the b'...' issue
+    pdf = fixColumns(pdf)
     
     # 6. Run Eric's functions to get polygon shp - 5/27 using 11m
     createShapefiles(utmLonList, utmLatList, 11, 100, int(epsg), pdf, outShp)
