@@ -381,10 +381,10 @@ def main(args):
     # Log output:
     logFile = os.path.join(outLogDir, 'ATL08-csv_to_shp__{}__Log.txt'.format(bname))
     print "See {} for log".format(logFile)
-    #so = se = open(logFile, 'a', 0) # open our log file
-    #sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0) # re-open stdout without buffering
-    #os.dup2(so.fileno(), sys.stdout.fileno()) # redirect stdout and stderr to the log file opened above
-    #os.dup2(se.fileno(), sys.stderr.fileno())
+    so = se = open(logFile, 'a', 0) # open our log file
+    sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0) # re-open stdout without buffering
+    os.dup2(so.fileno(), sys.stdout.fileno()) # redirect stdout and stderr to the log file opened above
+    os.dup2(se.fileno(), sys.stderr.fileno())
 
     print "BEGIN: {}".format(time.strftime("%m-%d-%y %I:%M:%S"))
     print "Continent: {}".format(cont)
@@ -432,21 +432,23 @@ def main(args):
     addAttributesToDf(pdf, utmLonList, utmLatList, epsg, bname)
     
     # 4. Remove NoData rows (h_can = 3.402823e+23)
-    #pdf, nFiltered = filterRows(pdf)
+    pdf, nFiltered = filterRows(pdf)
     
     # 5. Edit some columns
     # 1/19: Added this to fix the columns that were encoded improperly and have the b'...' issue
     pdf = fixColumns(pdf)
     
     # 6. Run Eric's functions to get polygon shp - 5/27 using 11m
-    createShapefiles(utmLonList, utmLatList, 11, 100, int(epsg), pdf, outShp)
+    #     xx and yy no longer match the filterd dataframe. Recreating these 
+    #     lists in the function now
+    createShapefiles(11, 100, int(epsg), pdf, outShp)
     
     # 7. Track info: .csv file, node, number of input .csv features, number of filtered features, number of output .shp features
     trackCsv = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ATL08_{}_v3__featureCount.csv'.format(cont)
     outFc = FeatureClass(outShp)
     
     with open(trackCsv, 'a') as c:
-        c.write('{},{},{},{}\n'.format(inCsv, platform.node(), nInputRows, outFc.nFeatures))
+        c.write('{},{},{},{},{}\n'.format(inCsv, platform.node(), nInputRows, nFiltered, outFc.nFeatures))
         
     # 8. If output is specified, update the output .gdb (or .gpkg?)
     if outGdb is not None:
