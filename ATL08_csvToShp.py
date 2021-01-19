@@ -249,7 +249,15 @@ def filterRows(pdf):
 # 1/19: Added this to fix the columns that were encoded improperly and have the b'...' issue
 def fixColumns(pdf):
     
+    # Columns that have issues and the output types we want them as:
+    # yr (int), m (int), d (int), gt (str)
     import pdb; pdb.set_trace()
+    
+    pdf['yr'] = pdf['yr'].str.strip("b'").astype("int")
+    pdf['m'] = pdf['m'].str.strip("b'").astype("int")
+    pdf['d'] = pdf['d'].str.strip("b'").astype("int")
+    pdf['gt'] = pdf['gt'].str.strip("b'").astype("str")
+
     return pdf
 
 # Get largest overlapping UTM zone for a bounding box
