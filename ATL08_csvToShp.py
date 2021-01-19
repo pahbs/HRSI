@@ -237,14 +237,22 @@ def addAttributesToDf(pdf, utmLonList, utmLatList, epsg, bname):
     
     return None
 
-# Remove rows from the dataframe
+# 1/19: Added this to Remove NoData rows from the dataframe
 def filterRows(pdf):
-    
-    nFeatures = 0
-    
     import pdb; pdb.set_trace()
+    nFiltered = len(pdf)
     
-    return pdf, nFeatures
+    outDf = pdf[pdf.can_open != 3.402823466385289e+38] # Must be written exactly like this
+    
+    nFiltered = nFiltered - len(outDf)
+    
+    
+    return outDf, nFiltered
+
+# 1/19: Added this to fix the columns that were encoded improperly and have the b'...' issue
+def fixColumns(pdf):
+    
+    return pdf
 
 # Get largest overlapping UTM zone for a bounding box
 def getUTM(ulx, uly, lrx, lry):
@@ -389,34 +397,38 @@ def main(args):
     lonArr = np.asarray(pdf['lon']) 
     
     nInputRows = len(pdf)
-    
-    # 2. Remove NoData rows (h_can = 3.402823e+23)
-    pdf, nFiltered = filterRows(pdf)
-    
+
     # calculategrounddirection() fails if there is only one footprint in csv.
     # Skip if only one footprint:
     if len(latArr) <= 1:
         print "\n CSV {} has only one entry. Skipping".format(inCsv)
-        return None        
+        return None 
     
-    # 3. Convert lat/lon lists to appropriate UTM zone
+    # 2. Remove NoData rows (h_can = 3.402823e+23)
+    pdf, nFiltered = filterRows(pdf)
+    
+    # 3. Edit some columns
+    # 1/19: Added this to fix the columns that were encoded improperly and have the b'...' issue
+    pdf = fixColumns(pdf)
+    
+    # 4. Convert lat/lon lists to appropriate UTM zone
     epsg = getUTM(np.min(lonArr), np.max(latArr), np.max(lonArr), np.min(latArr))
     utmLonList, utmLatList = latLonToUtmLists(lonArr, latArr, epsg)
    
-    # Add more information to attributes/pandas df
+    # 5. Add more information to attributes/pandas df
     addAttributesToDf(pdf, utmLonList, utmLatList, epsg, bname)
     
-    # 4. Run Eric's functions to get polygon shp - 5/27 using 11m
+    # 6. Run Eric's functions to get polygon shp - 5/27 using 11m
     createShapefiles(utmLonList, utmLatList, 11, 100, int(epsg), pdf, outShp)
     
-    # Track info: .csv file, node, number of input .csv features, number of filtered features, number of output .shp features
+    # 7. Track info: .csv file, node, number of input .csv features, number of filtered features, number of output .shp features
     trackCsv = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ATL08_{}_v3__featureCount.csv'.format(cont)
     outFc = FeatureClass(outShp)
     
     with open(trackCsv, 'a') as c:
         c.write('{},{},{},{},{}\n'.format(inCsv, platform.node(), nInputRows, nFiltered, outFc.nFeatures))
         
-    # If output is specified, update the output .gdb (or .gpkg?)
+    # 8. If output is specified, update the output .gdb (or .gpkg?)
     if outGdb is not None:
         outFc.addToFeatureClass(outGdb)
 
