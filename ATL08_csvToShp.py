@@ -239,19 +239,17 @@ def addAttributesToDf(pdf, utmLonList, utmLatList, epsg, bname):
 
 # 1/19: Added this to Remove NoData rows from the dataframe
 def filterRows(pdf):
-    import pdb; pdb.set_trace()
-    nFiltered = len(pdf)
     
     outDf = pdf[pdf.can_open != 3.402823466385289e+38] # Must be written exactly like this
     
-    nFiltered = nFiltered - len(outDf)
-    
+    nFiltered = len(pdf) - len(outDf)
     
     return outDf, nFiltered
 
 # 1/19: Added this to fix the columns that were encoded improperly and have the b'...' issue
 def fixColumns(pdf):
     
+    import pdb; pdb.set_trace()
     return pdf
 
 # Get largest overlapping UTM zone for a bounding box
