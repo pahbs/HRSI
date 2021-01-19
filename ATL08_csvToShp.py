@@ -388,7 +388,8 @@ def main(args):
 
     print "BEGIN: {}".format(time.strftime("%m-%d-%y %I:%M:%S"))
     print "Continent: {}".format(cont)
-    print ".csv File: {}\n".format(inCsv)
+    print ".csv File: {}".format(inCsv)
+    print ".gdb/.gpkg: {}\n".format(outGdb)
     
     #outCsv = os.path.join(outCsvDir, '{}.csv'.format(bname))
     outShp = os.path.join(outShpDir, '{}.shp'.format(bname))
