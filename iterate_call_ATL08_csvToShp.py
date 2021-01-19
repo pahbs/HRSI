@@ -123,6 +123,7 @@ def main(args):
             
             # Call script one at a time and supply node-specific output GDB and continent
             cmd = 'python {} -i {} -gdb {} -continent {}'.format(runScript, csv, outGdb, cont)
+            print '', cmd
             os.system(cmd)
             
             #o = os.popen(call).read()
