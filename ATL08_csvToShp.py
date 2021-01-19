@@ -193,7 +193,9 @@ def createShapefiles(xx, yy, width, height, epsg, attributes, outfile):
         
         # Assign a row of attributes to attribute columns
         # pdf.at[i, col] is equivalent of pdf.iloc[[i]][col].values[0]
-        for col in attributes.columns: feat.SetField(col, attributes.at[i, col])
+        import pdb; pdb.set_trace()
+        for col in attributes.columns:
+            feat.SetField(col, attributes.at[i, col])
                 
         # Make a geometry, from Shapely object
         geom = ogr.CreateGeometryFromWkb(wkb)
