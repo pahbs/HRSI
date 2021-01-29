@@ -374,7 +374,7 @@ def main(args):
     baseOutdir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/{}'.format(cont)
     #outCsvDir  = os.path.join(baseOutdir, 'flight_csvs')
     outShpDir  = os.path.join(baseOutdir, 'flight_shps')
-    outLogDir  = os.path.join(baseOutdir, 'flight_logs') # 5/15 - log file for each h5 file bc par processing
+    outLogDir  = os.path.join(baseOutdir, 'flight_logs')
     for d in [outShpDir, outLogDir]:
         os.system('mkdir -p {}'.format(d))
         
@@ -393,7 +393,7 @@ def main(args):
     
     #outCsv = os.path.join(outCsvDir, '{}.csv'.format(bname))
     outShp = os.path.join(outShpDir, '{}.shp'.format(bname))
-       
+      
     # Check if output shp already exists
     if os.path.isfile(outShp): 
         print "\n Output {} already exists".format(outShp)
