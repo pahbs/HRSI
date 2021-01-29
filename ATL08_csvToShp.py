@@ -351,12 +351,6 @@ def latLonToUtmLists(lonList, latList, targetEpsg):
     return utmLonList, utmLatList  
         
 def main(args):
-    
-    #F* 
-    print "\nBeginning of script:"
-    os.system("lsof | grep mwooten3 | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ | wc")
-    os.system("lsof | grep mwooten3 | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/")
-    print "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
 
     # Unpack args, check inputs and set up vars  
     inCsv  = args['input']
@@ -396,12 +390,6 @@ def main(args):
     sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0) # re-open stdout without buffering
     os.dup2(so.fileno(), sys.stdout.fileno()) # redirect stdout and stderr to the log file opened above
     os.dup2(se.fileno(), sys.stderr.fileno())
-
-    #F* 
-    print "\nRight after starting logging:"
-    os.system("lsof | grep mwooten3 | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ | wc")
-    os.system("lsof | grep mwooten3 | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/")
-    print "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
     
     print "BEGIN: {}".format(time.strftime("%m-%d-%y %I:%M:%S"))
     print "Continent: {}".format(cont)
@@ -429,11 +417,6 @@ def main(args):
         print "\n Output {} was not created".format(outCsv)
         return None
     """
-    #F* 
-    print "\nBefore reading in .csv:"
-    os.system("lsof | grep mwooten3 | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ | wc")
-    os.system("lsof | grep mwooten3 | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/")
-    print "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
     
     # 1. Import csv into pandas df and extract lat/lon columns into arrays    
     pdf = pd.read_csv(inCsv)
@@ -441,12 +424,6 @@ def main(args):
     lonArr = np.asarray(pdf['lon']) 
     
     nInputRows = len(pdf)
-    
-    #F* 
-    print "\nAfter reading in .csv:"
-    os.system("lsof | grep mwooten3 | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ | wc")
-    os.system("lsof | grep mwooten3 | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/")
-    print "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
     
     # calculategrounddirection() fails if there is only one footprint in csv.
     # Skip if only one footprint:
@@ -460,12 +437,6 @@ def main(args):
    
     # 3. Add more information to attributes/pandas df
     addAttributesToDf(pdf, utmLonList, utmLatList, epsg, bname)
-
-    #F* 
-    print "\nAfter adding attributes to pdf, before filtering nodata:"
-    os.system("lsof | grep mwooten3 | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ | wc")
-    os.system("lsof | grep mwooten3 | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/")
-    print "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
     
     # 4. Remove NoData rows (h_can = 3.402823e+23)
     pdf, nFiltered = filterRows(pdf)
@@ -475,60 +446,25 @@ def main(args):
         print "\n CSV {} has fewer than rows after filtering. Skipping".format(inCsv)
         return None  
     
-    #F* 
-    print "\nAfter filtering nodata, before fixing columns:"
-    os.system("lsof | grep mwooten3 | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ | wc")
-    os.system("lsof | grep mwooten3 | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/")
-    print "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-    
     # 5. Edit some columns
     # 1/19: Added this to fix the columns that were encoded improperly and have the b'...' issue
     pdf = fixColumns(pdf)
-    
-    #F* 
-    print "\nAfter fixing columns, before creating .shp:"
-    os.system("lsof | grep mwooten3 | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ | wc")
-    os.system("lsof | grep mwooten3 | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/")
-    print "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
     
     # 6. Run Eric's functions to get polygon shp - 5/27 using 11m
     #     xx and yy no longer match the filterd dataframe. Recreating these 
     #     lists in the function now
     createShapefiles(11, 100, int(epsg), pdf, outShp)
 
-    #F* 
-    print "\nAfter creating .shp, before instantiating as FC obj:"
-    os.system("lsof | grep mwooten3 | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ | wc")
-    os.system("lsof | grep mwooten3 | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/")
-    print "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-    
     # 7. Track info: .csv file, node, number of input .csv features, number of filtered features, number of output .shp features
     outFc = FeatureClass(outShp)
-    
-    #F* 
-    print "\nAfter instantiating as FC obj, before tracking info:"
-    os.system("lsof | grep mwooten3 | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ | wc")
-    os.system("lsof | grep mwooten3 | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/")
-    print "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
     
     with open(trackCsv, 'a') as c:
         c.write('{},{},{},{},{}\n'.format(inCsv, platform.node(), nInputRows, nFiltered, outFc.nFeatures))
 
-    #F* 
-    print "\nAfter tracking info, before adding to .gdb:"
-    os.system("lsof | grep mwooten3 | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ | wc")
-    os.system("lsof | grep mwooten3 | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/")
-    print "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-        
     # 8. If output is specified, update the output .gdb (or .gpkg?)
     if outGdb is not None:
         outFc.addToFeatureClass(outGdb)
-    outFc = None
-    #F* 
-    print "\nAfter adding to .gdb, after deleting var:"
-    os.system("lsof | grep mwooten3 | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ | wc")
-    os.system("lsof | grep mwooten3 | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/")
-    print "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+    outFc = None # Close feature class
     
     print "\nEND: {}\n".format(time.strftime("%m-%d-%y %I:%M:%S"))
 
