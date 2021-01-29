@@ -375,8 +375,13 @@ def main(args):
     #outCsvDir  = os.path.join(baseOutdir, 'flight_csvs')
     outShpDir  = os.path.join(baseOutdir, 'flight_shps')
     outLogDir  = os.path.join(baseOutdir, 'flight_logs')
-    for d in [outShpDir, outLogDir]:
+    trackDir   = os.path.join(baseOutdir, 'tracking_csvs')
+    
+    for d in [outShpDir, outLogDir, trackDir]:
         os.system('mkdir -p {}'.format(d))
+        
+    # Tracking .csv:
+    trackCsv = os.path.join(trackDir, 'ATL08_{}_v3__featureCount-{}.csv'.format(cont, platform.node()))
         
     # Log output:
     logFile = os.path.join(outLogDir, 'ATL08-csv_to_shp__{}__Log.txt'.format(bname))
@@ -388,6 +393,7 @@ def main(args):
 
     print "BEGIN: {}".format(time.strftime("%m-%d-%y %I:%M:%S"))
     print "Continent: {}".format(cont)
+    print "Node: {}".format(platform.node())
     print ".csv File: {}".format(inCsv)
     print ".gdb/.gpkg: {}\n".format(outGdb)
     
@@ -450,7 +456,6 @@ def main(args):
     createShapefiles(11, 100, int(epsg), pdf, outShp)
     
     # 7. Track info: .csv file, node, number of input .csv features, number of filtered features, number of output .shp features
-    trackCsv = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ATL08_{}_v3__featureCount.csv'.format(cont)
     outFc = FeatureClass(outShp)
     
     with open(trackCsv, 'a') as c:
