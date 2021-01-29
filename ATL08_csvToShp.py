@@ -523,19 +523,15 @@ def main(args):
     # 8. If output is specified, update the output .gdb (or .gpkg?)
     if outGdb is not None:
         outFc.addToFeatureClass(outGdb)
-
+    outFc = None
     #F* 
-    print "\nAfter adding to .gdb:"
+    print "\nAfter adding to .gdb, after deleting var:"
     os.system("lsof | grep mwooten3 | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ | wc")
     os.system("lsof | grep mwooten3 | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/")
     print "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
     
     print "\nEND: {}\n".format(time.strftime("%m-%d-%y %I:%M:%S"))
-    #F* 
-    print "\nAfter adding to .gdb:"
-    os.system("lsof | grep mwooten3 | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ | wc")
-    os.system("lsof | grep mwooten3 | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/")
-    print "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+
     return outShp
 
 if __name__ == "__main__":
