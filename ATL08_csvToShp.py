@@ -354,8 +354,8 @@ def main(args):
     
     #F* 
     print "\nBeginning of script:"
-    os.system("lsof | grep mwooten3 | wc")
-    os.system("lsof | grep mwooten3")
+    os.system("lsof | grep mwooten3 | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ | wc")
+    os.system("lsof | grep mwooten3 | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/")
     print "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
 
     # Unpack args, check inputs and set up vars  
@@ -399,8 +399,8 @@ def main(args):
 
     #F* 
     print "\nRight after starting logging:"
-    os.system("lsof | grep mwooten3 | wc")
-    os.system("lsof | grep mwooten3")
+    os.system("lsof | grep mwooten3 | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ | wc")
+    os.system("lsof | grep mwooten3 | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/")
     print "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
     
     print "BEGIN: {}".format(time.strftime("%m-%d-%y %I:%M:%S"))
@@ -431,8 +431,8 @@ def main(args):
     """
     #F* 
     print "\nBefore reading in .csv:"
-    os.system("lsof | grep mwooten3 | wc")
-    os.system("lsof | grep mwooten3")
+    os.system("lsof | grep mwooten3 | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ | wc")
+    os.system("lsof | grep mwooten3 | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/")
     print "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
     
     # 1. Import csv into pandas df and extract lat/lon columns into arrays    
@@ -444,8 +444,8 @@ def main(args):
     
     #F* 
     print "\nAfter reading in .csv:"
-    os.system("lsof | grep mwooten3 | wc")
-    os.system("lsof | grep mwooten3")
+    os.system("lsof | grep mwooten3 | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ | wc")
+    os.system("lsof | grep mwooten3 | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/")
     print "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
     
     # calculategrounddirection() fails if there is only one footprint in csv.
@@ -463,8 +463,8 @@ def main(args):
 
     #F* 
     print "\nAfter adding attributes to pdf, before filtering nodata:"
-    os.system("lsof | grep mwooten3 | wc")
-    os.system("lsof | grep mwooten3")
+    os.system("lsof | grep mwooten3 | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ | wc")
+    os.system("lsof | grep mwooten3 | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/")
     print "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
     
     # 4. Remove NoData rows (h_can = 3.402823e+23)
@@ -477,8 +477,8 @@ def main(args):
     
     #F* 
     print "\nAfter filtering nodata, before fixing columns:"
-    os.system("lsof | grep mwooten3 | wc")
-    os.system("lsof | grep mwooten3")
+    os.system("lsof | grep mwooten3 | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ | wc")
+    os.system("lsof | grep mwooten3 | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/")
     print "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
     
     # 5. Edit some columns
@@ -487,8 +487,8 @@ def main(args):
     
     #F* 
     print "\nAfter fixing columns, before creating .shp:"
-    os.system("lsof | grep mwooten3 | wc")
-    os.system("lsof | grep mwooten3")
+    os.system("lsof | grep mwooten3 | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ | wc")
+    os.system("lsof | grep mwooten3 | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/")
     print "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
     
     # 6. Run Eric's functions to get polygon shp - 5/27 using 11m
@@ -498,8 +498,8 @@ def main(args):
 
     #F* 
     print "\nAfter creating .shp, before instantiating as FC obj:"
-    os.system("lsof | grep mwooten3 | wc")
-    os.system("lsof | grep mwooten3")
+    os.system("lsof | grep mwooten3 | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ | wc")
+    os.system("lsof | grep mwooten3 | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/")
     print "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
     
     # 7. Track info: .csv file, node, number of input .csv features, number of filtered features, number of output .shp features
@@ -507,8 +507,8 @@ def main(args):
     
     #F* 
     print "\nAfter instantiating as FC obj, before tracking info:"
-    os.system("lsof | grep mwooten3 | wc")
-    os.system("lsof | grep mwooten3")
+    os.system("lsof | grep mwooten3 | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ | wc")
+    os.system("lsof | grep mwooten3 | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/")
     print "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
     
     with open(trackCsv, 'a') as c:
@@ -516,8 +516,8 @@ def main(args):
 
     #F* 
     print "\nAfter tracking info, before adding to .gdb:"
-    os.system("lsof | grep mwooten3 | wc")
-    os.system("lsof | grep mwooten3")
+    os.system("lsof | grep mwooten3 | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ | wc")
+    os.system("lsof | grep mwooten3 | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/")
     print "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
         
     # 8. If output is specified, update the output .gdb (or .gpkg?)
@@ -526,15 +526,15 @@ def main(args):
 
     #F* 
     print "\nAfter adding to .gdb:"
-    os.system("lsof | grep mwooten3 | wc")
-    os.system("lsof | grep mwooten3")
+    os.system("lsof | grep mwooten3 | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ | wc")
+    os.system("lsof | grep mwooten3 | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/")
     print "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
     
     print "\nEND: {}\n".format(time.strftime("%m-%d-%y %I:%M:%S"))
     #F* 
     print "\nAfter adding to .gdb:"
-    os.system("lsof | grep mwooten3 | wc")
-    os.system("lsof | grep mwooten3")
+    os.system("lsof | grep mwooten3 | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/ | wc")
+    os.system("lsof | grep mwooten3 | grep /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08/")
     print "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
     return outShp
 
