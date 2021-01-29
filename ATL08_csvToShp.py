@@ -381,10 +381,10 @@ def main(args):
     # Log output:
     logFile = os.path.join(outLogDir, 'ATL08-csv_to_shp__{}__Log.txt'.format(bname))
     print "See {} for log".format(logFile)
-    so = se = open(logFile, 'a', 0) # open our log file
-    sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0) # re-open stdout without buffering
-    os.dup2(so.fileno(), sys.stdout.fileno()) # redirect stdout and stderr to the log file opened above
-    os.dup2(se.fileno(), sys.stderr.fileno())
+    #so = se = open(logFile, 'a', 0) # open our log file
+   # sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0) # re-open stdout without buffering
+    #os.dup2(so.fileno(), sys.stdout.fileno()) # redirect stdout and stderr to the log file opened above
+   # os.dup2(se.fileno(), sys.stderr.fileno())
 
     print "BEGIN: {}".format(time.strftime("%m-%d-%y %I:%M:%S"))
     print "Continent: {}".format(cont)
@@ -418,7 +418,7 @@ def main(args):
     lonArr = np.asarray(pdf['lon']) 
     
     nInputRows = len(pdf)
-
+    import pdb; pdb.set_trace()
     # calculategrounddirection() fails if there is only one footprint in csv.
     # Skip if only one footprint:
     if len(latArr) <= 1:
