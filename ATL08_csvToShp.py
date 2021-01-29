@@ -422,7 +422,7 @@ def main(args):
     # calculategrounddirection() fails if there is only one footprint in csv.
     # Skip if only one footprint:
     if len(latArr) <= 1:
-        print "\n CSV {} has only one entry. Skipping".format(inCsv)
+        print "\n CSV {} does not have at least two rows. Skipping".format(inCsv)
         return None 
     
     # 2. Convert lat/lon lists to appropriate UTM zone
@@ -434,6 +434,11 @@ def main(args):
     
     # 4. Remove NoData rows (h_can = 3.402823e+23)
     pdf, nFiltered = filterRows(pdf)
+    
+    # Cannot continue if at least two points do not exist
+    if len(pdf) <= 1:
+        print "\n CSV {} does not have at least two rows after filtering. Skipping".format(inCsv)
+        return None  
     
     # 5. Edit some columns
     # 1/19: Added this to fix the columns that were encoded improperly and have the b'...' issue
