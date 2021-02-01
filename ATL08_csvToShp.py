@@ -399,12 +399,12 @@ def main(args):
     
     #outCsv = os.path.join(outCsvDir, '{}.csv'.format(bname))
     outShp = os.path.join(outShpDir, '{}.shp'.format(bname))
-      
+    """      
     # Check if output shp already exists
     if os.path.isfile(outShp): 
         print "\n Output {} already exists".format(outShp)
         return None
-    
+    """
     """
     # Skipping .h5 file portion now
     # 1. H5 file --> outCsv (Paul's extract code):
@@ -417,7 +417,7 @@ def main(args):
         print "\n Output {} was not created".format(outCsv)
         return None
     """
-    
+    """
     # 1. Import csv into pandas df and extract lat/lon columns into arrays    
     pdf = pd.read_csv(inCsv)
     latArr = np.asarray(pdf['lat'])
@@ -454,13 +454,13 @@ def main(args):
     #     xx and yy no longer match the filterd dataframe. Recreating these 
     #     lists in the function now
     createShapefiles(11, 100, int(epsg), pdf, outShp)
-
+    """
     # 7. Track info: .csv file, node, number of input .csv features, number of filtered features, number of output .shp features
     outFc = FeatureClass(outShp)
-    
+    """
     with open(trackCsv, 'a') as c:
         c.write('{},{},{},{},{}\n'.format(inCsv, platform.node(), nInputRows, nFiltered, outFc.nFeatures))
-
+    """
     # 8. If output is specified, update the output .gdb (or .gpkg?)
     if outGdb is not None:
         outFc.addToFeatureClass(outGdb)
