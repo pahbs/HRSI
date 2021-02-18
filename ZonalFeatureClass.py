@@ -26,6 +26,7 @@ from rasterstats import zonal_stats
 
 from FeatureClass import FeatureClass
 
+from Raster import Raster
 #------------------------------------------------------------------------------
 # class ZonalFeatureClass
 #------------------------------------------------------------------------------
@@ -78,7 +79,12 @@ class ZonalFeatureClass(FeatureClass):
         if 'keep' not in self.fieldNames():
             fldDef = ogr.FieldDefn('keep', ogr.OFTString)
             layer.CreateField(fldDef)
-         
+            
+        # 10/28: If mask has coarse resolution, use allTouched = True
+        allTouched = False
+        if Raster(mask).resolution()[0] >= 30:
+            allTouched = True
+
         # 6/11 - just count keep features, do no need FIDs
         #keepFIDs = []
         keepFeat = 0 
@@ -92,7 +98,7 @@ class ZonalFeatureClass(FeatureClass):
             wktPoly = geom.ExportToIsoWkt()
 
             # Get info from mask underneath feature
-            z = zonal_stats(wktPoly, mask, stats="mean")
+            z = zonal_stats(wktPoly, mask, stats="mean", all_touched = allTouched)
             out = z[0]['mean']            
             if out >= 0.99 or out == None: # If 99% of pixels or more are NoData, skip
                 feature.SetField('keep', 'no')
@@ -120,7 +126,6 @@ class ZonalFeatureClass(FeatureClass):
         # 6/11 New filtering method
         query = "keep = 'yes'"    
         layer.SetAttributeFilter(query)
-
         dsOut = drv.CreateDataSource(outShp)
         layerOutName = os.path.basename(outShp).replace('.shp', '')
         layerOut = dsOut.CopyLayer(layer, layerOutName)
@@ -130,6 +135,10 @@ class ZonalFeatureClass(FeatureClass):
             return self.filePath
         
         ds = layer = dsOut = layerOut = feature = None
+        
+        # 10/28: Try to remove 'keep' field
+        fc = FeatureClass(outShp)
+        fc.removeField('keep')
         
         return outShp
 

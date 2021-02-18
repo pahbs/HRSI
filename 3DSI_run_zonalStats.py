@@ -29,13 +29,15 @@ overwrite = False
 mainDir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ZonalStats'
 runScript = '/home/mwooten3/code/HRSI/3DSI_zonalStats.py'
 
-validStackTypes = ['SGM', 'LVIS', 'GLiHT']
+validStackTypes = ['SGM', 'LVIS', 'GLiHT', 'Landsat', 'Tandemx']
 validZonalTypes = ['ATL08', 'GLAS']
 
-""" Dirs as of 4/15/2020
+""" Dirs as of 10/13/2020
     SGM: /att/gpfsfs/briskfs01/ppl/pmontesa/userfs02/projects/3dsi/stacks/Out_SGM/
-    LVIS: /att/gpfsfs/briskfs01/ppl/pmontesa/userfs02/projects/3dsi/stacks/out_lvis/
+    LVIS: /att/gpfsfs/briskfs01/ppl/pmontesa/userfs02/projects/3dsi/stacks/out_lvis/ # these were updated to 15m stacks but location is same
     GLiHT: /att/gpfsfs/briskfs01/ppl/pmontesa/userfs02/projects/3dsi/stacks/out_gliht/
+    Landsat: /att/gpfsfs/briskfs01/ppl/pmontesa/userfs02/data/standage/boreal_na/tile_stacks
+    Tandemx: /att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/Tandemx_stacks
 """
 
 def getVarsDict(stackType, zonalType):
@@ -55,7 +57,7 @@ def getVarsDict(stackType, zonalType):
         #inputZonal = os.path.join(mainDir, '_zonalGdb', 'ATL08_na.gdb')
         inputZonal = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08_na_v003.gdb'
     elif zonalType == 'GLAS':
-        inputZonal = '' # ?????        
+        inputZonal = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_naBoreal.gdb'        
         
     outCsv = os.path.join(mainDir, '_zonalStatsGdb',
                          '{}__{}__ZonalStats.csv'.format(zonalType, stackType))
@@ -189,7 +191,7 @@ if __name__ == "__main__":
     parser.add_argument("zonalType", type=str,
                                 help="Zonal type (ATL08 or GLAS)")    
     parser.add_argument("stackType", type=str, 
-                                help="Stack type (SGM, LVIS, or GLiHT)")
+                                help="Stack type (SGM, LVIS, GLiHT, Landsat, Tandemx)")
     parser.add_argument("-r", "--range", type=str,
                                 help="Range for stack iteration (i.e. 1-20)")
     parser.add_argument("-par", "--parallel", action='store_true', help="Run in parallel")

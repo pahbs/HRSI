@@ -108,7 +108,7 @@ def buildLayerDict(stackObject):
                      'boreal_clust_25_100_2019_10_8_warp', 
                      'PCA_NaN_1_093019_warp', 
                      'PCA_NaN_2_093019_warp', 'PCA_NaN_3_093019_warp',
-                     'NA_standage_v2_warp']
+                     'NA_standage_v2_warp', 'warp'] # careful with warp, that it doesnt get mixed up with other layers (meant to be for first Lsat layer)
     
     # If there is no Log, build layerDict like --> {0: ['0', [defaultStats]]}
     if not stackKey:
@@ -133,7 +133,8 @@ def buildLayerDict(stackObject):
         layerName = layerName.replace('{}_'.format(stackObject.stackName), '')  # Remove any stack-related name (ie pairname_) from layerName
         
         # Determine which stats to use
-        if layerName in majorityNames: #or layerName.endswith('standage_warp'):
+        if layerName in majorityNames or layerName.endswith('mask_warp') or \
+        layerName.endswith('std_warp') or layerName.endswith('year_n0_m1h2_warp'):
             zonalStats = ["majority"]
         else:
             zonalStats = defaultZonalStats
@@ -144,10 +145,20 @@ def buildLayerDict(stackObject):
     # subset for testing
     #return {key: layerDict[key] for key in range(9,11)}
 
-def callZonalStats(raster, vector, layerDict, addPathRows = False):
+def callZonalStats(rasterObj, vectorObj, layerDict, addPathRows = False):
+    
+    raster = rasterObj.filePath
+    vector = vectorObj.filePath
+    
+    # Determine if stack type is tandemx/Landsat or not
+    # If it is, use all_touched = True
+    allTouched = False
+    if rasterObj.stackType() == 'Tandemx' or rasterObj.stackType() == 'Landsat':
+        allTouched = True
 
     print " Input Raster: {}".format(raster)
     print " Input Vector: {}".format(vector)
+    print "  all_touched = {}".format(allTouched)
     
     # Iterate through layers, run zonal stats and build dataframe
     firstLayer = True
@@ -164,11 +175,12 @@ def callZonalStats(raster, vector, layerDict, addPathRows = False):
             statsList.remove("nmad")
             zonalStatsDict = zonal_stats(vector, raster, 
                         stats=' '.join(statsList), add_stats={'nmad':getNmad}, 
-                        geojson_out=True, band=layerN)
+                        geojson_out=True, all_touched = allTouched, band=layerN)
             statsList.append("nmad")
         else:
             zonalStatsDict = zonal_stats(vector, raster, 
-                        stats=' '.join(statsList), geojson_out=True, band=layerN)
+                        stats=' '.join(statsList), geojson_out=True, 
+                        all_touched = allTouched, band=layerN)
 
         if firstLayer: # build the dataframe with just the attributes
 
@@ -259,12 +271,14 @@ def logOutput(logFile):
     
     return None
 
-def removeExtraColumns(df, col):
+def removeExtraColumns(shp, cols):
     
-    if col in df.columns: 
-        df.drop(col, axis=1, inplace=True)
-        
-    return df
+    fc = ZonalFeatureClass(shp)
+    
+    for col in cols: 
+        fc.removeField(col)
+
+    return None
    
 def updateOutputCsv(outCsv, df):
     # Append a dataframe to an output CSV - assumes columns are the same
@@ -392,14 +406,15 @@ def main(args):
     print "Output aggregate csv: {}".format(outCsv)
     print " n layers = {}".format(stack.nLayers)
 
-    # 6/5 Get filter depending on zonal type. Try to weed out bad data on front end
-    # also use this in step 2, but may get rid of that later
+    # 10/20/20: 
+    #   ATL08 .gdb has already been filtered on can_open, so do not filter 
+    #   GLAS .gdb has been filtered on everything *except* wflen, so filter on wflen
     if zonalType == 'ATL08':
-        filterStr = "can_open != {}".format(float(340282346638999984013312))       
+        filterStr = None #"can_open != {}".format(float(340282346638999984013312))       
     elif zonalType == 'GLAS':
-        filterStr = '' # ??????        
+        filterStr = 'wflen < 50'        
     else:
-        print "zonal type {} not recognized".format(zonalType)
+        print "Zonal type {} not recognized".format(zonalType)
         return None
                
     # 1. Clip input zonal shp to raster extent. Output proj = that of stack  
@@ -416,47 +431,66 @@ def main(args):
     
     # now zones is the clipped input ZFC object:
     zones = ZonalFeatureClass(clipZonal)
-    
     # if checkResults == None, there are no features to work with
     if not checkZfcResults(zones, "clipping to stack extent"): 
         return None
 
-    # 6/9 Uncomment to filter on attributes
-    print "\n2. Not running attribute filter step"
-    """
-    # 2. Filter footprints based on attributes - already did this on the front end to .gdb
-    print '\n2. Filtering on attributes using statement = "{}"...'.format(filterStr)   
-
-    filterShp = zones.filterAttributes(filterStr)
-    zones = ZonalFeatureClass(filterShp)
-    if not checkZfcResults(zones, "filtering on attributes"): 
-        return None
-    """
-    
+    # 2. Filter footprints based on attributes - filter GLAS, not ATL08
+    #    (10/20/2020): If filterStr is not None, filter on attributes
+    if filterStr: # aka zonal type = GLAS
+        print '\n2. Filtering on attributes using statement = "{}"...'.format(filterStr)
+        filterShp = zones.filterAttributes(filterStr)
+        
+        zones = ZonalFeatureClass(filterShp)
+        if not checkZfcResults(zones, "filtering on attributes"): 
+            return None
+        # zones is filtered shp
+        
+    else: # filterStr is None, aka zonal type = ATL08
+        print "\n2. Not running attribute filter step"
+        # zones is still the clipZonal shp
+            
     # 3. Remove footprints under noData mask 
     noDataMask = stack.noDataLayer()
-    rasterMask = RasterStack(noDataMask)
 
-    # If noDataMask is NOT in same projection as zonal fc, supply correct EPSG
-    transEpsg = None
-    if int(rasterMask.epsg()) != int(zones.epsg()):
-        transEpsg = rasterMask.epsg() # Need to transform coords to that of mask
+    # Mask out NoDataValues if there is a noDataMask. 
+    if noDataMask:
+        
+        print "\n3. Masking out NoData values using {}...".format(noDataMask) 
+        rasterMask = RasterStack(noDataMask)
 
-    print "\n3. Masking out NoData values using {}...".format(noDataMask)        
-    stackShp = zones.applyNoDataMask(noDataMask, transEpsg = transEpsg,
+        # If noDataMask is NOT in same projection as zonal fc, supply correct EPSG
+        transEpsg = None
+        if int(rasterMask.epsg()) != int(zones.epsg()):
+            transEpsg = rasterMask.epsg() # Need to transform coords to that of mask
+        
+       
+        zones.applyNoDataMask(noDataMask, transEpsg = transEpsg,
                                                              outShp = stackShp)
-           
+        
+    # If there is not, just copy the clipped .shp to our output .shp 
+    else:
+        print "\n3. No NoDataMask. Not masking out NoData values." 
+        cmd = 'ogr2ogr -f "ESRI Shapefile" {} {}'.format(stackShp, zones.filePath)
+        print ' ', cmd #TEMP 10/7
+        os.system(cmd)
+
+    ## Before moving on, clean up the zonal shapefile by removing unnecessary columns
+    ## This does not seem to be working, so leave it be for now
+    #removeColumns = ['SHAPE_Leng', 'SHAPE_Area', 'SHAPE_Length', 'keep']
+    #removeExtraColumns(stackShp, removeColumns)
+        
     zones = ZonalFeatureClass(stackShp)
     if not checkZfcResults(zones, "masking out NoData values"):
         return None
     # Now zones is the filtered fc obj, will eventually have the stats added as attributes
-     
+
     # Get stack key dictionary    
     layerDict = buildLayerDict(stack) # {layerNumber: [layerName, [statistics]]}
-
+    
     # 4. Call zonal stats and return a pandas dataframe    
     print "\n4. Running zonal stats for {} layers".format(len(layerDict))
-    zonalStatsDf = callZonalStats(stack.filePath, zones.filePath, layerDict)
+    zonalStatsDf = callZonalStats(stack, zones, layerDict)
    
     # 5. Complete the ZS DF by:
     #    adding stackName col, sunAngle if need be
@@ -464,10 +498,6 @@ def main(args):
     #    *removing columns if they exist: keep,SHAPE_Leng,SHAPE_Area
     zonalStatsDf = zonalStatsDf.fillna(stack.noDataValue)
     zonalStatsDf['stackName'] = [stackName for i in range(len(zonalStatsDf))]
-    # *Do not do this, because it will result in different fields for 
-    # individual shp vs larger gdb/csv. Until I can figure out better solution
-    #for col in ['keep', 'SHAPE_Leng', 'SHAPE_Area']: 
-        #zonalStatsDf = removeExtraColumns(zonalStatsDf, col)
     
     # Then add the zonal statistics columns from df to shp
     stackShp = addStatsToShp(zonalStatsDf, stackShp)
