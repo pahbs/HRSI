@@ -1,4 +1,8 @@
-import os, sys
+#!/usr/bin/env python
+import sys
+import os
+import argparse
+
 import ogr
 import osr
 from math import ceil
@@ -6,15 +10,32 @@ import subprocess as subp
 
 ##https://pcjericks.github.io/py-gdalogr-cookbook/vector_layers.html#create-fishnet-grid
 
-def main(outputGridfn,xmin,xmax,ymin,ymax,gridHeight,gridWidth):
+def getparser():
+    parser = argparse.ArgumentParser(description='Create a vecotr grid within a lat/lon bounding box')
+    parser.add_argument('out_fn', type=str, help='Output vector grid name)')
+    parser.add_argument('xmin', type=float, default=None, help='xmin')
+    parser.add_argument('xmax', type=float, default=None, help='xmax')
+    parser.add_argument('ymin', type=float, default=None, help='ymin')
+    parser.add_argument('ymax', type=float, default=None, help='ymax')
+    parser.add_argument('gridWidth', type=float, default=1, help='Width of vector grid cell')
+    parser.add_argument('gridHeight', type=float, default=1, help='Height of vector grid cell')
+    return parser
+
+def main():
+
+
+    parser = getparser()
+    args = parser.parse_args()
+
+    out_fn = args.out_fn
 
     # convert sys.argv to float
-    xmin = float(xmin)
-    xmax = float(xmax)
-    ymin = float(ymin)
-    ymax = float(ymax)
-    gridWidth = float(gridWidth)
-    gridHeight = float(gridHeight)
+    xmin = args.xmin
+    xmax = args.xmax
+    ymin = args.ymin
+    ymax = args.ymax
+    gridWidth = args.gridWidth
+    gridHeight = args.gridHeight
 
     # get rows
     rows = ceil((ymax-ymin)/gridHeight)
@@ -29,10 +50,10 @@ def main(outputGridfn,xmin,xmax,ymin,ymax,gridHeight,gridWidth):
 
     # create output file
     outDriver = ogr.GetDriverByName('ESRI Shapefile')
-    if os.path.exists(outputGridfn):
-        os.remove(outputGridfn)
-    outDataSource = outDriver.CreateDataSource(outputGridfn)
-    outLayer = outDataSource.CreateLayer(outputGridfn,geom_type=ogr.wkbPolygon )
+    if os.path.exists(out_fn):
+        os.remove(out_fn)
+    outDataSource = outDriver.CreateDataSource(out_fn)
+    outLayer = outDataSource.CreateLayer(out_fn,geom_type=ogr.wkbPolygon )
     featureDefn = outLayer.GetLayerDefn()
 
     # create grid cells
@@ -78,21 +99,10 @@ def main(outputGridfn,xmin,xmax,ymin,ymax,gridHeight,gridWidth):
     spatialRef = osr.SpatialReference()
     spatialRef.ImportFromEPSG(4326)
     spatialRef.MorphToESRI()
-    prj_file = open(outputGridfn.replace("shp","prj"), 'w')
+    prj_file = open(out_fn.replace("shp","prj"), 'w')
     prj_file.write(spatialRef.ExportToWkt())
     prj_file.close()
 
 
-
-
-if __name__ == "__main__":
-
-    #
-    # example run : $ python grid.py <full-path><output-shapefile-name>.shp xmin xmax ymin ymax gridHeight gridWidth
-    #
-    argsNum = 7
-    if len( sys.argv ) != argsNum+1:
-        print "[ ERROR ] you must supply %s arguments: output-shapefile-name.shp xmin xmax ymin ymax gridHeight gridWidth " %(argsNum)
-        sys.exit( 1 )
-
-    main( sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6], sys.argv[7] )
+if __name__ == '__main__':
+    main()

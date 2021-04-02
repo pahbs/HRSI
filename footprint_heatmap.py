@@ -1,6 +1,5 @@
-#
-#http://stackoverflow.com/questions/7861196/check-if-a-geopoint-with-latitude-and-longitude-is-within-a-shapefile
-#http://geospatialpython.com/2010/12/dot-density-maps-with-python-and-ogr.html
+#!/usr/bin/env python
+
 import os, sys, osgeo, math, datetime, time
 from osgeo import ogr, gdal, osr
 import subprocess as subp
@@ -11,9 +10,12 @@ import argparse
 gdal.AllRegister()
 start_time = time.time()
 
+# Create a heatmap grid with number of observations representing overlapping data from an input footprint shapefile
+# Call example: python footprint_grid_num.py /att/pubrepo/hma_data/ASTER HMA_AST_L1A_DSM_footprints_20170423.shp 0.1 66 106 25 50
 #
-# Call example: python footprint_grid_num.py /att/pubrepo/hma_data/ASTER HMA_AST_L1A_DSM_footprints_20170423.shp 0.1 hma_010_fishnet 66 106 25 50 FID
-#
+# http://stackoverflow.com/questions/7861196/check-if-a-geopoint-with-latitude-and-longitude-is-within-a-shapefile
+# http://geospatialpython.com/2010/12/dot-density-maps-with-python-and-ogr.html
+
 
 def makeGrid(cell_size):
     worldGrid = {}
@@ -33,16 +35,15 @@ def gridSort(lat,lon,cell_size):
     return gridCell
 
 def getparser():
-    parser = argparse.ArgumentParser(description="Create a grid with number of observations")
-    parser.add_argument('root', default=None, help='Specify dir where input is located')
-    parser.add_argument('in_fn', default=None, type=str, help='Input shapefile name')
+    parser = argparse.ArgumentParser(description="Create a heatmap grid with number of observations representing overlapping data from an input footprint shapefile")
+    parser.add_argument('in_fn', default=None, type=str, help='Input footprint shapefile name')
     parser.add_argument('cell_size', type=float, default=0.25, help='Float indicating the cell size (degrees)')
-    parser.add_argument('fishnet_name', default="fishnet", help='Output vector grid (fishnet) of given cell size')
-    parser.add_argument('llon', default=66, type=int, help='The left longitude value (degrees)')
-    parser.add_argument('rlon', default=106, type=int, help='The right longitude value (degrees)')
-    parser.add_argument('blat', default=25, type=int, help='The bottom latitude value (degrees)')
-    parser.add_argument('ulat', default=50, type=int, help='The upper latitude value (degrees)')
-    parser.add_argument('UID_index', default='FID', type=str, help='(Default: FID) A unique ID field from the reprojected version of the input shapefile')
+    parser.add_argument('llon', default=None, type=int, help='The left longitude value (degrees)')
+    parser.add_argument('rlon', default=None, type=int, help='The right longitude value (degrees)')
+    parser.add_argument('blat', default=None, type=int, help='The bottom latitude value (degrees)')
+    parser.add_argument('ulat', default=None, type=int, help='The upper latitude value (degrees)')
+    parser.add_argument('-UID_index', default='FID', type=str, help='(Default: FID) A unique ID field from the reprojected version of the input shapefile')
+    parser.add_argument('-out_fishnet_fn', default="tmp_fishnet.shp", help='Output vector grid (fishnet) of given cell size')
     return parser
 
 def main():
@@ -50,34 +51,33 @@ def main():
     parser = getparser()
     args = parser.parse_args()
 
-    root = args.root
     in_fn = args.in_fn
     cell_size = args.cell_size
-    fishnet_name = args.fishnet_name
+    fishnet_fn = args.out_fishnet_fn
 
+    root = os.path.split(in_fn)[0]
     os.chdir(root)
 
-    #root = "/att/pubrepo/hma_data/ASTER"
-    #in_fn = "HMA_AST_L1A_DSM_footprints_20170422" # BEFORE, then AFTER INTERSECT: coverage shp with fishnet at cell_size resolution
-    #fishnet_name = "fishnet"
+    if args.llon is None:
+        sys.exit("Enter in correct geographic bounds for heatmap: llon rlon blat ulat")
+
     outIntersect = in_fn.replace('.shp','_INTERSECT_'+args.UID_index)
-    #cell_size = .25 #degrees
 
     print "\t[1] CREATE: fishnet (i.e., vector grid), and reproject to a srs that matches that of the footprint shp"
     create_start_time = time.time()
+
     # Get EPSG of in_fn
-    cmdStr = "gdalsrsinfo -o proj4 {}".format(os.path.join(root, in_fn))
+    cmdStr = "gdalsrsinfo -o proj4 {}".format(in_fn)
     Cmd = subp.Popen(cmdStr, stdout=subp.PIPE, shell=True)
     proj4_str, err = Cmd.communicate()
 
+    fishnet_path, fishnet_name = os.path.split(fishnet_fn)
 
-    ##out_epsg = 3995
-    fishnet_path = os.path.join(root,fishnet_name+'.shp')
-    fishnet.main(fishnet_path,args.llon,args.rlon,args.blat,args.ulat, cell_size, cell_size)
+    os.system("fishnet.py {} {} {} {} {} {} {}".format(fishnet_fn, args.llon, args.rlon, args.blat, args.ulat, cell_size, cell_size) )
 
     # reproject fishnet to match footprint prj
-    fishnet_path_repro = fishnet_path.replace('.shp','_reprj.shp')
-    cmdStr = "ogr2ogr {} {} -f 'ESRI Shapefile' -overwrite -t_srs {}".format(fishnet_path_repro,fishnet_path,proj4_str)
+    fishnet_fn_repro = fishnet_fn.replace('.shp','_reprj.shp')
+    cmdStr = "ogr2ogr {} {} -f 'ESRI Shapefile' -overwrite -t_srs {}".format(fishnet_fn_repro,fishnet_fn,proj4_str)
 
     Cmd = subp.Popen(cmdStr, stdout=subp.PIPE, shell=True)
     stdOut, err = Cmd.communicate()
@@ -88,10 +88,10 @@ def main():
 
     print "\t[2] INTERSECT: 2 shps; fishnet and footprints"
 
-    outIntersect_path = os.path.join(root,outIntersect+'.shp')
+    outIntersect_fn = outIntersect+'.shp'
 
     try:
-        if not os.path.isfile(outIntersect_path):
+        if not os.path.isfile(outIntersect_fn):
 
             intersect_start_time = time.time()
             ## https://gis.stackexchange.com/questions/119374/intersect-shapefiles-using-shapely
@@ -101,11 +101,11 @@ def main():
                 SELECT ST_Intersection(A.geometry, B.geometry) AS geometry, A.*, B.*
                 FROM {} A, {} B
                 WHERE ST_Intersects(A.geometry, B.geometry);
-            """.format(in_fn.split('.')[0], basename(fishnet_path_repro.strip(".shp")) )
+            """.format(basename(in_fn).split('.')[0], basename(fishnet_fn_repro).split('.')[0] )
 
             layer = ogr_ds.ExecuteSQL(SQL, dialect='SQLITE')
             # copy result back to datasource as a new shapefile
-            layer2 = ogr_ds.CopyLayer(layer, outIntersect)
+            layer2 = ogr_ds.CopyLayer(layer, basename(outIntersect))
             # save, close
             layer = layer2 = ogr_ds = None
 
@@ -114,7 +114,7 @@ def main():
             print("\t\tElapsed INTERSECT time was %g minutes." % duration)
 
         else:
-            print "Intersection file already exists: %s" %(outIntersect_path)
+            print "Intersection file already exists: %s" %(outIntersect_fn)
 
     except Exception,e:
         print "\n\t!!!--- Problem with the intersection: "
@@ -123,72 +123,60 @@ def main():
     print "\t[3] PROJECT: intersected shp to GEOG"
     proj_start_time = time.time()
     sufx = '_geog'
-    cmdStr = "ogr2ogr -f 'ESRI Shapefile' -t_srs EPSG:{} {} {} -overwrite".format(str(4326),outIntersect_path.replace('.shp',sufx+'.shp'), outIntersect_path)
+    cmdStr = "ogr2ogr -f 'ESRI Shapefile' -t_srs EPSG:{} {} {} -overwrite".format(str(4326),outIntersect_fn.replace('.shp',sufx+'.shp'), outIntersect_fn)
     Cmd = subp.Popen(cmdStr, stdout=subp.PIPE, shell=True)
     s, e = Cmd.communicate()
-    in_intersect = outIntersect+sufx+'.shp'
+    in_intersect_fn = outIntersect+sufx+'.shp'
 
-    #UID_index = "FID" # shp field name with UID
-    #date_field = 'Year' # name of field with YYYY-MM-DD
-    #viewing_angle_field = 'IncidAngle' # name of field in input shp with look angle
     proj = 4326 #http://spatialreference.org/ref/epsg/wgs-84/
     outCountField = "count" #new field for output coverage shp
-    #outAngleField = 'max_view_angle'
     proj_end_time = time.time()
     duration = (proj_end_time-proj_start_time)/60
     print("\t\tElapsed PROJECT time was %g minutes." % duration)
 
-
-    # #### POPULATE REFERENCE GRID CELL DICTIONARY WITH NTF FOOTPRINT INFO
-
-    # In[5]:
-
     print "\t[4] POPULATE: reference grid cell dictionary with footprint info"
     pop_start_time = time.time()
-    in_intersect_path = os.path.join(root,in_intersect)
-    ##print in_intersect_path
+
     drv = ogr.GetDriverByName('ESRI Shapefile')
-    ntfIn = drv.Open(in_intersect_path)
-    ntfLyr = ntfIn.GetLayer(0)
-    ntfGrid = makeGrid(cell_size)
-    ntfDict = {}
+    shp_open = drv.Open(in_intersect_fn)
+    lyr = shp_open.GetLayer(0)
+    featGrid = makeGrid(cell_size)
+    featDict = {}
 
-    for ntf in ntfLyr: #each ntf is of type "feature"
+    for feat in lyr: #each feat is of type "feature"
         #print "\tUID_index: %s" %(args.UID_index)
-        ID_index = ntf.GetFieldIndex(args.UID_index)
-        ntfID = ntf.GetField(ID_index)
+        ID_index = feat.GetFieldIndex(args.UID_index)
+        featID = feat.GetField(ID_index)
 
-        ntfGeom = ntf.GetGeometryRef()
-        ntfCentroid = ntfGeom.Centroid() #lon-lat
-        ntfCentroidLon = float(str(ntfCentroid).split(' ')[1].strip('('))
-        ntfCentroidLat = float(str(ntfCentroid).split(' ')[2].strip(')'))
+        featGeom = feat.GetGeometryRef()
+        centroid = featGeom.Centroid() #lon-lat
+        centroidLon = float(str(centroid).split(' ')[1].strip('('))
+        centroidLat = float(str(centroid).split(' ')[2].strip(')'))
 
-        ntfDict[ntfID]=[ntfCentroidLat,ntfCentroidLon]#,ntfDate]
-        #print "\tcent lat: %s, cent lon: %s" %(ntfCentroidLat,ntfCentroidLon)
-        ntfCell = gridSort(ntfCentroidLat,ntfCentroidLon,cell_size)
-        ntfGrid[ntfCell].append(ntfID)
+        featDict[featID]=[centroidLat,centroidLon]#,ntfDate]
+        #print "\tcent lat: %s, cent lon: %s" %(centroidLat,centroidLon)
+        featCell = gridSort(centroidLat,centroidLon,cell_size)
+        featGrid[featCell].append(featID)
 
-    ntfCellCount=0
-    for cell in ntfGrid:
-        if ntfGrid[cell] != []: ntfCellCount+=1
+    featCellCount=0
+    for cell in featGrid:
+        if featGrid[cell] != []: featCellCount+=1
 
     #reformat decimal degree for output if necessary
     cell_sizeStr = str(cell_size)
     if cell_sizeStr.split('.')>0:  # 0.25 degree cell size, for example
         cell_sizeStr.replace('.','-')
 
-    print('\t\tRead '+ str(len(ntfDict))+' '+in_intersect+' poly features into '+str(ntfCellCount)+'/'+str(len(ntfGrid)) +' '+ cell_sizeStr+'-deg cells.\n')
+    print('\t\tRead '+ str(len(featDict))+' '+in_intersect_fn+' poly features into '+str(featCellCount)+'/'+str(len(featGrid)) +' '+ cell_sizeStr+'-deg cells.\n')
     pop_end_time = time.time()
     duration = (pop_end_time-pop_start_time)/60
     print("\t\tElapsed POPULATE time was %g minutes." % duration)
 
     # #### CREATE GRID SHP BASED ON REFERENCE GRID CELLS
 
-    # In[6]:
-
     print "\t[5] GRID: shp based on vector grid cells"
     grid_start_time = time.time()
-    gridShp = os.path.join(root,in_fn.replace(".shp","-GRIDnum-"+args.UID_index+".shp")) #+cell_sizeStr+"deg_grid.shp"
+    gridShp = os.path.join(root,in_fn.replace(".shp","_heatmap_"+cell_sizeStr.replace(".","_")+"deg.shp"))
 
     if os.path.exists(gridShp): os.remove(gridShp)
 
@@ -204,8 +192,8 @@ def main():
     #bring in cell boundary geometry and NTF footprint data
     #http://pcjericks.github.io/py-gdalogr-cookbook/geometry.html#create-a-polygon
     #http://pcjericks.github.io/py-gdalogr-cookbook/layers.html
-    for cell in ntfGrid:
-        sceneCount = len(ntfGrid[cell])
+    for cell in featGrid:
+        sceneCount = len(featGrid[cell])
         if sceneCount > 0: #only make shp cells where at least one scene
             ring = ogr.Geometry(ogr.wkbLinearRing)
             cell_UL_lat = float(cell.split('_')[0])*cell_size
@@ -227,7 +215,7 @@ def main():
             feature.SetField(outCountField,sceneCount)
             gridLayer.CreateFeature(feature)
 
-    ntfIn.Destroy()
+    shp_open.Destroy()
     outGridShp.Destroy()
 
     # make prj
@@ -254,15 +242,11 @@ def main():
     duration = (grid_end_time-grid_start_time)/60
     print("\t\tElapsed GRID time was %g minutes." % duration)
 
-    # In[7]:
-
     outGridShp = None
     del outGridShp
 
 
     # #### CONVERT SHP TO TIF
-
-    # In[ ]:
 
     print "\t[6] CONVERT: shp to GeoTiff"
     convert_start_time = time.time()

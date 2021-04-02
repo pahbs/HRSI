@@ -37,9 +37,9 @@ batch_name=${10}
 # Percentage by which the resolution of the DEM is reduced to produce a slope raster
 reduce_pct_slope=100
 
-out_dz_res=2 
+out_dz_res=4 
 
-echo; echo "Script call:"
+echo; echo "Script call at $(date)"
 echo "${0} ${1} ${2} ${3} ${4} ${5} ${6} ${7} ${8} ${9} ${10}" ; echo
 echo "Processing CHMs from pairname: $pairname"
 echo "Processing parameters for point-cloud filtering"
@@ -49,14 +49,23 @@ echo "Search radius (in pixels): $search_rad"
 echo "Max slope above which pixels will be masked out: $max_slope"
 echo "Output res. for CHM files: $out_dz_res"
 
-if [ "${INPUT}" = "v1" ] || [ "${INPUT}" = "true" ] ; then
+if [[ "${INPUT}" = "v1" ]] || [[ "${INPUT}" = "true" ]] ; then
     main_dir=/att/pubrepo/DEM/hrsi_dsm
     work_dir=/att/gpfsfs/briskfs01/ppl/pmontesa/outASP_TEST/test2_do_dem_filt
 elif [ "${INPUT}" = "v2" ] ; then
     main_dir=/att/pubrepo/DEM/hrsi_dsm/v2
     work_dir=/att/gpfsfs/briskfs01/ppl/pmontesa/chm_work/hrsi_chm_sgm_filt
+elif [ "${INPUT}" = "v2_val" ] ; then
+    main_dir=/att/pubrepo/DEM/hrsi_dsm/v2
+    work_dir=/att/gpfsfs/briskfs01/ppl/pmontesa/chm_work/hrsi_chm_sgm_filt
 elif [ "${INPUT}" = "test" ] ; then
-    main_dir=/att/gpfsfs/briskfs01/ppl/pmontesa/outASP/veg_mode/SGM_5_999_0
+    #main_dir=/att/gpfsfs/briskfs01/ppl/pmontesa/outASP/veg_mode/SGM_5_999_0
+    #work_dir=/att/gpfsfs/briskfs01/ppl/pmontesa/chm_work/hrsi_chm_sgm_filt
+    main_dir=/att/gpfsfs/briskfs01/ppl/pmontesa/userfs02/projects/3dsi/DSM_ground/${batch_name}
+    work_dir=$main_dir
+elif [ "${INPUT}" = "v2_projrepo" ] ; then
+    # TMP location for v2 SGM output
+    main_dir=/att/projrepo/hrsi_dsm/v2
     work_dir=/att/gpfsfs/briskfs01/ppl/pmontesa/chm_work/hrsi_chm_sgm_filt
 else
     main_dir=/att/gpfsfs/briskfs01/ppl/pmontesa/outASP/${batch_name}
@@ -72,8 +81,9 @@ mkdir -p $work_dir
 mkdir -p ${work_dir}/chm
 
 # This is important so you dont overwrite the original PC.tif when you are writing the CHMs to the same dir as the input...
-if [ "${INPUT}" = "v1" ] || [ "${INPUT}" = "v2" ] || [ "${INPUT}" = "test" ]; then
+if [[ "${INPUT}" == "v1" ]] || [[ "${INPUT}" == "v2"* ]] || [[ "${INPUT}" == "test" ]]; then
 
+    echo; echo "Do symlinks..." ; echo
     if [ -e ${main_dir}/${pairname}/out-strip-PC.tif ] ; then
         ln -sf ${main_dir}/${pairname}/out-strip-PC.tif $pairname_dir/out-PC.tif 2> /dev/null
     else
@@ -89,7 +99,7 @@ fi
 proj=$(utm_proj_select.py ${pairname_dir}/out-DEM_24m.tif)
 echo; echo "Projection: $proj" ; echo
 
-if [ "${proj}" = "" ] || [ -e "${proj}" ] ; then
+if [[ "${proj}" = "" ]] || [[ -e "${proj}" ]] ; then
     echo; echo "Proj string empty: ${pairname_dir}/out-DEM_24m.tif . Exiting." ; echo
     exit 1
 fi
@@ -119,13 +129,18 @@ if [ "${DO_P2D}" = true ]; then
             res=${res_fine}
         fi
         
-        if [ -e $pairname_dir/out_${res}m-sr${search_rad_frmt}-${filt}-DEM.tif ] && [ -e $pairname_dir/out_${res}m-sr${search_rad_frmt}-DEM_complete ]  ; then
+        if [[ -e $pairname_dir/out_${res}m-sr${search_rad_frmt}-${filt}-DEM.tif ]] && [[ -e $pairname_dir/out_${res}m-sr${search_rad_frmt}-DEM_complete ]]  ; then
             echo "DEM exists: out_${res}m-sr${search_rad_frmt}-${filt}-DEM.tif"
         else
-            echo "Get the $filt DEM at ${res}m using search radius ${search_rad}" 
-            cmd+="point2dem --filter $filt $p2d_opts --tr $res -o $pairname_dir/out_${res}m-sr${search_rad_frmt} $pairname_dir/out-PC.tif && touch $work_dir/out_${res}m-sr${search_rad_frmt}-DEM_complete ; "
-            echo; echo $cmd ; echo
-            cmd_list+=\ \'$cmd\'
+            if [ -e $pairname_dir/out-PC.tif ] ; then
+                echo "Get the $filt DEM at ${res}m using search radius ${search_rad}" 
+                cmd+="point2dem --filter $filt $p2d_opts --tr $res -o $pairname_dir/out_${res}m-sr${search_rad_frmt} $pairname_dir/out-PC.tif && touch $pairname_dir/out_${res}m-sr${search_rad_frmt}-DEM_complete ; "
+                echo; echo $cmd ; echo
+                cmd_list+=\ \'$cmd\'
+            else
+                echo ; echo "PC file does not exist. Exiting." ; echo
+                exit 1
+            fi
         fi
     done
     if [ -z "$cmd_list" ] ; then
@@ -144,7 +159,7 @@ out_dz_tmp=${min_dsm%.*}_$(basename ${max_dsm%.*})_dz_eul.tif
 out_dz=${pairname_dir}/${pairname}_sr${search_rad_frmt}_$(echo $(basename ${out_dz_tmp}) | sed -e 's/out_//g' | sed -e "s/${tail}//g" )
 
 if [ -e "$out_dz" ] ; then
-    echo; echo "CHM already exists:" ; echo ${out_dz} ; echo
+    echo; echo "Yes. CHM already exists:" ; echo ${out_dz} ; echo "Script: $0" ; echo
 elif [[ "${DO_DZ}" = false ]] && [[ ! -e "$out_dz" ]] ; then
     echo; echo "CHM DOESNT exists, and you chose not to compute it." ; echo
 elif [[ "${DO_DZ}" = true ]] && [[ ! -e "$out_dz" ]] ; then
@@ -208,9 +223,9 @@ elif [[ "${DO_DZ}" = true ]] && [[ ! -e "$out_dz" ]] ; then
     gdaladdo -ro -r average ${out_dz} 2 4 8 16 32 64
 
     if [ -e "$out_dz" ] ; then
-        echo; echo "CHM finished:" ; echo ${out_dz} ; echo
+        echo; echo "Yes! CHM finished. $(date)" ; echo ${out_dz} ; echo
     else
-        echo; echo "Fail: CHM not made for some reason." ; echo
+        echo; echo "No! CHM not made for some reason. $(date)" ; echo "Try deleting DSMs and re-run." ; echo
         echo $pairname >> ${work_dir}/list_fails
     fi
 
@@ -224,4 +239,4 @@ done
 rm ${pairname_dir}/out-*sr${search_rad_frmt}*masked.tif 2> /dev/null
 rm -rf /tmp/magick-* 2> /dev/null
 
-echo "----Done---- $(date)" ; echo
+echo "----Done with `basename ${0}`---- $(date)" ; echo

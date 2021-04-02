@@ -4,23 +4,31 @@
 #   Will use the header from the first csv and all others should match
 
 import pandas as pd
-import numpy as np
 import os, sys
+import glob
 
 # Inputs:
-csvList = ['/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/Stacks_20190328/outputs/20190328_Stacks__zonalStats_15m.csv',
-            '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/Stacks_20190416/outputs/20190416_Stacks__zonalStats_15m.csv']
+inDir =  '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ZonalStats/ATL08/Landsat/h*'
+outCsv = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ZonalStats/ATL08__Landsat__ZonalStats__rewrite.csv'
 
-outCsv = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_zonal/GLAS_Stacks_zonalStats_15m-2m.csv'
+
+
 if os.path.isfile(outCsv): # if output file exists, we want to append to it
 ##    csvList.insert(0, outCsv) # this was causing problems
     #print
     sys.exit("Output CSV {} already exists. Please delete and try again".format(outCsv))
+    
+   
+csvList = glob.glob(os.path.join(inDir, '*.csv'))
+print "Combining {} .csv files...\n".format(len(csvList))
 
 first = True
 concatList = []
+cnt = 0
 for c in csvList:
     #import pdb; pdb.set_trace()
+    cnt += 1
+    print cnt
 
     df = pd.read_csv(c)
 
@@ -39,6 +47,8 @@ for c in csvList:
 #print concatList
 
 outdf = pd.concat(concatList, ignore_index=True).drop_duplicates().reset_index(drop=True)
+print "\n{} rows in final output df".format(len(outdf))
+
 ##print 'ya'
 outdf.to_csv(outCsv, index=False)
 print "Wrote to {}".format(outCsv)
