@@ -33,6 +33,9 @@ Inputs:
 6/5: Changing csv argument to be either csv or gdb
      If gdb is passed, create .csv and .gdb
      If .csv is passed, create only .csv
+     
+4/23/2021: Adding hardcoded argument in main() for region (EU or NA) to direct  
+           outputs to correct dir
     
 """
 
@@ -339,6 +342,8 @@ def getPathRows(lat, lon):
 
 def main(args):
     
+    region = 'EU' # or NA (default)
+    
     ogr.UseExceptions() # Unsure about this, but pretty sure we want errors to cause exceptions
     # "export CPL_LOG=/dev/null" -- to hide warnings, must be set from shell or in bashrc
 
@@ -347,6 +352,7 @@ def main(args):
     
     # Set main directory:
     baseDir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ZonalStats/'
+    if region == 'EU': baseDir = os.path.join(baseDir, 'EU')
     
     # Unpack arguments   
     inRaster  = args['rasterStack']
