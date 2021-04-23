@@ -353,7 +353,7 @@ def main(args):
     # Set main directory:
     baseDir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ZonalStats/'
     if region == 'EU': baseDir = os.path.join(baseDir, 'EU')
-    
+    import pdb; pdb.set_trace()
     # Unpack arguments   
     inRaster  = args['rasterStack']
     inZonalFc = args['zonalFc']
