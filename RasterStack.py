@@ -89,7 +89,7 @@ class RasterStack(Raster):
         
         # SGM, LVIS, or GLiHT
         
-        if 'Out_SGM' or 'Out_EA' in self.baseDir: # TEMP UNTIL WILL FIXES STACKDIRs
+        if 'Out_SGM' in self.baseDir or 'Out_EA' in self.baseDir: # TEMP UNTIL WILL FIXES STACKDIRs
             return 'SGM'
         
         elif 'out_lvis' in self.baseDir:

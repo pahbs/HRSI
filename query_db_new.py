@@ -8,6 +8,8 @@
 # Copyright:   (c) mwooten3 2016
 # Licence:     <your licence>
 
+# 5/13/2021: NOTE: this is old script no longer used. Ignore this. See query_db.py in AIST_Code/TTE/evhr instead
+
 
 # 1/24: Instead of passing along preLogText list, write preLogText to text file (saved to inASP dir) and pass filename as arg; then read file into list on DISCOVER
 # 1/24: Previously made changes are commented throughout the code (search #*, ##*, #Q, ##Q)
@@ -732,6 +734,8 @@ def main(inTxt, inDir, batchID, noP2D, rp, debug): #the 4 latter args are option
             # CHANGE THESE ?:
             job_name = '{}__{}__job'.format(batchID, pairname) # identify job with batchID and pairname??
             time_limit = '6-00:00:00'
+            # 5/7/2021: Not sure but if my memory serves, this needs to happen? idk where this was happening before
+            if sensor == 'WV03': time_limit = '8-00:00:00'
             num_nodes = '1'
             python_script_args = 'python {} {} {} {} {} {} {} {} {} {} {} {} {}'.format(os.path.join(DISCdir, 'code', workflowCodeName), arg1, arg2, arg3, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13)
             print python_script_args #T
@@ -741,7 +745,7 @@ def main(inTxt, inDir, batchID, noP2D, rp, debug): #the 4 latter args are option
                 f.write('#!/bin/csh -f\n')
                 f.write('#SBATCH --job-name={}\n'.format(job_name))
                 f.write('#SBATCH --nodes={}\n'.format(num_nodes))
-                f.write('#SBATCH --constraint=hasw\n\n')
+                f.write('#SBATCH --constraint=hasw|sky\n\n') # 5/7/2021 skylake node as well
                 f.write('#SBATCH --time={}\n'.format(time_limit))
                 f.write('#SBATCH --qos=boreal_b0217\n')
                 f.write('#SBATCH --partition=single\n\n')

@@ -36,6 +36,9 @@ Inputs:
      
 4/23/2021: Adding hardcoded argument in main() for region (EU or NA) to direct  
            outputs to correct dir
+           
+5/19/2021: In RasterStack.py, make temp edit because Will's SGM stacks no
+           longer had Out_SGM in them
     
 """
 
