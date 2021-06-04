@@ -35,10 +35,13 @@ Inputs:
      If .csv is passed, create only .csv
      
 4/23/2021: Adding hardcoded argument in main() for region (EU or NA) to direct  
-           outputs to correct dir
+            outputs to correct dir
            
 5/19/2021: In RasterStack.py, make temp edit because Will's SGM stacks no
-           longer had Out_SGM in them
+            longer had Out_SGM in them
+           
+6/4/2021:  Changed line 383 below to write to node-specific .csv instead of 
+            one big one to avoid write issues like last time
     
 """
 
@@ -380,9 +383,10 @@ def main(args):
     bigExt = os.path.splitext(bigOutput)[1]
     if bigExt == '.gdb' or bigExt == '.gpkg': # Write to both
         # Assume gdb/gpkg is node specific (eg. output-crane101.gdb)
-        outCsv = bigOutput.replace('-{}{}'.format(platform.node(), bigExt), '.csv')
-        if not outCsv.endswith('.csv'): # If that assumption is wrong and the above didn't work
-            outCsv = bigOutput.replace(bigExt, '.csv') # then replace extension as is
+        outCsv = bigOutput.replace(bigExt, '.csv') # 6/4/21 - same as .gdb but .csv        
+        #outCsv = bigOutput.replace('-{}{}'.format(platform.node(), bigExt), '.csv')
+        #if not outCsv.endswith('.csv'): # If that assumption is wrong and the above didn't work
+          #  outCsv = bigOutput.replace(bigExt, '.csv') # then replace extension as is
         outGdb = bigOutput # Keep gdb as is
     elif bigExt == '.csv': # Write only to .csv
         outCsv = bigOutput
