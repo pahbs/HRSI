@@ -136,9 +136,9 @@ class ZonalFeatureClass(FeatureClass):
         
         ds = layer = dsOut = layerOut = feature = None
         
-        # 10/28: Try to remove 'keep' field
-        fc = FeatureClass(outShp)
-        fc.removeField('keep')
+        # 10/28: Try to remove 'keep' field - 4/26/21 - comment out to keep consistent with NA outputs
+        #fc = FeatureClass(outShp)
+        #fc.removeField('keep')
         
         return outShp
 
