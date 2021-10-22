@@ -1,9 +1,11 @@
 #!/bin/bash
 
+
+
 INPUTXML=${1:-''}
 TOPDIR=${2:-''} # top dir under which new catid dirs will sit 
 
-if [ -z "${INPUTXML}" ] || [[ -z "${TOPDIR}" ]] ; then
+if [[ -z "${INPUTXML}" ]] || [[ -z "${TOPDIR}" ]] ; then
     echo "Enter an XML and a top dir!" ; echo
     exit
 fi
@@ -28,9 +30,17 @@ echo $RENAMEDXML
 
 # Get correspondig NTF, rename, and convert to lowercase extension
 INPUTNTF="${INPUTXML%.XML}.NTF"
+# INSANELY, you must strip the first *16* chars of the NTF name to have it match the XML...
+#INPUTNTF=$(echo "$INPUTNTF" | cut -c17-)
+
 RENAMEDNTF=$(echo "${satid}_${acqdate}_${catid}_$(basename $INPUTNTF)" | sed -r "s/([^.]*)\$/\L\1/")
 
 # Make CATID dir under DIRREQ
-mkdir -p ${TOPDIR}/${satid}_${acqdate}_${catid}
-cp $INPUTXML ${TOPDIR}/${catid}/${RENAMEDXML}
-ln -sf $INPUTNTF ${TOPDIR}/${catid}/${RENAMEDNTF}
+DIR_ACQ=${satid}_${acqdate}_${catid}
+mkdir -p ${TOPDIR}/${DIR_ACQ}
+
+cp $INPUTXML ${TOPDIR}/${DIR_ACQ}/${RENAMEDXML}
+mv $INPUTNTF ${TOPDIR}/${DIR_ACQ}/${RENAMEDNTF}
+
+#cp $INPUTXML ${TOPDIR}/${catid}/${RENAMEDXML}
+#ln -sf $INPUTNTF ${TOPDIR}/${catid}/${RENAMEDNTF}

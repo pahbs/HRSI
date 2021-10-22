@@ -20,6 +20,7 @@ if [ "$TYPE" = HRSIDSM ] ; then
     
     OUT_SHP=HRSI_DSM_footprints_$(basename $RAS_DIR) #_${RAS_EXT%.*}        #HRSI_DSM_footprints_pct${COARSEN_PCT}
 
+    # With '_footprints' appended to name of RAS_DIR in case RAS_DIR has many subdirs...
     OUT_DIR=${RAS_DIR}_footprints
 
     NB_OUT=${5:-'false'}

@@ -25,9 +25,9 @@ search_rad=$5		# Search radius (# pixels) used for point2dem filtering
 #Format for output file naming
 search_rad_frmt=$(echo $search_rad | awk '{printf("%02d", $1)}')
 
-INPUT=$6		#Input data in /att/pubrepo/DEM/hrsi_dsm ? 
-DO_P2D=$7		#Do the point2dem block of this script?
-DO_DZ=$8		#Do the masking & differencing block?
+INPUT=${6:-'v2_projrepo'}		#Default input data is now in /att/projrepo/hrsi_dsm/v2 
+DO_P2D=${7:-'true'}				#Do the point2dem block of this script?
+DO_DZ=${8:-'true'}				#Do the masking & differencing block?
 
 p2d_extent=${9:-''}
 
@@ -35,7 +35,7 @@ p2d_extent=${9:-''}
 batch_name=${10}
 
 # Percentage by which the resolution of the DEM is reduced to produce a slope raster
-reduce_pct_slope=100
+#reduce_pct_slope=100
 
 out_dz_res=4 
 
@@ -63,10 +63,13 @@ elif [ "${INPUT}" = "test" ] ; then
     #work_dir=/att/gpfsfs/briskfs01/ppl/pmontesa/chm_work/hrsi_chm_sgm_filt
     main_dir=/att/gpfsfs/briskfs01/ppl/pmontesa/userfs02/projects/3dsi/DSM_ground/${batch_name}
     work_dir=$main_dir
-elif [ "${INPUT}" = "v2_projrepo" ] ; then
-    # TMP location for v2 SGM output
+elif [[ "${INPUT}" = "v2_projrepo" ]] ; then
+    # Location for v2 SGM output
     main_dir=/att/projrepo/hrsi_dsm/v2
     work_dir=/att/gpfsfs/briskfs01/ppl/pmontesa/chm_work/hrsi_chm_sgm_filt
+elif [ "${INPUT}" = "senegal" ] ; then
+    main_dir=/att/gpfsfs/briskfs01/ppl/mwooten3/EVHR_API/Jobs/requests/eCassamanceDEM-sdk_xhb6ON5t8HTEptXcwWHXQoO6-ebPf8HNWXsX/dems
+    work_dir=/att/gpfsfs/briskfs01/ppl/pmontesa/chm_work/hrsi_chm_sgm_filt_senegal
 else
     main_dir=/att/gpfsfs/briskfs01/ppl/pmontesa/outASP/${batch_name}
     work_dir=/att/gpfsfs/briskfs01/ppl/pmontesa/chm_work/${batch_name}
@@ -81,9 +84,10 @@ mkdir -p $work_dir
 mkdir -p ${work_dir}/chm
 
 # This is important so you dont overwrite the original PC.tif when you are writing the CHMs to the same dir as the input...
-if [[ "${INPUT}" == "v1" ]] || [[ "${INPUT}" == "v2"* ]] || [[ "${INPUT}" == "test" ]]; then
+if [[ "${INPUT}" == "v1" ]] || [[ "${INPUT}" == "v2"* ]] || [[ "${INPUT}" == "test" ]] || [[ "${INPUT}" == "senegal" ]]; then
 
     echo; echo "Do symlinks..." ; echo
+
     if [ -e ${main_dir}/${pairname}/out-strip-PC.tif ] ; then
         ln -sf ${main_dir}/${pairname}/out-strip-PC.tif $pairname_dir/out-PC.tif 2> /dev/null
     else
@@ -91,9 +95,10 @@ if [[ "${INPUT}" == "v1" ]] || [[ "${INPUT}" == "v2"* ]] || [[ "${INPUT}" == "te
     fi
 
     # Make symlinks to original data needed
-    ln -sf ${main_dir}/${pairname}/out-DEM_4m.tif $pairname_dir/out-DEM_4m.tif 2> /dev/null
-    ln -sf ${main_dir}/${pairname}/out-DEM_24m.tif $pairname_dirr/out-DEM_24m.tif 2> /dev/null
-    ln -sf ${main_dir}/${pairname}/${pairname}_ortho.tif $pairname_dir/${pairname}_ortho.tif 2> /dev/null
+    ln -sf ${main_dir}/${pairname}/out-DEM_1m.tif $pairname_dir #/out-DEM_1m.tif ###2> /dev/null
+    ln -sf ${main_dir}/${pairname}/out-DEM_4m.tif $pairname_dir #/out-DEM_4m.tif ###2> /dev/null
+    ln -sf ${main_dir}/${pairname}/out-DEM_24m.tif $pairname_dir #/out-DEM_24m.tif ###2> /dev/null
+    ln -sf ${main_dir}/${pairname}/${pairname}_ortho.tif $pairname_dir #/${pairname}_ortho.tif ###2> /dev/null
 fi
 
 proj=$(utm_proj_select.py ${pairname_dir}/out-DEM_24m.tif)
@@ -217,8 +222,12 @@ elif [[ "${DO_DZ}" = true ]] && [[ ! -e "$out_dz" ]] ; then
     
     echo; echo "Min dsm, Max dsm: $(basename $min_dsm) , $(basename $max_dsm)"
     echo $(basename $out_dz)
-             
-    compute_dz.py -tr $out_dz_res $min_dsm $max_dsm
+
+    # Note: 'compute_dz.py' doesn not have a -tr arg (/att/gpfsfs/home/pmontesa/code/HRSI/compute_dz.py), but 'compute_dz_chm.py' does..
+    # not clear what was changed when...
+    # Change below to call 'compute_dz_chm.py' insteam of 'compute_dz.py'?         
+    compute_dz_chm.py -tr $out_dz_res $min_dsm $max_dsm
+
     mv ${out_dz_tmp} ${out_dz}
     gdaladdo -ro -r average ${out_dz} 2 4 8 16 32 64
 
