@@ -8,12 +8,25 @@ Inputs:
     stackType [SGM, LVIS, or GLiHT for now]
     zoneType  [ATL08?, GLAS for now]
     
-6/5 
+6/5/2020
     Adding parameter in 3DSI_zonalStats.py to update an output GDB or not
     If not running in parallel, supply output GDB/GPKG
     If running in parallel, do not supply output GDB
         Will instead build list of output shapefiles after parallel is 
         done running here and update gdb using list
+        
+9/1/2021:
+    Adding region var that will be hardcoded at top of script
+    Editing some vars if region == 'EU'
+    Hardcoding 'run1' in lists, will need to change as we go - see #9/1/21*
+    
+9/14: Due to excessive ADAPT slowness, going to clip .gdb to selected Landsat
+      squares for each run. So, creating a run variable to use for lists/.gdb
+      and clipping before will hopefully speed up processing [in getVarsDict()]
+      See #*9/14
+      
+9/28: Making necessary changes for run2 - changing comment indicator to make things easier
+      See #*run now for hardcoded run change areas
 """
 
 import os
@@ -25,9 +38,13 @@ from RasterStack import RasterStack
 from FeatureClass import FeatureClass
 
 overwrite = False
+region = 'EU' # or NA (default)
 
 mainDir = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ZonalStats'
 runScript = '/home/mwooten3/code/HRSI/3DSI_zonalStats.py'
+
+if region == 'EU':
+    mainDir = os.path.join(mainDir, 'EU')
 
 validStackTypes = ['SGM', 'LVIS', 'GLiHT', 'Landsat', 'Tandemx']
 validZonalTypes = ['ATL08', 'GLAS']
@@ -42,7 +59,10 @@ validZonalTypes = ['ATL08', 'GLAS']
 
 def getVarsDict(stackType, zonalType):
 
-    inputList = os.path.join(mainDir, '_lists', 'ls_{}.txt'.format(stackType))
+    #*9/1 #*9/14 - temp edit for splitting EU runs
+    #*run
+    runName = 'run3'
+    inputList = os.path.join(mainDir, '_lists', 'ls_{}_EU-{}.txt'.format(stackType, runName))
     
     """
     if stackType == 'SGM':
@@ -56,11 +76,23 @@ def getVarsDict(stackType, zonalType):
     if zonalType == 'ATL08':
         #inputZonal = os.path.join(mainDir, '_zonalGdb', 'ATL08_na.gdb')
         inputZonal = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08_na_v003.gdb'
+        #*9/14 - temp edit for splitting runs
+        #*run - but only have to change if no longer separating by run
+        inputZonal = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/ATL08_eu__run_gdbs/{}/ATL08_na_v003.gdb'.format(runName)
     elif zonalType == 'GLAS':
-        inputZonal = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_naBoreal.gdb'        
+        inputZonal = '/att/gpfsfs/briskfs01/ppl/mwooten3/3DSI/GLAS_naBoreal.gdb' 
         
     outCsv = os.path.join(mainDir, '_zonalStatsGdb',
                          '{}__{}__ZonalStats.csv'.format(zonalType, stackType))
+    #*9/14 want output .csv and crane .gdb files to be put in run specific dir 
+    #*run - but only have to change if no longer separating by run
+    outCsv = os.path.join(mainDir, '_zonalStatsGdb', runName,
+                         '{}__{}__ZonalStats.csv'.format(zonalType, stackType))
+    
+    # Edit vars if region is EU
+    if region == 'EU':
+        inputZonal = inputZonal.replace('na', 'eu')
+        outCsv = outCsv.replace('{}__'.format(zonalType), '{}-EU__'.format(zonalType))
     
     varsDict = {'inList': inputList, 'inZonal': inputZonal, 'outCsv': outCsv}
     
@@ -172,6 +204,9 @@ def main(args):
             rs = RasterStack(stack)
             check = os.path.join(mainDir, zonalType, stackType, rs.stackName,
                         '{}__{}__zonalStats.csv'.format(zonalType, rs.stackName))
+            # not actually needed            
+            #if region == 'EU':
+                #check = check.replace('{}__'.format(zonalType), '{}-EU__'.format(zonalType))
             
             if not overwrite:
                 if os.path.isfile(check):

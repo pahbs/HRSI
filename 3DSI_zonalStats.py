@@ -42,6 +42,8 @@ Inputs:
            
 6/4/2021:  Changed line 383 below to write to node-specific .csv instead of 
             one big one to avoid write issues like last time
+            
+#* 7/13/21: Look for these comments for what is needed to generalize script for non-3DSI
     
 """
 
@@ -428,6 +430,7 @@ def main(args):
         filterStr = 'wflen < 50'        
     else:
         print "Zonal type {} not recognized".format(zonalType)
+        #* 7/13/21: to generalize, edit needed here
         return None
                
     # 1. Clip input zonal shp to raster extent. Output proj = that of stack  
@@ -474,6 +477,7 @@ def main(args):
 
         # If noDataMask is NOT in same projection as zonal fc, supply correct EPSG
         transEpsg = None
+        #import pdb; pdb.set_trace()
         if int(rasterMask.epsg()) != int(zones.epsg()):
             transEpsg = rasterMask.epsg() # Need to transform coords to that of mask
         
@@ -531,8 +535,9 @@ def main(args):
         fc = ZonalFeatureClass(stackShp) # Update GDB now a method in FC.py
         fc.addToFeatureClass(outGdb)#, moreArgs = '-unsetFID')
 
+    endTime = time.strftime("%m-%d-%y %I:%M:%S")
     elapsedTime = round((time.time()-start)/60, 4)
-    print "\nEND: {}\n".format(time.strftime("%m-%d-%y %I:%M:%S"))
+    print "\nEND: {}\n".format(endTime)
     print " Completed in {} minutes".format(elapsedTime)
 
     # 8. Lastly, record some info to a batch-level csv:
@@ -542,10 +547,10 @@ def main(args):
     
     if not os.path.isfile(batchCsv):
         with open(batchCsv, 'w') as bc:
-            bc.write('stackName,n layers,n zonal features,node,minutes\n')
+            bc.write('stackName,n layers,n zonal features,node,minutes,datetime\n')
     with open(batchCsv, 'a') as bc:
-        bc.write('{},{},{},{},{}\n'.format(stackName, stack.nLayers, 
-                                zones.nFeatures, platform.node(), elapsedTime))
+        bc.write('{},{},{},{},{},{}\n'.format(stackName, stack.nLayers, 
+                 zones.nFeatures, platform.node(), elapsedTime, endTime))
 
     sys.stdout.flush()
     
