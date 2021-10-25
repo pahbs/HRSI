@@ -51,7 +51,7 @@ Inputs:
 def addStatsToShp(df, shp):   
     # Edit shp to add the stat columns from df
 
-    print "\nWriting output from Zonal Stats to {}".format(shp)
+    print("\nWriting output from Zonal Stats to {}".format(shp))
     
     # Open shp in write mode (shpObj.layer gives us read-mode layer)        
     shpObj = ZonalFeatureClass(shp)
@@ -167,9 +167,9 @@ def callZonalStats(rasterObj, vectorObj, layerDict, addPathRows = False):
     if rasterObj.stackType() == 'Tandemx' or rasterObj.stackType() == 'Landsat':
         allTouched = True
 
-    print " Input Raster: {}".format(raster)
-    print " Input Vector: {}".format(vector)
-    print "  all_touched = {}".format(allTouched)
+    print(" Input Raster: {}".format(raster))
+    print(" Input Vector: {}".format(vector))
+    print("  all_touched = {}".format(allTouched))
     
     # Iterate through layers, run zonal stats and build dataframe
     firstLayer = True
@@ -179,7 +179,7 @@ def callZonalStats(rasterObj, vectorObj, layerDict, addPathRows = False):
         layerName = layerDict[layerN][0]
         statsList = layerDict[layerN][1]
 
-        print "\n Layer {} ({}): {}".format(layerN, layerName, statsList)
+        print("\n Layer {} ({}): {}".format(layerN, layerName, statsList))
 
         # Run/call dict to pandas    
         if "nmad" in statsList:
@@ -223,13 +223,13 @@ def callZonalStats(rasterObj, vectorObj, layerDict, addPathRows = False):
 
 def checkZfcResults(zfc, activity):
 
-    print "\nZonal feature class after {}: {}".format(activity, zfc.filePath)
+    print("\nZonal feature class after {}: {}".format(activity, zfc.filePath))
 
     if zfc.nFeatures == 0:
-        print "\nThere were 0 features after {}. Exiting ({})".format(activity, time.strftime("%m-%d-%y %I:%M:%S"))
+        print("\nThere were 0 features after {}. Exiting ({})".format(activity, time.strftime("%m-%d-%y %I:%M:%S")))
         return None
 
-    print " n features now = {}".format(zfc.nFeatures)
+    print(" n features now = {}".format(zfc.nFeatures))
     return 'continue'
 
 """
@@ -274,7 +274,7 @@ def getSunAngle(useXml):
     
 def logOutput(logFile):
     
-    print "See {} for log".format(logFile)
+    print("See {} for log".format(logFile))
     so = se = open(logFile, 'a', 0) # open our log file
     sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0) # re-open stdout without buffering
     os.dup2(so.fileno(), sys.stdout.fileno()) # redirect stdout and stderr to the log file opened above
@@ -294,7 +294,7 @@ def removeExtraColumns(shp, cols):
 def updateOutputCsv(outCsv, df):
     # Append a dataframe to an output CSV - assumes columns are the same
 
-    print "\nUpdating the big output csv {}".format(outCsv)
+    print("\nUpdating the big output csv {}".format(outCsv))
     
     hdr = False # Only add the header if the file does not exist
     if not os.path.isfile(outCsv):
@@ -314,10 +314,10 @@ def updateOutputGdb(output, inFile, outEPSG = 4326):
     elif ext == '.gpkg':
         outDrv = 'GPKG'
     else:
-        print "\nUnrecognized output extension '{}'".format(ext)
+        print("\nUnrecognized output extension '{}'".format(ext))
         return None
     
-    print "\nUpdating the big output {}".format(output)
+    print("\nUpdating the big output {}".format(output))
     
     layerName = os.path.basename(output).replace(ext, '')
     cmd = 'ogr2ogr -nln {} -a_srs EPSG:4326 -t_srs EPSG:4326'.format(layerName)
@@ -327,7 +327,7 @@ def updateOutputGdb(output, inFile, outEPSG = 4326):
         
     cmd += ' -f "{}" {} {}'.format(outDrv, output, inFile) 
     
-    print '', cmd
+    print(' {}'.format(cmd))
     os.system(cmd)
 
     return None       
@@ -413,13 +413,13 @@ def main(args):
         logOutput(logFile)
    
     # print some info
-    print "BEGIN: {}\n".format(time.strftime("%m-%d-%y %I:%M:%S"))
-    print "Input zonal feature class: {}".format(inZonalFc)
-    print "Input raster stack: {}".format(inRaster)
-    print "Output stack .csv: {}".format(stackCsv)
-    print "Output aggregate fc: {}".format(outGdb)
-    print "Output aggregate csv: {}".format(outCsv)
-    print " n layers = {}".format(stack.nLayers)
+    print("BEGIN: {}\n".format(time.strftime("%m-%d-%y %I:%M:%S")))
+    print("Input zonal feature class: {}".format(inZonalFc))
+    print("Input raster stack: {}".format(inRaster))
+    print("Output stack .csv: {}".format(stackCsv))
+    print("Output aggregate fc: {}".format(outGdb))
+    print("Output aggregate csv: {}".format(outCsv))
+    print(" n layers = {}".format(stack.nLayers))
 
     # 10/20/20: 
     #   ATL08 .gdb has already been filtered on can_open, so do not filter 
@@ -429,7 +429,7 @@ def main(args):
     elif zonalType == 'GLAS':
         filterStr = 'wflen < 50'        
     else:
-        print "Zonal type {} not recognized".format(zonalType)
+        print("Zonal type {} not recognized".format(zonalType))
         #* 7/13/21: to generalize, edit needed here
         return None
                
@@ -440,10 +440,10 @@ def main(args):
    
     clipZonal = os.path.join(outDir, '{}__{}.shp'.format(zonalType, stackName))
     if not os.path.isfile(clipZonal):
-        print "\n1. Clipping input feature class to extent..."
+        print("\n1. Clipping input feature class to extent...")
         inZones.clipToExtent(stackExtent, stackEpsg, stackEpsg, 
                              clipZonal)#, sqlQry)
-    else: print "\n1. Clipped feature class {} already exists...".format(clipZonal)
+    else: print("\n1. Clipped feature class {} already exists...".format(clipZonal))
     
     # now zones is the clipped input ZFC object:
     zones = ZonalFeatureClass(clipZonal)
@@ -454,7 +454,7 @@ def main(args):
     # 2. Filter footprints based on attributes - filter GLAS, not ATL08
     #    (10/20/2020): If filterStr is not None, filter on attributes
     if filterStr: # aka zonal type = GLAS
-        print '\n2. Filtering on attributes using statement = "{}"...'.format(filterStr)
+        print('\n2. Filtering on attributes using statement = "{}"...'.format(filterStr))
         filterShp = zones.filterAttributes(filterStr)
         
         zones = ZonalFeatureClass(filterShp)
@@ -463,7 +463,7 @@ def main(args):
         # zones is filtered shp
         
     else: # filterStr is None, aka zonal type = ATL08
-        print "\n2. Not running attribute filter step"
+        print("\n2. Not running attribute filter step")
         # zones is still the clipZonal shp
             
     # 3. Remove footprints under noData mask 
@@ -472,7 +472,7 @@ def main(args):
     # Mask out NoDataValues if there is a noDataMask. 
     if noDataMask:
         
-        print "\n3. Masking out NoData values using {}...".format(noDataMask) 
+        print("\n3. Masking out NoData values using {}...".format(noDataMask)) 
         rasterMask = RasterStack(noDataMask)
 
         # If noDataMask is NOT in same projection as zonal fc, supply correct EPSG
@@ -487,9 +487,9 @@ def main(args):
         
     # If there is not, just copy the clipped .shp to our output .shp 
     else:
-        print "\n3. No NoDataMask. Not masking out NoData values." 
+        print("\n3. No NoDataMask. Not masking out NoData values.")
         cmd = 'ogr2ogr -f "ESRI Shapefile" {} {}'.format(stackShp, zones.filePath)
-        print ' ', cmd #TEMP 10/7
+        print(' {}'.format(cmd)) #TEMP 10/7
         os.system(cmd)
 
     ## Before moving on, clean up the zonal shapefile by removing unnecessary columns
@@ -506,7 +506,7 @@ def main(args):
     layerDict = buildLayerDict(stack) # {layerNumber: [layerName, [statistics]]}
     
     # 4. Call zonal stats and return a pandas dataframe    
-    print "\n4. Running zonal stats for {} layers".format(len(layerDict))
+    print("\n4. Running zonal stats for {} layers".format(len(layerDict)))
     zonalStatsDf = callZonalStats(stack, zones, layerDict)
    
     # 5. Complete the ZS DF by:
@@ -535,10 +535,10 @@ def main(args):
         fc = ZonalFeatureClass(stackShp) # Update GDB now a method in FC.py
         fc.addToFeatureClass(outGdb)#, moreArgs = '-unsetFID')
 
-    endTime = time.strftime("%m-%d-%y %I:%M:%S")
+    endTime = time.strftime("%m-%d-%y %I:%M:%S %p")
     elapsedTime = round((time.time()-start)/60, 4)
-    print "\nEND: {}\n".format(endTime)
-    print " Completed in {} minutes".format(elapsedTime)
+    print("\nEND: {}\n".format(endTime))
+    print(" Completed in {} minutes".format(elapsedTime))
 
     # 8. Lastly, record some info to a batch-level csv:
     batchCsv = os.path.join(baseDir, '_timing', 

@@ -170,7 +170,7 @@ def main(args):
     
         parList = ' '.join(stackList)
         
-        print "\nProcessing {} stack files in parallel...\n".format(len(stackList))
+        print("\nProcessing {} stack files in parallel...\n".format(len(stackList)))
 
         # Do not supply output GDB, just supply .csv
         parCall = '{} -rs '.format(runScript) + '{1} -z {2} -o {3} -log'
@@ -181,8 +181,8 @@ def main(args):
         os.system(cmd)       
 
         # And update node-specific GDB if shp exists
-        print "\n\nCreating {} with completed shapefiles ({})...".format(outGdb, 
-                                            time.strftime("%m-%d-%y %I:%M:%S"))   
+        print("\n\nCreating {} with completed shapefiles ({})...".format(outGdb, 
+                                           time.strftime("%m-%d-%y %I:%M:%S")))   
         for shp in shps:
             if os.path.isfile(shp):
                 fc = FeatureClass(shp)
@@ -192,31 +192,31 @@ def main(args):
     else:   
         
         # Iterate through stacks and call
-        print "\nProcessing {} stacks...".format(len(stackList))
+        print("\nProcessing {} stacks...".format(len(stackList)))
         
         c = 0
         for stack in stackList:
             
             c+=1
-            print "\n{}/{}:".format(c, len(stackList))
+            print("\n{}/{}:".format(c, len(stackList)))
             
             # Check stack's output csv's, and skip if it exists and overwrite is False
             rs = RasterStack(stack)
             check = os.path.join(mainDir, zonalType, stackType, rs.stackName,
                         '{}__{}__zonalStats.csv'.format(zonalType, rs.stackName))
-            # not actually needed            
+            # not actually needed
             #if region == 'EU':
                 #check = check.replace('{}__'.format(zonalType), '{}-EU__'.format(zonalType))
             
             if not overwrite:
                 if os.path.isfile(check):
-                    print "\nOutputs for {} already exist\n".format(rs.stackName)
+                    print("\nOutputs for {} already exist\n".format(rs.stackName))
                     continue
             
             # Not running in parallel, send the node-specific ouput .gdb and both should get written
             cmd = 'python {} -rs {} -z {} -o {} -log'.format(runScript, stack,  \
                                           varsDict['inZonal'], outGdb)        
-            print cmd
+            print(cmd)
             os.system(cmd) 
         
         

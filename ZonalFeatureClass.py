@@ -131,14 +131,14 @@ class ZonalFeatureClass(FeatureClass):
         layerOut = dsOut.CopyLayer(layer, layerOutName)
         
         if not layerOut: # If CopyLayer failed for whatever reason
-            print "Could not remove NoData polygons"
+            print("Could not remove NoData polygons")
             return self.filePath
         
         ds = layer = dsOut = layerOut = feature = None
         
-        # 10/28: Try to remove 'keep' field - 4/26/21 - comment out to keep consistent with NA outputs
-        #fc = FeatureClass(outShp)
-        #fc.removeField('keep')
+        # 10/28: Try to remove 'keep' field - 4/26/21 - comment out to keep consistent with NA outputs - 6/17 uncomment out again bc won't be consistent anyways
+        fc = FeatureClass(outShp)
+        fc.removeField('keep')
         
         return outShp
 
@@ -200,7 +200,7 @@ class ZonalFeatureClass(FeatureClass):
         try:
             layer.SetAttributeFilter(filterStr)
         except RuntimeError as e:
-            print 'Could not filter based on string "{}": {}'.format(filterStr, e)
+            print('Could not filter based on string "{}": {}'.format(filterStr, e))
             return self.filePath
         
         # Copy filtered layer to output and save
@@ -210,7 +210,7 @@ class ZonalFeatureClass(FeatureClass):
         layerOut = dsOut.CopyLayer(layer, layerOutName)
 
         if not layerOut: # If CopyLayer failed for whatever reason
-            print 'Could not filter based on string "{}"'.format(filterStr)
+            print('Could not filter based on string "{}"'.format(filterStr))
             return self.filePath
         
         return outShp

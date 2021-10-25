@@ -117,7 +117,7 @@ def unpackValidateArgs(args):
 def updateOutputCsv(outCsv, df):
     # Append a dataframe to an output CSV - assumes columns are the same
 
-    #print "\nUpdating the big output csv {}".format(outCsv)
+    #print("\nUpdating the big output csv {}".format(outCsv))
     
     hdr = False # Only add the header if the file does not exist
     if not os.path.isfile(outCsv):
@@ -153,8 +153,8 @@ def main(args):
             bc.write('zonalStatShp,basename,nFeatures\n')
 
     # PART A: Iterate through csv's and write to big output .csv
-    print "\nProcessing {} zonalStats outputs to write .csv {}...". \
-                            format(len(shpList), varsDict['outCsv'])
+    print("\nProcessing {} zonalStats outputs to write .csv {}...". \
+                            format(len(shpList), varsDict['outCsv']))
     #c = 0
     for inShp in shpList:
         
@@ -169,17 +169,17 @@ def main(args):
         df = pd.DataFrame.from_csv(inCsv)
         updateOutputCsv(varsDict['outCsv'], df)
         
-    print "Finished writing .csv\n========================================"
+    print("Finished writing .csv\n========================================")
     
     """    
     # PART B: Iterate through shp's and write to big output gdb/.gpkg
-    print "\nProcessing {} zonalStats outputs to write .gdb {}...". \
-                                        format(len(shpList), outGdb)
+    print("\nProcessing {} zonalStats outputs to write .gdb {}...". \
+                                        format(len(shpList), outGdb))
     c = 0
     for inShp in shpList:
         
         c+=1
-        print "\n{}/{}:".format(c, len(shpList))
+        print("\n{}/{}:".format(c, len(shpList)))
               
         # B. Append to large output .gdb
         zs = FeatureClass(inShp)
@@ -213,7 +213,7 @@ def main(args):
     
         parList = ' '.join(stackList)
         
-        print "\nProcessing {} stack files in parallel...\n".format(len(stackList))
+        print("\nProcessing {} stack files in parallel...\n".format(len(stackList)))
 
         # Do not supply output GDB, just supply .csv
         parCall = '{} -rs '.format(runScript) + '{1} -z {2} -o {3} -log'
@@ -223,7 +223,7 @@ def main(args):
         os.system(cmd)       
 
         # And update node-specific GDB 
-        print "\n\nCreating {} with completed shapefiles ({})...".format(outGdb, time.strftime("%m-%d-%y %I:%M:%S"))   
+        print("\n\nCreating {} with completed shapefiles ({})...".format(outGdb, time.strftime("%m-%d-%y %I:%M:%S")) )  
         for shp in shps:
             if os.path.isfile(shp):
                 fc = FeatureClass(shp)
@@ -233,13 +233,13 @@ def main(args):
     else:   
        
         # Iterate through stacks and call
-        print "\nProcessing {} stacks...".format(len(stackList))
+        print("\nProcessing {} stacks...".format(len(stackList)))
         
         c = 0
         for stack in stackList:
             
             c+=1
-            print "\n{}/{}:".format(c, len(stackList))
+            print("\n{}/{}:".format(c, len(stackList)))
             
             # Check stack's outputs, and skip if it exists and overwrite is False
             rs = RasterStack(stack)
@@ -248,13 +248,13 @@ def main(args):
             
             if not overwrite:
                 if os.path.isfile(check):
-                    print "\nOutputs for {} already exist\n".format(rs.stackName)
+                    print("\nOutputs for {} already exist\n".format(rs.stackName))
                     continue
             
             # Not running in parallel, send the node-specific ouput .gdb and both should get written
             cmd = 'python {} -rs {} -z {} -o {} -log'.format(runScript, stack,  \
                                           varsDict['inZonal'], outGdb)        
-            print cmd
+            print(cmd)
             os.system(cmd) 
     """         
         

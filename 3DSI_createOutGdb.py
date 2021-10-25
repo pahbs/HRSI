@@ -35,7 +35,7 @@ def main(args):
     outGdb = os.path.join(outDir, '{}.gdb'.format(bname))
     
     globDir = glob.glob(os.path.join(inDir, '{}*gpkg'.format(bname)))
-    print "\nCreating {} from {} input files...\n".format(outGdb, len(globDir))
+    print("\nCreating {} from {} input files...\n".format(outGdb, len(globDir)))
 
     for f in globDir:
 
